@@ -1,0 +1,391 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Combined Engineering Drawing: Orthographic and Isometric View</title>
+    <link rel="icon" href="./favicon.ico" />
+
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root { 
+    --red:#c40000; 
+    --bg:#fff; 
+    --yellow:gold; 
+    --blue:#007bff; 
+    --green:#00a300; 
+    --orange: #ff7700; 
+    --light-grey: #e8e8e8;
+  }
+  html,body{height:100%; margin:0; font-family:Arial,Helvetica,sans-serif; background:var(--bg);} 
+  #app { display:flex; height:100vh; overflow:hidden; }
+
+  #sidebar{
+    width:320px;
+    padding:16px;
+    box-sizing:border-box;
+    background:#f7f7f7;
+    border-right:1px solid #eee;
+    overflow:auto;
+  }
+  .step-item{ padding:10px; margin:8px 0; background:white; border-left:4px solid var(--light-grey); cursor:pointer; }
+  .step-item.active{ border-left-color:var(--red); background:#fff5f5; font-weight:700; }
+  .step-section-title { margin-top: 15px; margin-bottom: 5px; color: var(--blue); font-size: 1.1em; font-weight: bold; }
+
+  #main{
+    flex:1 1 auto;
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+    box-sizing:border-box;
+    position: relative;
+  }
+
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:12px 16px; border-bottom:1px solid #eee; background:linear-gradient(#fff,#fafafa);
+  }
+  .title { font-size:26px; color:var(--red); margin:0; font-weight:700; }
+  .subtitle { font-size:13px; color:#666; margin-top:2px; }
+
+  #controls { display:flex; gap:8px; align-items:center; }
+  button{ padding:8px 14px; border:0; border-radius:6px; background:var(--red); color:#fff; cursor:pointer; }
+  button:disabled{ background:#ccc; cursor:not-allowed; }
+
+  /* Legend Box */
+  .legend-box {
+    position: absolute;
+    top: 85px;
+    right: 25px;
+    background: white;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 10;
+  }
+  .legend-item { display: flex; align-items: center; margin: 4px 0; }
+  .legend-line { width: 25px; height: 0; margin-right: 10px; border-bottom-style: solid; }
+
+  #svgWrap{
+    flex:1 1 auto;
+    width:100%;
+    height: calc(100vh - 72px); 
+    box-sizing:border-box;
+    overflow:auto;
+    background:#fff;
+  }
+
+  svg{ width:100%; height:100%; display:block; background:#fff; }
+
+  .axis { stroke:var(--red); stroke-width:3; stroke-linecap:round; }
+  .label { fill:var(--red); font-weight:700; font-size:14px; }
+  .square { stroke:var(--red); stroke-width:4; fill:#fff; }
+  .corner-label { fill:var(--red); font-weight:700; font-size:14px; }
+  
+  /* Pencil Grade Classes */
+  .yellow-line { stroke:var(--yellow); stroke-width:2; stroke-linecap:round; } /* 2H */
+  .red-line { stroke:var(--red); stroke-width:4; stroke-linecap:round; }      /* HB */
+  .dark-seg { stroke:var(--red); stroke-width:5; stroke-linecap:round; }
+
+  /* Red HB Dimension Line */
+  .dim-line-hb { 
+    stroke: var(--red); 
+    stroke-width: 2.5; 
+    fill: none; 
+    marker-end: url(#arrowhead-red); 
+    marker-start: url(#arrowhead-start-red); 
+  }
+  
+  /* UPDATED: Changed from black to var(--red) */
+  .prism-line { stroke: var(--red); stroke-width: 2.5; stroke-linecap: round; }
+  .hidden-line { stroke: gray; stroke-dasharray: 5, 5; stroke-width: 1.5; stroke-linecap: round; }
+  .iso-axis-line { stroke: var(--green); stroke-width: 1.5; }
+  .reference-line { stroke: var(--light-grey); stroke-width: 1; }
+  
+  .iso-dim-text { font-size: 12px; fill: var(--red); text-anchor: middle; font-weight: 700;}
+  
+  .iso-label { font-size: 13px; font-weight: bold; fill: black; }
+  .iso-red-dot { fill: var(--red); r: 3; }
+  .angle-arc { stroke: var(--green); stroke-width: 1; fill: none; }
+  .note-text { font-size: 14px; font-weight: bold; fill: #333; }
+
+  @media (max-width:900px){ #sidebar{ display:none } }
+</style>
+</head>
+<body>
+  <div id="app">
+    <div id="sidebar">
+      <h3 style="color:var(--red);margin:0 0 8px 0">Steps</h3>
+      <div id="stepList"></div>
+    </div>
+
+    <div id="main">
+      <div class="topbar">
+        <div>
+          <div class="title">Isometric View: Square Prism (30x70mm)</div>
+          <div class="subtitle">Step-by-step construction guide</div>
+        </div>
+        <div id="controls">
+          <button id="prevBtn" disabled>← Previous</button>
+          <button id="nextBtn">Next →</button>
+    <button onclick="window.location.href='./index.html'">Home</button>
+
+        </div>
+      </div>
+
+      <div class="legend-box">
+        <div class="legend-item">
+          <div class="legend-line" style="border-bottom-color: var(--yellow); border-bottom-width: 2px;"></div>
+          <span>Yellow line - 2H Line</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-line" style="border-bottom-color: var(--red); border-bottom-width: 4px;"></div>
+          <span>Red lines - HB Line</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-line" style="border-bottom-color: gray; border-bottom-width: 1.5px; border-bottom-style: dashed;"></div>
+          <span>Grey line - H Line</span>
+        </div>
+      </div>
+
+      <div id="svgWrap">
+        <svg id="svg" viewBox="0 0 1400 850" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+              <marker id="arrowhead-red" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+                  <polygon points="0 0, 10 3.5, 0 7" fill="var(--red)" />
+              </marker>
+              <marker id="arrowhead-start-red" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                  <polygon points="10 0, 0 3.5, 10 7" fill="var(--red)" />
+              </marker>
+          </defs>
+          <g id="scaleGroup">
+            <g id="saranFinalLayer"></g> 
+            <g id="mainDrawingLayer"></g> 
+            <text x="1350" y="820" class="note-text" text-anchor="end">All Dimensions Are In mm</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+<script>
+let SCALE = 1.05; 
+const MM_TO_PX = 96/25.4;
+const squareSideMM = 30;
+const heightMM = 70; 
+const squareSidePx = squareSideMM * MM_TO_PX;
+const heightPx = heightMM * MM_TO_PX;
+
+const viewBoxWidth = 1400;
+const viewBoxHeight = 850;
+const XY_y = 400; 
+let axisLeft = 100;   
+let axisRight = 600;
+let viewCenterX = axisLeft + (axisRight - axisLeft) / 2;
+let squareCenter = { x: viewCenterX, y: XY_y + 160 }; 
+
+const ISO_ORIGIN_X = 950; 
+const ISO_ORIGIN_Y = 600; 
+const ISO_SCALE = 2.2; 
+const ISO_S = squareSideMM * ISO_SCALE; 
+const ISO_H = heightMM * ISO_SCALE; 
+const cos30 = Math.cos(Math.PI / 6);
+const sin30 = Math.sin(Math.PI / 6);
+
+const svg = document.getElementById('svg');
+const scaleGroup = document.getElementById('scaleGroup');
+const saranFinalLayer = document.getElementById('saranFinalLayer');
+const mainDrawingLayer = document.getElementById('mainDrawingLayer');
+
+function el(tag, attrs = {}, parent = mainDrawingLayer){
+  const e = document.createElementNS(svg.namespaceURI, tag);
+  for(const k in attrs){
+    if(k === 'textContent') e.textContent = attrs[k];
+    else if(k !== 'parent') e.setAttribute(k, String(attrs[k]));
+  }
+  (attrs.parent || parent).appendChild(e);
+  return e;
+}
+
+const P = {}; 
+const ISO = {
+  a: { x: ISO_ORIGIN_X, y: ISO_ORIGIN_Y },
+  b: { x: ISO_ORIGIN_X + ISO_S * cos30, y: ISO_ORIGIN_Y - ISO_S * sin30 },
+  d: { x: ISO_ORIGIN_X - ISO_S * cos30, y: ISO_ORIGIN_Y - ISO_S * sin30 },
+  c: { x: ISO_ORIGIN_X, y: ISO_ORIGIN_Y - 2 * (ISO_S * sin30) }
+};
+ISO.vert_1 = { x: ISO.a.x, y: ISO.a.y - ISO_H };
+ISO.vert_2 = { x: ISO.b.x, y: ISO.b.y - ISO_H };
+ISO.vert_3 = { x: ISO.c.x, y: ISO.c.y - ISO_H };
+ISO.vert_4 = { x: ISO.d.x, y: ISO.d.y - ISO_H };
+
+const steps = [
+  { name:'Start', desc:'Setup Area', section: '1. Orthographic Projection', draw(){ mainDrawingLayer.innerHTML=''; saranFinalLayer.innerHTML=''; } },
+  { name:'Step 1: XY axis', desc:'Reference line.', draw(){
+      mainDrawingLayer.innerHTML='';
+      el('line',{ x1:axisLeft, y1:XY_y, x2:axisRight, y2:XY_y, class:'axis' });
+      el('text',{ x:axisLeft-10, y:XY_y-6, class:'label', 'text-anchor':'end', textContent:'x' });
+      el('text',{ x:axisRight+10, y:XY_y-6, class:'label', 'text-anchor':'start', textContent:'y' });
+    }
+  },
+  { name:'Step 2: Top View', desc:'Draw 30x30 square.', draw(){
+      steps[1].draw();
+      const half = squareSidePx/2;
+      P.a={x:viewCenterX-half, y:squareCenter.y+half}; P.b={x:viewCenterX+half, y:squareCenter.y+half};
+      P.c={x:viewCenterX+half, y:squareCenter.y-half}; P.d={x:viewCenterX-half, y:squareCenter.y-half};
+      el('path', { d: `M ${P.d.x} ${P.d.y} L ${P.c.x} ${P.c.y} L ${P.b.x} ${P.b.y} L ${P.a.x} ${P.a.y} Z`, class:'square' });
+    }
+  },
+  { name:'Step 3: Labels', desc:'Corner markers.', draw(){
+      steps[2].draw();
+      const lbls = [{p:P.a, t:'a(1)', dx:-8, dy:8, an:'end'}, {p:P.b, t:'b(2)', dx:8, dy:8, an:'start'}, {p:P.c, t:'c(3)', dx:8, dy:-8, an:'start'}, {p:P.d, t:'d(4)', dx:-8, dy:-8, an:'end'}];
+      lbls.forEach(l => { el('circle',{cx:l.p.x, cy:l.p.y, r:3, fill:'var(--red)'}); el('text',{x:l.p.x+l.dx, y:l.p.y+l.dy, class:'corner-label', 'text-anchor':l.an, textContent:l.t}); });
+    }
+  },
+  { name:'Step 4: Projections', desc:'Project to XY.', draw(){
+      steps[3].draw();
+      el('line', { x1:P.a.x, y1:P.d.y, x2:P.a.x, y2:XY_y, class:'yellow-line' });
+      el('line', { x1:P.b.x, y1:P.c.y, x2:P.b.x, y2:XY_y, class:'yellow-line' });
+      el('text',{ x:P.a.x-5, y:XY_y-10, class:'label', 'text-anchor':'end', textContent:"a'(d')" });
+      el('text',{ x:P.b.x+5, y:XY_y-10, class:'label', 'text-anchor':'start', textContent:"b'(c')" });
+    }
+  },
+  { name:'Step 5: Front View', desc:'Vertical rise of 70.', draw(){
+      steps[4].draw();
+      P.topL = {x:P.a.x, y:XY_y-heightPx}; P.topR = {x:P.b.x, y:XY_y-heightPx};
+      el('line',{x1:P.a.x, y1:XY_y, x2:P.topL.x, y2:P.topL.y, class:'red-line'});
+      el('line',{x1:P.b.x, y1:XY_y, x2:P.topR.x, y2:P.topR.y, class:'red-line'});
+    }
+  },
+  { name:'Step 6: Outline', desc:'Darken edges.', draw(){
+      steps[5].draw();
+      el('line',{x1:P.a.x, y1:XY_y, x2:P.b.x, y2:XY_y, class:'dark-seg'});
+      el('line',{x1:P.topL.x, y1:P.topL.y, x2:P.topR.x, y2:P.topR.y, class:'red-line'});
+      el('text',{ x:P.topL.x-12, y:P.topL.y-8, class:'label', 'text-anchor':'end', textContent:"1'(4')" });
+      el('text',{ x:P.topR.x+12, y:P.topR.y-8, class:'label', 'text-anchor':'start', textContent:"2'(3')" });
+    }
+  },
+  { name:'Step 7: Ortho Final', desc:'Lock view and dimensions.', draw(){
+      steps[6].draw();
+      saranFinalLayer.innerHTML = mainDrawingLayer.innerHTML; 
+      mainDrawingLayer.innerHTML = '';
+      
+      const gap = 50;
+      // Projection lines = Yellow 2H
+      el('line', {x1:P.a.x, y1:P.a.y+5, x2:P.a.x, y2:P.a.y+gap+10, class:'yellow-line', parent:saranFinalLayer});
+      el('line', {x1:P.b.x, y1:P.b.y+5, x2:P.b.x, y2:P.b.y+gap+10, class:'yellow-line', parent:saranFinalLayer});
+      // Dimension lines = Red HB
+      el('line', {x1:P.a.x, y1:P.a.y+gap, x2:P.b.x, y2:P.b.y+gap, class:'dim-line-hb', parent:saranFinalLayer});
+      el('text', {x:(P.a.x+P.b.x)/2, y:P.a.y+gap-8, class:'iso-dim-text', textContent:'30', parent:saranFinalLayer});
+
+      const sideGap = 65;
+      // Projection lines = Yellow 2H
+      el('line', {x1:P.b.x+10, y1:XY_y, x2:P.b.x+sideGap+10, y2:XY_y, class:'yellow-line', parent:saranFinalLayer});
+      el('line', {x1:P.topR.x+10, y1:P.topR.y, x2:P.topR.x+sideGap+10, y2:P.topR.y, class:'yellow-line', parent:saranFinalLayer});
+      // Dimension lines = Red HB
+      el('line', {x1:P.b.x+sideGap, y1:XY_y, x2:P.topR.x+sideGap, y2:P.topR.y, class:'dim-line-hb', parent:saranFinalLayer});
+      // UPDATED: Changed x and text-anchor to place '70' above the line
+      el('text', {x:P.b.x+sideGap-15, y:(XY_y+P.topR.y)/2, class:'iso-dim-text', 'text-anchor':'middle', textContent:'70', transform:`rotate(-90 ${P.b.x+sideGap-15} ${(XY_y+P.topR.y)/2})`, parent:saranFinalLayer});
+    }
+  },
+  { name: "Step 8: Iso Axes", desc: "30° reference axes.", section: '2. Isometric Drawing', draw: () => {
+      mainDrawingLayer.innerHTML = ''; 
+      el('line', { x1: ISO.a.x - 200, y1: ISO.a.y, x2: ISO.a.x + 200, y2: ISO.a.y, class: 'reference-line' });
+      el('circle', { cx: ISO.a.x, cy: ISO.a.y, r: 3, class: 'iso-red-dot' });
+      const al = 150;
+      el('line', { x1: ISO.a.x, y1: ISO.a.y, x2: ISO.a.x + al * cos30, y2: ISO.a.y - al * sin30, class: 'iso-axis-line' });
+      el('line', { x1: ISO.a.x, y1: ISO.a.y, x2: ISO.a.x - al * cos30, y2: ISO.a.y - al * sin30, class: 'iso-axis-line' });
+      el('line', { x1: ISO.a.x, y1: ISO.a.y, x2: ISO.a.x, y2: ISO.a.y - al, class: 'iso-axis-line' });
+      
+      const arcR = 40;
+      el('path', { d: `M ${ISO.a.x + arcR} ${ISO.a.y} A ${arcR} ${arcR} 0 0 0 ${ISO.a.x + arcR*cos30} ${ISO.a.y - arcR*sin30}`, class: 'angle-arc' });
+      el('path', { d: `M ${ISO.a.x - arcR} ${ISO.a.y} A ${arcR} ${arcR} 0 0 1 ${ISO.a.x - arcR*cos30} ${ISO.a.y - arcR*sin30}`, class: 'angle-arc' });
+      el('text', { x: ISO.a.x + arcR + 10, y: ISO.a.y - 5, class: 'iso-dim-text', textContent: '30°' });
+      el('text', { x: ISO.a.x - arcR - 25, y: ISO.a.y - 5, class: 'iso-dim-text', textContent: '30°' });
+    }
+  },
+  { name: "Step 9: Base Points", desc: "Marking origin labels.", draw: () => {
+      steps[8].draw();
+      el('text', { x: ISO.a.x, y: ISO.a.y + 18, class: 'iso-label', textContent: 'a' });
+      el('text', { x: ISO.b.x + 8, y: ISO.b.y - 2, class: 'iso-label', textContent: 'b' });
+      el('text', { x: ISO.d.x - 15, y: ISO.d.y - 2, class: 'iso-label', textContent: 'd' });
+    }
+  },
+  { name: "Step 10: Base Box", desc: "Darken front edges AD and AB.", draw: () => {
+      steps[9].draw();
+      el('line', { x1: ISO.b.x, y1: ISO.b.y, x2: ISO.c.x, y2: ISO.c.y, class: 'hidden-line' });
+      el('line', { x1: ISO.d.x, y1: ISO.d.y, x2: ISO.c.x, y2: ISO.c.y, class: 'hidden-line' });
+      el('line', { x1: ISO.a.x, y1: ISO.a.y, x2: ISO.b.x, y2: ISO.b.y, class: 'prism-line' });
+      el('line', { x1: ISO.a.x, y1: ISO.a.y, x2: ISO.d.x, y2: ISO.d.y, class: 'prism-line' });
+      el('text', { x: ISO.c.x, y: ISO.c.y + 18, class: 'iso-label', textContent: 'c' });
+    }
+  },
+  { name: "Step 11: Verticals", desc: "Project height 70.", draw: () => {
+      steps[10].draw();
+      el('line', { x1: ISO.a.x, y1: ISO.a.y, x2: ISO.vert_1.x, y2: ISO.vert_1.y, class: 'prism-line' });
+      el('line', { x1: ISO.b.x, y1: ISO.b.y, x2: ISO.vert_2.x, y2: ISO.vert_2.y, class: 'prism-line' });
+      el('line', { x1: ISO.c.x, y1: ISO.c.y, x2: ISO.vert_3.x, y2: ISO.vert_3.y, class: 'hidden-line' });
+      el('line', { x1: ISO.d.x, y1: ISO.d.y, x2: ISO.vert_4.x, y2: ISO.vert_4.y, class: 'prism-line' });
+    }
+  },
+  { name: "Step 12: Top Face", desc: "Labeling top corners 1,2,3,4.", draw: () => {
+      steps[11].draw();
+      el('line', { x1: ISO.vert_1.x, y1: ISO.vert_1.y, x2: ISO.vert_2.x, y2: ISO.vert_2.y, class: 'prism-line' });
+      el('line', { x1: ISO.vert_2.x, y1: ISO.vert_2.y, x2: ISO.vert_3.x, y2: ISO.vert_3.y, class: 'prism-line' });
+      el('line', { x1: ISO.vert_3.x, y1: ISO.vert_3.y, x2: ISO.vert_4.x, y2: ISO.vert_4.y, class: 'prism-line' });
+      el('line', { x1: ISO.vert_4.x, y1: ISO.vert_4.y, x2: ISO.vert_1.x, y2: ISO.vert_1.y, class: 'prism-line' });
+      
+      el('text', { x: ISO.vert_1.x, y: ISO.vert_1.y - 12, class: 'iso-label', 'text-anchor':'middle', textContent: '1' });
+      el('text', { x: ISO.vert_2.x + 8, y: ISO.vert_2.y - 5, class: 'iso-label', textContent: '2' });
+      el('text', { x: ISO.vert_3.x, y: ISO.vert_3.y - 12, class: 'iso-label', 'text-anchor':'middle', textContent: '3' });
+      el('text', { x: ISO.vert_4.x - 15, y: ISO.vert_4.y - 5, class: 'iso-label', textContent: '4' });
+    }
+  }
+];
+
+let current = 0;
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+
+function updateScaleTransform(){
+  const cx = viewBoxWidth / 2, cy = viewBoxHeight / 2;
+  const tx = cx - SCALE * cx, ty = cy - SCALE * cy;
+  scaleGroup.setAttribute('transform', `translate(${tx} ${ty}) scale(${SCALE})`);
+}
+
+function goToStep(i){
+  if(i < 0 || i >= steps.length) return;
+  current = i;
+  if(current < 7) saranFinalLayer.innerHTML = '';
+  if(current >= 7 && saranFinalLayer.innerHTML === '') steps[7].draw();
+  steps[current].draw();
+  document.querySelectorAll('.step-item').forEach((it,ii)=> it.classList.toggle('active', ii === current));
+  prevBtn.disabled = current === 0;
+  nextBtn.disabled = current === steps.length - 1;
+  updateScaleTransform();
+}
+
+const stepList = document.getElementById('stepList');
+steps.forEach((s,i)=>{
+  if (s.section) {
+      const t = document.createElement('div');
+      t.className = 'step-section-title';
+      t.textContent = s.section;
+      stepList.appendChild(t);
+  }
+  const d = document.createElement('div');
+  d.className = 'step-item';
+  d.innerHTML = `<strong>${s.name}</strong><br><small>${s.desc}</small>`;
+  d.onclick = ()=> goToStep(i);
+  stepList.appendChild(d);
+});
+
+prevBtn.onclick = ()=> goToStep(current - 1);
+nextBtn.onclick = ()=> goToStep(current + 1);
+
+goToStep(0);
+window.addEventListener('resize', updateScaleTransform);
+</script>
+</body>
+</html>

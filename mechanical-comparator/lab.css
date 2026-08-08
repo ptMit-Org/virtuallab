@@ -1,0 +1,182 @@
+/* --- Global Resets --- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body { font-family: 'Inter', sans-serif; touch-action: none; }
+
+/* --- Layout Wrappers --- */
+.app-body {
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* --- Header --- */
+.main-header {
+    height: 70px;
+    padding: 0 1.5rem; /* Horizontal padding */
+    border-bottom: 1px solid #e5e7eb;
+    background-color: #73c3d7;
+    
+    /* Flexbox Layout */
+    display: flex; 
+    align-items: center; 
+    /* This pushes the Title to the left and Button to the right */
+    justify-content: space-between; 
+    z-index: 20;
+}
+.header-title {
+    font-size: 1.5rem;
+    color: #ffffff;
+    font-weight: 700;
+}
+
+/* --- Home Button Style --- */
+.home-btn {
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent white */
+    padding: 8px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 6px;
+    transition: all 0.2s ease-in-out;
+}
+
+.home-btn:hover {
+    background-color: #ffffff;
+    color: #0284c7; /* Darker blue text on hover */
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* --- MAIN GRID LAYOUT --- */
+#mainArea {
+    /* Takes remaining height */
+    flex: 1; 
+    display: grid;
+    /* Col 1 (250px) | Col 2 (Flexible) | Col 3 (250px) */
+    grid-template-columns: 250px 1fr 250px; 
+    grid-template-rows: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+/* --- COLUMN 1: Left Panel --- */
+#workbench {
+    background-color: #ffffff;
+    border-right: 2px solid #D1D5DB;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    z-index: 20;
+}
+
+/* --- COLUMN 2: Center Simulation --- */
+.measurement-area {
+    position: relative; /* Anchor for absolute children (dial, base) */
+    background-color: #E0F2FE;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    overflow: hidden;
+}
+
+/* --- COLUMN 3: Right Panel --- */
+#infoPanel {
+    background-color: #ffffff;
+    border-left: 2px solid #D1D5DB;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Pushes reading to bottom */
+    z-index: 20;
+}
+
+/* --- UI Elements Styling --- */
+.panel-title {
+    font-size: 1rem; font-weight: 700; color: #374151; text-align: center;
+    margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;
+    border-bottom: 2px solid #D1D5DB; padding-bottom: 5px;
+}
+
+/* Workpieces */
+.workpiece-wrapper {
+    position: relative; width: 100%; margin: 15px 0;
+    display: flex; justify-content: center; flex-direction: column;
+}
+.workpiece {
+    width: 100%; height: 70px; border: 2px solid;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1); cursor: pointer;
+    transition: transform 0.2s;
+}
+.workpiece:hover { transform: scale(1.02); }
+.workpiece-label {
+    position: absolute; top: -22px; left: 0; background: rgba(255,255,255,0.9);
+    padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;
+}
+
+/* Specific Blocks */
+#zeroBlock { height: 40px; background: #6EE7B7; border-color: #047857; }
+#irregularBlock10 {
+    height: 60px; background: #FBCFE8; border-color: #831843;
+    clip-path: polygon(0% 100%, 100% 100%, 100% 20%, 90% 30%, 80% 20%, 70% 35%, 60% 25%, 50% 40%, 40% 25%, 30% 35%, 20% 20%, 10% 30%, 0% 15%);
+}
+#irregularBlock20 {
+    height: 70px; background: #FDE68A; border-color: #B45309;
+    clip-path: polygon(0% 100%, 100% 100%, 100% 10%, 95% 20%, 85% 5%, 75% 25%, 60% 10%, 50% 30%, 35% 15%, 25% 35%, 15% 10%, 5% 40%, 0% 20%);
+}
+
+/* Right Panel Content */
+.instruction-list { padding-left: 20px; font-size: 0.9rem; color: #4b5563; line-height: 1.5; }
+.instruction-list li { margin-bottom: 8px; }
+.display-container {
+    background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #d1d5db;
+    display: flex; align-items: baseline; justify-content: center; gap: 5px;
+}
+#measurementDisplay { font-size: 2.5rem; font-weight: 700; font-family: monospace; color: #111827; }
+
+/* --- SIMULATION OBJECTS (Absolute inside Center Col) --- */
+
+/* 1. Gauge / Dial */
+#gaugeAssembly {
+    position: fixed;
+    top: 117px; /* Push down from top */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 250px;
+    z-index: 10;
+    pointer-events: none;
+    display: flex; flex-direction: column; align-items: center;
+}
+#gaugeAssembly canvas { width: 250px; height: 250px; }
+#plunger { width: 15px; }
+#plungerMount { width: 6px; height: 19px; margin:  auto; background: #9ca3af; }
+#plungerShaft { width: 6px; margin: 0 auto; background: #d1d5db; }
+#plungerTip { width: 1rem; height: 1rem; background: #eab308; border-radius: 50%; margin: 0 auto; }
+
+/* 2. Active Workpiece (Draggable) */
+#activeWorkpieceContainer {
+    position: absolute; bottom: 48px; left: 50%;
+    transform: translateX(-50%);
+    width: 500px; height: 200px;
+    pointer-events: none; z-index: 15;
+}
+#activeWorkpiece {
+    position: absolute; top: 0; left: 0;
+    width: 300px; cursor: grab; pointer-events: auto; z-index: 50;
+    border: 2px solid; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    display: flex; justify-content: center;
+    transition: left 0.4s ease-out, top 0.4s ease-out;
+}
+#activeWorkpiece:active { cursor: grabbing; }
+
+/* 3. Base Surface */
+#base {
+    position: absolute; bottom: 0; width: 100%; height: 3rem;
+    background: #6b7280; border-top: 4px solid #4b5563; z-index: 5;
+}

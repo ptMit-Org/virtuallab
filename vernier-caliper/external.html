@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>External Workpiece Measurement</title>
+  <link rel="icon" href="./favicon.ico" />
+  <style>
+    /* Reset and Base Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9fafb;
+      overflow-x: hidden;
+      padding-top: 80px;
+      /* Space for fixed buttons */
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      color: #1f2937;
+      margin-bottom: 2rem;
+    }
+
+    /* Fixed Top Buttons */
+    .btn-group {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      gap: 15px;
+      z-index: 1000;
+    }
+
+    .internal-btn,
+    .home-btn {
+      padding: 0.75rem 1.5rem;
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .internal-btn:hover,
+    .home-btn:hover {
+      background-color: #2563eb;
+    }
+
+    /* Layout Containers (New Flex Structure) */
+    .container {
+      width: 95%;
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 1rem;
+      padding-top: 10px;
+      /* Add padding to prevent overlap with fixed top content */
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      color: #1f2937;
+      margin-bottom: 2rem;
+      /* Set margin-top to separate it from instruction text, if applicable */
+    }
+
+    .caliper-section {
+      display: flex;
+      justify-content: space-between;
+      /* Space out caliper area and shapes */
+      align-items: flex-start;
+      /* Align elements to the top */
+      gap: 20px;
+    }
+
+    /* Caliper Viewport (Fixed Width with Scroll) */
+    #caliperViewport {
+      flex-grow: 1;
+      max-width: 70%;
+      /* Takes up most space */
+      height: 500px;
+      overflow-x: auto;
+      /* ENABLE HORIZONTAL SCROLLING */
+      border: 2px solid #d1d5db;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      position: relative;
+      background-color: white;
+    }
+
+    /* Caliper Content Wrapper (Always Full Size of the Image) */
+    .caliper-container {
+      position: absolute;
+      width: 1400px;
+      /* Fixed width matching the image scale/size */
+      height: 100%;
+      top: 0;
+      left: 0;
+    }
+
+    /* Caliper Components */
+    .main-scale {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .main-scale img {
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+    }
+
+    .vernier-scale {
+      position: absolute;
+      width: 100%;
+      height: 448px;
+      top: 6px;
+      left: 0;
+      /* Resetting left to 0, actual offset managed by JS transform */
+      z-index: 10;
+      transition: transform 0.6s ease;
+      /* Use transform for smooth movement */
+    }
+
+    .vernier-scale img {
+      width: 105%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    #workpieceShape {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      z-index: 5;
+      display: none;
+    }
+
+    /* Shapes Sidebar */
+    .shapes-grid {
+      flex-shrink: 0;
+      /* Ensures sidebar doesn't shrink */
+      width: 25%;
+      /* Takes remaining space */
+      max-width: 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .shape {
+      width: 100px;
+      height: 100px;
+      border: 4px solid black;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .shape:hover {
+      transform: scale(1.1);
+    }
+
+    .circle {
+      border-radius: 50%;
+      background-color: #3b82f6;
+    }
+
+    .square {
+      background-color: #fbbf24;
+    }
+
+    .rectangle {
+      width: 140px;
+      height: 80px;
+      background-color: #16a34a;
+    }
+
+    .shape-button {
+      border: none;
+      background-color: #ef4444;
+      color: white;
+      padding: 8px 16px;
+      font-size: 1rem;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.2s;
+      margin-top: 10px;
+    }
+
+    .shape-button:hover {
+      background-color: #dc2626;
+      transform: scale(1.05);
+    }
+
+    /* Measurement Result Box (Relative to Viewport) */
+    #externalMeasurementBox {
+      display: none;
+      position: absolute;
+      right: 20px;
+      /* Positioned relative to Caliper Viewport */
+      top: 50px;
+      width: 250px;
+      border: 2px solid red;
+      border-radius: 10px;
+      padding: 15px;
+      background: #fff;
+      font-size: 16px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+      z-index: 999;
+    }
+
+    /* Calculation Box (Fixed Bottom Center) */
+    #calculationBox {
+      position: fixed;
+      /* Fixed relative to screen */
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      /* ... rest of styles */
+
+      background-color: #f3f4f6;
+      border: 2px solid #9ca3af;
+      border-radius: 12px;
+      width: 400px;
+      padding: 15px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      text-align: left;
+      font-size: 15px;
+      z-index: 9999;
+    }
+
+    #calculationBox h3 {
+      margin-bottom: 8px;
+      text-align: center;
+      color: #111827;
+    }
+
+    #calculationBox p {
+      margin: 4px 0;
+      line-height: 1.5;
+    }
+
+    /* Help Button/Box */
+    .help-button {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 50px;
+      height: 50px;
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      font-size: 24px;
+      cursor: pointer;
+      z-index: 1000;
+    }
+
+    .instruction-box {
+      display: none;
+      position: relative;
+      bottom: 100px;
+      width: 10px;
+      background: #fff;
+      border: 2px solid #2563eb;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      font-size: 20px;
+      line-height: 1.5;
+      z-index: 10;
+    }
+
+    /* ARROWS - Updated to use transform for positioning relative to caliper scale */
+    .arrow-label {
+      position: absolute;
+      z-index: 20;
+      pointer-events: none;
+      display: none;
+      width: 0;
+      height: 0;
+      transform: translateY(0);
+      /* Base position for arrows on scale */
+    }
+
+    #msrArrow::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 3px;
+      height: 60px;
+      background-color: #dc2626;
+      transform: translateX(-50%);
+    }
+
+    #msrArrow::after {
+      content: '';
+      position: absolute;
+      top: 60px;
+      left: 50%;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-top: 15px solid #dc2626;
+      transform: translateX(-50%);
+    }
+
+    #vscArrow::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      width: 3px;
+      height: 60px;
+      background-color: #2563eb;
+      transform: translateX(-50%);
+    }
+
+    #vscArrow::after {
+      content: '';
+      position: absolute;
+      bottom: 60px;
+      left: 50%;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-bottom: 15px solid #2563eb;
+      transform: translateX(-50%);
+    }
+
+    @keyframes flicker {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.3;
+      }
+    }
+
+    .flicker {
+      animation: flicker 0.6s infinite ease-in-out;
+    }
+
+    /* Instruction Text Positioning */
+    .instruction-text {
+      position: relative;
+      /* Change to relative to put it in the normal document flow */
+      margin: -1.5rem auto 1.5rem;
+      /* Center it and add space */
+      top: auto;
+      /* Remove fixed top constraint */
+      left: auto;
+      transform: none;
+      font-weight: bold;
+      padding: 10px 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+      background: #dbeafe;
+      color: #1e3a8a;
+      z-index: 10;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="btn-group">
+    <button class="home-btn" onclick="window.location.href='./index.html'">Introduction</button>
+    <button class="internal-btn" onclick="window.location.href='./internal.html'">Go to Internal Measurement</button>
+  </div>
+
+  <div class="container">
+    <h1>External Workpiece Measurement</h1>
+
+    <div class="instruction-text" id="instructionText">Select a workpiece to measure</div>
+
+    <div class="caliper-section">
+
+      <div id="caliperViewport">
+        <div class="caliper-container" id="caliperContainer">
+          <div class="main-scale"><img src="./FIXED_JAW.jpeg" alt="Main Scale"></div>
+
+          <div class="vernier-scale" id="vernierScale">
+            <img src="./MOVABLE_JAW.png" alt="Vernier Scale">
+          </div>
+
+          <div id="workpieceShape"></div>
+          <div id="externalMeasurementBox"></div>
+          <div class="arrow-label" id="msrArrow"></div>
+          <div class="arrow-label" id="vscArrow"></div>
+        </div>
+      </div>
+
+      <div class="shapes-grid">
+        <div>
+          <div class="shape circle" onclick="measureShape('Circle', 10)"></div>
+          <button class="shape-button" onclick="measureShape('Circle', 10)">⭕ Circle</button>
+        </div>
+        <div>
+          <div class="shape square" onclick="measureShape('Square', 12)"></div>
+          <button class="shape-button" onclick="measureShape('Square', 12)">⬜ Square</button>
+        </div>
+        <div>
+          <div class="shape rectangle" onclick="measureShape('Rectangle', 14)"></div>
+          <button class="shape-button" onclick="measureShape('Rectangle', 14)">▭ Rectangle</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="calculationBox">
+      <h3>Measurement Calculation</h3>
+      <p id="msrDisplay">MSR = -- mm</p>
+      <p id="vsrDisplay">VSR = VSC × LC = -- × 0.05 = -- mm</p>
+      <p id="trDisplay">TR = MSR + VSR = -- mm</p>
+    </div>
+  </div>
+
+  <script>
+    const CALIPER_WIDTH = 1400; // Must match the fixed width of .caliper-container
+    const shapeOffsets = {
+      // vernierTransformX: How much the Vernier scale moves to the LEFT (negative value)
+      Circle: { workpieceTop: 345, workpieceLeft: 222, vernierTransformX: -360 },
+      Square: { workpieceTop: 360, workpieceLeft: 220, vernierTransformX: -365 },
+      Rectangle: { workpieceTop: 357, workpieceLeft: 267, vernierTransformX: -273 }
+    };
+
+    // Get static element references
+    const workpiece = document.getElementById('workpieceShape');
+    const vernier = document.getElementById('vernierScale');
+    const msrArrow = document.getElementById('msrArrow');
+    const vscArrow = document.getElementById('vscArrow');
+    const instructionText = document.getElementById('instructionText');
+    const externalMeasurementBox = document.getElementById("externalMeasurementBox");
+
+    function measureShape(shapeName, size) {
+      const offset = shapeOffsets[shapeName];
+
+      // Hide arrows instantly before starting new measurement
+      msrArrow.style.display = "none";
+      vscArrow.style.display = "none";
+      msrArrow.classList.remove("flicker");
+      vscArrow.classList.remove("flicker");
+
+      workpiece.style.display = 'block';
+      workpiece.innerHTML = '';
+      instructionText.textContent = `Workpiece selected: ${shapeName}`;
+
+      // --- Workpiece Styling (same as before) ---
+      if (shapeName === 'Circle') {
+        workpiece.style.width = `${size * 16}px`;
+        workpiece.style.height = `${size * 16}px`;
+        workpiece.style.borderRadius = '50%';
+        workpiece.style.backgroundColor = '#3b82f6';
+      } else if (shapeName === 'Square') {
+        workpiece.style.width = `${size * 13}px`;
+        workpiece.style.height = `${size * 13}px`;
+        workpiece.style.borderRadius = '0';
+        workpiece.style.backgroundColor = '#fbbf24';
+      } else if (shapeName === 'Rectangle') {
+        workpiece.style.width = `${size * 18}px`;
+        workpiece.style.height = `${size * 8}px`;
+        workpiece.style.borderRadius = '0';
+        workpiece.style.backgroundColor = '#16a34a';
+      }
+
+      // Position workpiece (relative to Caliper Container)
+      workpiece.style.left = `${offset.workpieceLeft}px`;
+      workpiece.style.top = `${offset.workpieceTop}px`;
+
+      // Move Vernier scale and then show readings
+      setTimeout(() => moveJawToFitWorkpiece(offset, vernier), 150);
+      setTimeout(() => showExternalMeasurement(shapeName), 500);
+      setTimeout(() => positionReadingElements(shapeName, offset), 900);
+    }
+
+    function moveJawToFitWorkpiece(offset, vernier) {
+      // Use CSS transform to move the vernier scale (movable jaw)
+      vernier.style.transform = `translateX(${offset.vernierTransformX}px)`;
+
+      // Automatically scroll the viewport to the measurement area
+      const viewport = document.getElementById('caliperViewport');
+      const scrollTargetX = offset.vernierTransformX + 400;
+
+      viewport.scrollTo({
+        left: -scrollTargetX,
+        behavior: 'smooth'
+      });
+    }
+
+    function showExternalMeasurement(shapeName) {
+      const lc = 0.05;
+      let msr, vsc;
+
+      if (shapeName === "Circle") {
+        msr = 29; vsc = 4;
+      } else if (shapeName === "Square") {
+        msr = 29; vsc = 0;
+      } else if (shapeName === "Rectangle") {
+        msr = 45; vsc = 4;
+      }
+
+      const tr = msr + vsc * lc;
+
+      externalMeasurementBox.innerHTML = ` 
+        <h3>Workpiece (${shapeName})</h3> 
+        <div><b style="color:#dc2626;">MSR:</b> ${msr.toFixed(2)} mm</div> 
+        <div><b style="color:#2563eb;">VSC:</b> ${vsc}</div> 
+        <div><b>LC:</b> ${lc.toFixed(2)} mm</div> 
+        <hr> 
+        <div style="font-size:26px; font-weight:700;">TR = ${tr.toFixed(2)} mm</div>`;
+
+      externalMeasurementBox.style.display = "block";
+
+      updateCalculationBox(msr, vsc);
+    }
+
+    function updateCalculationBox(msr, vsc) {
+      const lc = 0.05;
+      const vsr = vsc * lc;
+      const tr = msr + vsr;
+
+      document.getElementById("msrDisplay").textContent = `MSR = ${msr.toFixed(2)} mm`;
+      document.getElementById("vsrDisplay").textContent = `VSR = VSC × LC = ${vsc} × ${lc.toFixed(2)} = ${vsr.toFixed(2)} mm`;
+      document.getElementById("trDisplay").textContent = `TR = MSR + VSR = ${tr.toFixed(2)} mm`;
+    }
+
+    // 🌟 FIX: Position Reading Box and Arrows relative to the Vernier Scale visually.
+    function positionReadingElements(shapeName, offset) {
+
+      // Base X position where the main scale starts (approx. on the FIXED_JAW image)
+      const FIXED_SCALE_REFERENCE_X = 500;
+
+      let boxRelativeLeft, msrLeftOffset, vscLeftOffset;
+
+      if (shapeName === "Circle") {
+        // 29.00mm MSR, 4 VSC
+        // 4th VSD coincides with 29.80 mark
+        msrLeftOffset = 385; // Fixed position of the 29.00 line on the main scale
+        vscLeftOffset = 465; // Position where VSD 4 lines up with MSR
+        boxRelativeLeft = 600;
+      } else if (shapeName === "Square") {
+        // 29.00mm MSR, 0 VSC (Zero reading mark)
+        msrLeftOffset = 385;
+        vscLeftOffset = 385;
+        boxRelativeLeft = 600;
+      } else if (shapeName === "Rectangle") {
+        // 45.00mm MSR, 4 VSC
+        // 4th VSD coincides with 45.20 mark (45.00 + 4*0.05)
+        msrLeftOffset = 545; // Fixed position of the 45.00 line on the main scale
+        vscLeftOffset = 635; // Position where VSD 4 lines up with MSR
+        boxRelativeLeft = 800;
+      }
+
+      // --- ARROWS ---
+      // MSR Arrow (Red, pointing DOWN to main scale line)
+      // Position = FIXED_SCALE_REFERENCE_X + (Distance on the fixed scale)
+      msrArrow.style.left = `${msrLeftOffset}px`;
+      msrArrow.style.top = `120px`; // Fixed vertical position
+
+      // VSC Arrow (Blue, pointing UP to vernier scale line)
+      // Position = MSR Arrow position + difference in reading coincidence.
+      vscArrow.style.left = `${vscLeftOffset}px`;
+      vscArrow.style.top = `300px`; // Fixed vertical position
+
+      // --- READING BOX ---
+      // Position the measurement box near the reading area, relative to the caliper's fixed scale.
+      externalMeasurementBox.style.left = `${boxRelativeLeft}px`;
+      externalMeasurementBox.style.top = `50px`;
+
+      // MSR flickers continuously first
+      setTimeout(() => {
+        msrArrow.style.display = "block";
+        msrArrow.classList.add("flicker");
+      }, 400);
+
+      // VSC starts shortly after
+      setTimeout(() => {
+        vscArrow.style.display = "block";
+        vscArrow.classList.add("flicker");
+      }, 1200);
+    }
+
+    document.getElementById("helpButton").addEventListener("click", () => {
+      const box = document.getElementById("instructionBox");
+      box.style.display = box.style.display === "block" ? "none" : "block";
+    });
+
+    // Set initial vernier position on load
+    window.addEventListener('load', () => {
+      vernier.style.transform = `translateX(0px)`;
+      workpiece.style.display = 'none';
+      externalMeasurementBox.style.display = 'none';
+      document.getElementById('calculationBox').style.display = 'block';
+      instructionText.textContent = "Select a workpiece to measure";
+    });
+
+    // Initial visibility of calculation box
+    document.getElementById('calculationBox').style.display = 'block';
+
+  </script>
+</body>
+
+</html>

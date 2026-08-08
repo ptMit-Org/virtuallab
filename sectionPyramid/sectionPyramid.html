@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<link rel="icon" href="./favicon.ico" />
+
+<title>Section of Solids</title>
+<style>
+  :root { 
+    --mit-red: #8a0000; 
+    --bg-light: #f4f4f4;
+    --text-dark: #000000;
+    --axis-y: 600; 
+    --hb-width: 4; 
+    --thin-width: 1; 
+  } 
+  
+  body { 
+    margin:0; display:flex; flex-direction: column; 
+    background: white; font-family: Arial, sans-serif; 
+    height: 100vh; overflow: hidden; color: var(--text-dark);
+  }
+  
+  #header {
+    background: white; padding: 15px 40px; text-align: center; 
+    border-bottom: 3px solid var(--mit-red); z-index: 10;
+  }
+  #header h1 { margin: 0; font-size: 26px; font-weight: bold; color: var(--mit-red); text-transform: uppercase; }
+  #header h2 { margin: 5px 0 0 0; font-size: 16px; font-weight: bold; color: #333; text-transform: uppercase; }
+
+  #main-container { display: flex; flex: 1; overflow: hidden; }
+  
+  #sidebar { 
+    width: 320px; background: var(--bg-light); padding: 20px; 
+    border-right: 1px solid #ccc; overflow-y: auto; 
+    display: flex; flex-direction: column; gap: 12px; 
+  }
+  .input-group { display: flex; flex-direction: column; gap: 4px; }
+  .input-group label { font-size: 12px; font-weight: bold; color: #444; text-transform: uppercase; }
+  .input-group input, .input-group select { 
+    padding: 10px; border: 2px solid #ddd; border-radius: 4px; font-size: 14px; font-family: Arial; font-weight: bold;
+  }
+  
+  #lang-switch { display: flex; gap: 5px; margin-bottom: 5px; }
+  .lang-btn { 
+    flex: 1; padding: 10px; border: 2px solid var(--mit-red); background: white; 
+    color: var(--mit-red); cursor: pointer; border-radius: 4px; font-weight: bold; font-size: 13px;
+  }
+  .lang-btn.active { background: var(--mit-red); color: white; }
+
+  #step-list { margin-top: 10px; border-top: 2px solid #ddd; padding-top: 10px; }
+  .step-item { 
+    padding: 10px; margin: 5px 0; background: white; border-radius: 4px;
+    border: 1px solid #ccc; cursor: pointer; font-size: 13px; 
+  }
+  .step-item.active { border: 2px solid var(--mit-red); background: #fff1f1; font-weight: bold; }
+  
+  #main-content { flex: 1; display: flex; flex-direction: column; background: #fff; position: relative; }
+  #toolbar { padding: 12px; background: #eee; display: flex; justify-content: center; gap: 20px; border-bottom: 1px solid #ccc; }
+
+  .btn { padding: 10px 20px; font-size: 13px; cursor: pointer; border: 1px solid #999; border-radius: 4px; font-weight: bold; }
+  .btn-nav { background: white; color: #000; }
+  .btn-nav:disabled { opacity: 0.3; cursor: not-allowed; }
+  .btn-update { background: var(--mit-red); color: white; border: none; margin-top: 5px; }
+
+  #svg-container { flex: 1; overflow: hidden; background: white; cursor: grab; }
+  svg { width: 100%; height: 100%; }
+  
+  #footer {
+    padding: 20px 40px; border-top: 3px solid #ddd; 
+    display: flex; justify-content: center; align-items: center; gap: 50px;
+    background: #f9f9f9; z-index: 10;
+  }
+  .submitted-label { font-weight: bold; font-size: 14px; color: #000; text-transform: uppercase; }
+  .student-name { color: var(--mit-red); font-weight: bold; font-size: 18px; text-decoration: underline; }
+
+  /* Drawing Styles */
+  .hb-line { stroke: #000; fill: none; stroke-width: var(--hb-width); stroke-linecap: round; stroke-linejoin: round; }
+  .hb-red { stroke: var(--mit-red); fill: none; stroke-width: var(--hb-width); stroke-linecap: round; stroke-linejoin: round; }
+  .proj-line { stroke: #999; stroke-width: var(--thin-width); fill: none; } 
+  .aux-proj { stroke: orange; stroke-width: var(--thin-width); fill: none; } 
+  .cutting-plane { stroke: #008000; stroke-width: 3; fill: none; } 
+  .axis-line { stroke: #000; stroke-width: 3; }
+  .axis-label { fill: var(--mit-red); font-size: 24px; font-weight: bold; }
+  .corner-label { fill: var(--mit-red); font-size: 16px; font-weight: bold; }
+  .hatch-line { stroke: var(--mit-red); stroke-width: 1; opacity: 0.6; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>Section of Solids: Pyramid</h1>
+</div>
+
+<div id="main-container">
+  <div id="sidebar">
+    <div id="lang-switch">
+      <button class="lang-btn active" id="btn-en" onclick="setLang('en')">ENGLISH</button>
+      <button class="lang-btn" id="btn-ta" onclick="setLang('ta')">தமிழ்</button>
+    </div>
+    <div class="input-group">
+      <label id="lbl-shape">Shape Type</label>
+      <select id="shapeType">
+        <option value="5" selected>Pentagonal Pyramid</option>
+        <option value="6">Hexagonal Pyramid</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label id="lbl-side">Base Side (mm)</label>
+      <input type="number" id="baseSide" value="40">
+    </div>
+    <div class="input-group">
+      <label id="lbl-height">Height (mm)</label>
+      <input type="number" id="pyramidHeight" value="80">
+    </div>
+    <div class="input-group">
+      <label id="lbl-angle">Cutting Angle (°)</label>
+      <input type="number" id="cutAngle" value="45">
+    </div>
+    <div class="input-group">
+      <label id="lbl-pos">Distance from Base (mm)</label>
+      <input type="number" id="cutDist" value="35">
+    </div>
+    <button class="btn btn-update" id="btn-update-text" onclick="initDrawing()">UPDATE DRAWING</button>
+    <div id="step-list"></div>
+  </div>
+
+  <div id="main-content">
+    <div id="toolbar">
+      <button id="prevBtn" class="btn btn-nav">← PREVIOUS STEP</button>
+      <button id="nextBtn" class="btn btn-nav">NEXT STEP →</button>
+      <button class="btn btn-nav" onclick="window.location.href='./index.html'">HOME</button>
+    </div>
+    <div id="svg-container">
+      <svg id="mainSvg" viewBox="0 -300 1200 1300">
+        <defs id="svg-defs"></defs>
+        <g id="viewport"><g id="drawingLayer"></g></g>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<div id="footer">
+  <div class="submitted-label"></div>
+  <div class="student-name"></div>
+  <div class="student-name"></div>
+  <div class="student-name"></div>
+</div>
+
+<script>
+const MM = 3.5; const axisY = 600; const centerX = 550; const tvCenterY = 820; const auxOffset = 300;
+const drawingLayer = document.getElementById('drawingLayer');
+const defs = document.getElementById('svg-defs');
+const viewport = document.getElementById('viewport');
+
+let currentLang = 'en';
+const translations = {
+  en: {
+    college: "MIT, ANNA UNIVERSITY", dept: "DEPARTMENT OF PRODUCTION ENGINEERING",
+    shape: "Shape Type", side: "Base Side (mm)", height: "Height (mm)", 
+    angle: "Cutting Angle (°)", pos: "Distance from Base (mm)", update: "UPDATE DRAWING",
+    steps: ["Reference XY Axis", "Top View (HB)", "Projectors (Continuous)", "Front View (HB)", "Cutting Plane (Green Line)", "Sectional Top View", "Auxiliary Axis X1Y1", "Aux Projectors", "True Shape"]
+  },
+  ta: {
+    college: "எம்.ஐ.டி, அண்ணா பல்கலைக்கழகம்", dept: "உற்பத்திப் பொறியியல் துறை",
+    shape: "வடிவ வகை", side: "பக்க அளவு (மிமீ)", height: "உயரம் (மிமீ)", 
+    angle: "வெட்டும் கோணம் (°)", pos: "அடியிலிருந்து தூரம் (மிமீ)", update: "வரைபடத்தைப் புதுப்பிக்கவும்",
+    steps: ["குறிப்பு அச்சு XY", "மேலிருந்து தோற்றம் (HB)", "நீட்டிப்புக் கோடுகள்", "முன்பக்கத் தோற்றம் (HB)", "வெட்டும் தளம்", "வெட்டப்பட்ட மேலிருந்து தோற்றம்", "துணை அச்சு X1Y1", "உண்மை வடிவ நீட்டிப்பு", "இறுதி உண்மை வடிவம்"]
+  }
+};
+
+let currentStep = 0;
+let stepsData = [];
+
+function setLang(l) {
+  currentLang = l;
+  document.getElementById('btn-en').classList.toggle('active', l === 'en');
+  document.getElementById('btn-ta').classList.toggle('active', l === 'ta');
+  document.getElementById('college-name').textContent = translations[l].college;
+  document.getElementById('dept-name').textContent = translations[l].dept;
+  document.getElementById('lbl-shape').textContent = translations[l].shape;
+  document.getElementById('lbl-side').textContent = translations[l].side;
+  document.getElementById('lbl-height').textContent = translations[l].height;
+  document.getElementById('lbl-angle').textContent = translations[l].angle;
+  document.getElementById('lbl-pos').textContent = translations[l].pos;
+  document.getElementById('btn-update-text').textContent = translations[l].update;
+  updateStepList();
+}
+
+function updateStepList() {
+  const list = document.getElementById('step-list');
+  list.innerHTML = "";
+  translations[currentLang].steps.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'step-item' + (i === currentStep ? ' active' : '');
+    div.innerHTML = `<strong>${i+1}. ${s}</strong>`;
+    div.onclick = () => goToStep(i);
+    list.appendChild(div);
+  });
+}
+
+function goToStep(idx) {
+  if (idx < 0 || idx >= stepsData.length) return;
+  currentStep = idx;
+  drawingLayer.innerHTML = ''; defs.innerHTML = '';
+  for(let i=0; i<=currentStep; i++) stepsData[i]();
+  
+  // Update button states
+  document.getElementById('prevBtn').disabled = currentStep === 0;
+  document.getElementById('nextBtn').disabled = currentStep === stepsData.length - 1;
+  
+  // Highlight active step in sidebar
+  document.querySelectorAll('.step-item').forEach((item, i) => {
+    item.classList.toggle('active', i === currentStep);
+  });
+}
+
+function createEl(tag, attrs, parent = drawingLayer) {
+  const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (let k in attrs) el.setAttribute(k, attrs[k]);
+  parent.appendChild(el); return el;
+}
+
+function initDrawing() {
+  const n = parseInt(document.getElementById('shapeType').value);
+  const side = parseFloat(document.getElementById('baseSide').value) * MM;
+  const height = parseFloat(document.getElementById('pyramidHeight').value) * MM;
+  const cutAngleRad = (parseFloat(document.getElementById('cutAngle').value)) * Math.PI / 180;
+  const cutDist = parseFloat(document.getElementById('cutDist').value) * MM;
+  
+  const pivotY = axisY - cutDist; 
+  const getYOnPlane = (x) => Math.tan(-cutAngleRad) * (x - centerX) + pivotY;
+
+  const ptsTV = []; const R = side / (2 * Math.sin(Math.PI / n));
+  for (let i = 0; i < n; i++) {
+    const angle = (Math.PI / 2) + (i * 2 * Math.PI / n);
+    ptsTV.push({ x: centerX + R * Math.cos(angle), y: tvCenterY - R * Math.sin(angle) });
+  }
+
+  const apexFV = { x: centerX, y: axisY - height };
+  const baseLabels = "abcdefgh".split("");
+
+  function getIntersection(p1, p2) {
+    const mCut = Math.tan(-cutAngleRad); const cCut = pivotY - mCut * centerX;
+    if (Math.abs(p2.x - p1.x) < 0.1) return { x: p1.x, y: mCut * (p1.x - centerX) + pivotY };
+    const mEdge = (p2.y - p1.y) / (p2.x - p1.x); const cEdge = p1.y - mEdge * p1.x;
+    const x = (cCut - cEdge) / (mEdge - mCut);
+    return { x, y: mCut * (x - centerX) + pivotY };
+  }
+
+  const sectionPtsFV = ptsTV.map(p => getIntersection({x: p.x, y: axisY}, apexFV));
+  const sectionPtsTV = sectionPtsFV.map((pfv, i) => {
+    const ratio = (axisY - pfv.y) / height;
+    return { x: centerX + (ptsTV[i].x - centerX) * (1 - ratio), y: tvCenterY + (ptsTV[i].y - tvCenterY) * (1 - ratio) };
+  });
+
+  const tsPoints = sectionPtsFV.map((pfv, i) => {
+    const d = sectionPtsTV[i].y - tvCenterY; const a = cutAngleRad + (Math.PI / 2); 
+    return { x: pfv.x + (auxOffset + d) * Math.cos(a), y: pfv.y - (auxOffset + d) * Math.sin(a) };
+  });
+
+  function hatch(pts, id) {
+    const clip = createEl("clipPath", {id: "clip-"+id}, defs);
+    createEl("path", {d: pts.map((p,i)=>(i===0?'M':'L')+`${p.x},${p.y}`).join(' ')+'Z'}, clip);
+    const g = createEl("g", {"clip-path": `url(#clip-${id})`});
+    for(let i=-3000; i<6000; i+=12) createEl("line", {x1:-2000, y1:i, x2:3000, y2:i+4000, class:"hatch-line"}, g);
+  }
+
+  stepsData = [
+    () => { // 1. XY
+      createEl("line", {x1: 50, y1: axisY, x2: 1100, y2: axisY, class: "axis-line"});
+      createEl("text", {x:60, y:axisY-15, class:"axis-label"}).textContent = "X";
+      createEl("text", {x:1110, y:axisY-15, class:"axis-label"}).textContent = "Y";
+    },
+    () => { // 2. TV
+      createEl("path", {d: ptsTV.map((p,i)=>(i===0?'M':'L')+`${p.x},${p.y}`).join(' ')+'Z', class: "hb-line"});
+      ptsTV.forEach((p, i) => {
+        createEl("line", {x1:centerX, y1:tvCenterY, x2:p.x, y2:p.y, class:"hb-line"});
+        createEl("text", {x:p.x, y:p.y+25, class:"corner-label"}).textContent = baseLabels[i];
+      });
+      createEl("text", {x:centerX+8, y:tvCenterY-8, class:"corner-label"}).textContent = "o";
+    },
+    () => { // 3. Proj
+      ptsTV.forEach(p => createEl("line", {x1:p.x, y1:p.y, x2:p.x, y2:axisY, class:"proj-line"}));
+      createEl("line", {x1:centerX, y1:tvCenterY, x2:centerX, y2:axisY-height, class:"proj-line"});
+    },
+    () => { // 4. FV
+      ptsTV.forEach((p, i) => {
+        createEl("line", {x1:p.x, y1:axisY, x2:centerX, y2:axisY-height, class: "hb-line"});
+        createEl("text", {x:p.x, y:axisY+25, class:"corner-label"}).textContent = baseLabels[i] + "'";
+      });
+      createEl("line", {x1:Math.min(...ptsTV.map(p=>p.x)), y1:axisY, x2:Math.max(...ptsTV.map(p=>p.x)), y2:axisY, class: "hb-line"});
+    },
+    () => { // 5. VT (Green Continuous)
+      let xStart = 200, xEnd = 900;
+      createEl("line", {x1:xStart, y1:getYOnPlane(xStart), x2:xEnd, y2:getYOnPlane(xEnd), class:"cutting-plane"});
+      sectionPtsFV.forEach((p, i) => createEl("text", {x:p.x-20, y:p.y-10, class:"corner-label", style:"fill:green"}).textContent = (i+1)+"'");
+    },
+    () => { // 6. Sectional TV
+      hatch(sectionPtsTV, "stv");
+      createEl("path", {d: sectionPtsTV.map((p,i)=>(i===0?'M':'L')+`${p.x},${p.y}`).join(' ')+'Z', class: "hb-red"});
+    },
+    () => { // 7. X1Y1
+      const x1 = 150, x2 = 950;
+      createEl("line", {x1, y1:getYOnPlane(x1)-auxOffset, x2, y2:getYOnPlane(x2)-auxOffset, class: "axis-line"});
+      createEl("text", {x:x1-40, y:getYOnPlane(x1)-auxOffset, class:"axis-label"}).textContent = "X1";
+      createEl("text", {x:x2+20, y:getYOnPlane(x2)-auxOffset, class:"axis-label"}).textContent = "Y1";
+    },
+    () => { // 8. Aux Proj
+      sectionPtsFV.forEach((pfv, i) => createEl("line", {x1: pfv.x, y1: pfv.y, x2: tsPoints[i].x, y2: tsPoints[i].y, class: "aux-proj"}));
+    },
+    () => { // 9. True Shape
+      hatch(tsPoints, "ts");
+      createEl("path", {d: tsPoints.map((p,i)=>(i===0?'M':'L')+`${p.x},${p.y}`).join(' ')+'Z', class: "hb-red", "stroke-width": 5});
+      tsPoints.forEach((p, i) => createEl("text", {x:p.x+20, y:p.y, class:"corner-label"}).textContent = (i+1));
+    }
+  ];
+
+  updateStepList();
+  goToStep(0);
+}
+
+// Button Events
+document.getElementById('prevBtn').addEventListener('click', () => goToStep(currentStep - 1));
+document.getElementById('nextBtn').addEventListener('click', () => goToStep(currentStep + 1));
+
+// Initialize
+setLang('en');
+initDrawing();
+</script>
+</body>
+</html>

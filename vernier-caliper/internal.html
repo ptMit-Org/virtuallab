@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Internal Workpiece Measurement</title>
+  <link rel="icon" href="./favicon.ico" />
+  <style>
+    /* Reset and Base Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9fafb;
+      overflow-x: hidden;
+      padding-top: 80px;
+      /* Space for fixed buttons */
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      color: #1f2937;
+      margin-bottom: 2rem;
+    }
+
+    /* Fixed Top Buttons */
+    .top-buttons {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      gap: 15px;
+      z-index: 1000;
+    }
+
+    .external-btn,
+    .home-btn {
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+      transition: 0.3s;
+      background-color: #2563eb;
+    }
+
+    .external-btn:hover,
+    .home-btn:hover {
+      background-color: #1e40af;
+      transform: scale(1.05);
+    }
+
+    /* Instruction Text (Adjusted to sit below H1) */
+    .instruction-text {
+      position: relative;
+      /* Changed to relative */
+      margin: -1rem auto 1.5rem;
+      /* Center and provide space */
+      top: auto;
+      left: auto;
+      transform: none;
+      font-weight: bold;
+      padding: 10px 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+      background: #dbeafe;
+      color: #1e3a8a;
+      z-index: 10;
+      width: fit-content;
+    }
+
+    /* Main Layout: Flex to accommodate Caliper and Selector */
+    .container {
+      width: 95%;
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    .caliper-main-area {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+    }
+
+    /* Caliper Viewport (Fixed Height with Scroll) */
+    #caliperViewport {
+      flex-grow: 1;
+      max-width: 70%;
+      /* Takes up most space */
+      height: 500px;
+      overflow-x: auto;
+      /* ENABLE HORIZONTAL SCROLLING */
+      border: 2px solid #d1d5db;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      background-color: white;
+    }
+
+    /* Caliper Content Wrapper (Fixed Width matching image scale) */
+    .caliper-container {
+      position: relative;
+      /* Important for absolute positioning inside */
+      width: 1400px;
+      /* Fixed width matching the image scale/size */
+      height: 100%;
+      top: 0;
+      left: 0;
+    }
+
+    /* Caliper Components */
+    .main-scale {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .main-scale img {
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+    }
+
+    .vernier-scale {
+      position: absolute;
+      width: 100%;
+      height: 450px;
+      top: 6px;
+      left: 0;
+      z-index: 10;
+      transition: transform 0.6s ease;
+      /* Use transform for movement */
+    }
+
+    .vernier-scale img {
+      position: absolute;
+      width: 105%;
+      height: 100%;
+      object-fit: contain;
+      left: 0;
+      top: 0;
+    }
+
+    .workpiece {
+      position: absolute;
+      z-index: 1;
+      transition: all 0.8s ease;
+      background: transparent;
+    }
+
+    /* Internal Measurement Box (Positioned relative to Caliper Container) */
+    #measurementBox {
+      display: none;
+      position: absolute;
+      right: 50px;
+      top: 50px;
+      width: 300px;
+      border: 2px solid red;
+      border-radius: 10px;
+      padding: 15px;
+      font-size: 16px;
+      background-color: #fff;
+      color: black;
+      text-align: left;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+      z-index: 999;
+    }
+
+    /* Calculation Box (Fixed to Screen Bottom) */
+    #calculationBox {
+      position: fixed;
+      /* Ensures it doesn't scroll with page content */
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #f3f4f6;
+      border: 2px solid #9ca3af;
+      border-radius: 12px;
+      width: 400px;
+      padding: 15px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      text-align: left;
+      font-size: 15px;
+      z-index: 9999;
+    }
+
+    #calculationBox h3 {
+      margin-bottom: 8px;
+      text-align: center;
+      color: #111827;
+    }
+
+    #calculationBox p {
+      margin: 4px 0;
+      line-height: 1.5;
+    }
+
+    /* Workpiece Selector Sidebar */
+    .workpiece-selector {
+      flex-shrink: 0;
+      width: 25%;
+      max-width: 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      top: 0;
+    }
+
+    .workpiece-selector h3 {
+      font-size: 1.2rem;
+      color: #065f46;
+      margin-bottom: 10px;
+    }
+
+    .shape-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .shape-item:hover {
+      transform: scale(1.08);
+    }
+
+    .shape-button {
+      padding: 8px 16px;
+      background-color: #ef4444;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    /* ARROWS */
+    .arrow {
+      position: absolute;
+      width: 0;
+      height: 0;
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+      z-index: 20;
+      display: none;
+    }
+
+    .arrow::before {
+      content: "";
+      position: absolute;
+      left: -1px;
+      width: 2px;
+      height: 60px;
+      background-color: currentColor;
+    }
+
+    .arrow.red {
+      border-top: 12px solid red;
+      color: red;
+    }
+
+    .arrow.red::before {
+      top: -60px;
+    }
+
+    .arrow.blue {
+      border-bottom: 12px solid blue;
+      border-top: none;
+      color: blue;
+    }
+
+    .arrow.blue::before {
+      bottom: -60px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="top-buttons">
+    <button class="home-btn" onclick="window.location.href='./index.html'">Introduction</button>
+    <button class="external-btn" onclick="window.location.href='./external.html'">Go to External Measurement</button>
+  </div>
+
+  <div class="container">
+    <h1>Internal Workpiece Measurement</h1>
+    <div class="instruction-text" id="instructionText">Select a workpiece to measure</div>
+
+    <div class="caliper-main-area">
+      <div id="caliperViewport">
+        <div class="caliper-container">
+          <div class="main-scale">
+            <img src="./FIXED_JAW.jpeg" alt="Main Scale">
+          </div>
+
+          <canvas id="piece1" class="workpiece" width="220" height="180"></canvas>
+          <canvas id="piece2" class="workpiece" width="250" height="200"></canvas>
+          <div id="msrArrow" class="arrow red"></div>
+          <div id="vscArrow" class="arrow blue"></div>
+
+          <div class="vernier-scale" id="vernierScale">
+            <img src="./MOVABLE_JAW.png" alt="Movable Jaw">
+          </div>
+          <div id="measurementBox"></div>
+        </div>
+      </div>
+
+      <div class="workpiece-selector">
+        <h3>Select Workpiece</h3>
+        <div class="shape-item" id="panel-small" onclick="moveToJaw('piece1')">
+          <canvas width="220" height="180"></canvas>
+          <button class="shape-button">Small Piece</button>
+        </div>
+        <div class="shape-item" id="panel-large" onclick="moveToJaw('piece2')">
+          <canvas width="250" height="200"></canvas>
+          <button class="shape-button">Large Piece</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="calculationBox">
+      <h3>Measurement Calculation</h3>
+      <p id="msrDisplay">MSR = -- mm</p>
+      <p id="vsrDisplay">VSR = VSC × LC = -- × 0.05 = -- mm</p>
+      <p id="trDisplay">TR = MSR + VSR = -- mm</p>
+    </div>
+  </div>
+
+  <script>
+    const CALIPER_WIDTH = 1400;
+    const measurementBox = document.getElementById('measurementBox');
+    const instructionText = document.getElementById('instructionText');
+    const piece1 = document.getElementById('piece1');
+    const piece2 = document.getElementById('piece2');
+    const vernier = document.getElementById('vernierScale');
+    const msrArrow = document.getElementById('msrArrow');
+    const vscArrow = document.getElementById('vscArrow');
+
+    const wpData = {
+      'piece1': {
+        msr: 11, vsc: 9, lc: 0.05, name: "Small",
+        vernierTransformX: -528,
+        pieceLeft: "65px", pieceTop: "-20px",
+        msrArrowOffset: 230, // Pixel position of MSR mark on the 1400px fixed scale
+        vscArrowOffset: 300, // Pixel position of VSC mark on the 1400px fixed scale
+        scale: 0.9
+      },
+      'piece2': {
+        msr: 14, vsc: 1, lc: 0.05, name: "Large",
+        vernierTransformX: -512,
+        pieceLeft: "60px", pieceTop: "-27px",
+        msrArrowOffset: 260,
+        vscArrowOffset: 290,
+        scale: 1.1
+      }
+    };
+
+    function updateCalculationBox(msr, vsc) {
+      const lc = 0.05;
+      const vsr = vsc * lc;
+      const tr = msr + vsr;
+      document.getElementById("msrDisplay").textContent = `MSR = ${msr.toFixed(2)} mm`;
+      document.getElementById("vsrDisplay").textContent = `VSR = VSC × LC = ${vsc} × ${lc.toFixed(2)} = ${vsr.toFixed(2)} mm`;
+      document.getElementById("trDisplay").textContent = `TR = MSR + VSR = ${msr.toFixed(2)} + ${vsr.toFixed(2)} = ${tr.toFixed(2)} mm`;
+    }
+
+    function drawInternalShape(canvas, scale = 1) {
+      const ctx = canvas.getContext('2d');
+      const R2 = 60 * scale, R1 = 40 * scale, h2 = 60 * scale, h1 = 40 * scale;
+      canvas.width = 2 * R2 + 40;
+      canvas.height = h2 + 40;
+      const path = new Path2D();
+      path.moveTo(20, 20);
+      path.lineTo(20 + 2 * R2, 20);
+      path.lineTo(20 + 2 * R2, 20 + h2);
+      path.lineTo(20 + R2 + R1, 20 + h2);
+      path.lineTo(20 + R2 + R1, 20 + h2 - h1);
+      path.lineTo(20 + R2 - R1, 20 + h2 - h1);
+      path.lineTo(20 + R2 - R1, 20 + h2);
+      path.lineTo(20, 20 + h2);
+      path.closePath();
+      ctx.fillStyle = "#fde047";
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 2;
+      ctx.fill(path);
+      ctx.stroke(path);
+    }
+
+    function drawPanelPreviews() {
+      drawInternalShape(document.querySelector('#panel-small canvas'), 0.9);
+      drawInternalShape(document.querySelector('#panel-large canvas'), 1.1);
+    }
+    drawPanelPreviews();
+
+    function moveToJaw(id) {
+      piece1.style.display = piece2.style.display = 'none';
+      msrArrow.style.display = vscArrow.style.display = 'none';
+      const wp = wpData[id];
+      const piece = document.getElementById(id);
+
+      // --- Workpiece Position and Drawing ---
+      piece.style.display = 'block';
+      piece.style.left = wp.pieceLeft;
+      piece.style.top = wp.pieceTop;
+      const ctx = piece.getContext('2d');
+      ctx.clearRect(0, 0, piece.width, piece.height);
+      drawInternalShape(piece, wp.scale);
+
+      // --- Vernier Movement ---
+      vernier.style.transform = `translateX(${wp.vernierTransformX}px)`;
+
+      // --- Viewport Scroll ---
+      const viewport = document.getElementById('caliperViewport');
+      // Scroll to position the measurement area in view
+      const scrollTargetX = wp.vernierTransformX + 400; // Adjust 400 as needed
+      viewport.scrollTo({ left: -scrollTargetX, behavior: 'smooth' });
+
+      // --- Feedback ---
+      instructionText.textContent = `You selected ${wp.name}`;
+      instructionText.style.background = "#22c55e";
+      instructionText.style.color = "white";
+      setTimeout(() => {
+        instructionText.style.background = "#dbeafe";
+        instructionText.style.color = "#1e3a8a";
+        instructionText.textContent = "Select a workpiece to measure";
+      }, 3000);
+
+      // --- Show Readings and Arrows ---
+      setTimeout(() => {
+        const vsr = wp.vsc * wp.lc;
+        const tr = wp.msr + vsr;
+        measurementBox.innerHTML = ` 
+            <h3>${wp.name} Workpiece</h3> 
+            <div><strong style="color:red;">MSR ↓:</strong> ${wp.msr.toFixed(2)} mm</div> 
+            <div><strong style="color:blue;">VSC ↑:</strong> ${wp.vsc}</div> 
+            <div><strong>Least Count (LC):</strong> ${wp.lc.toFixed(2)} mm</div> 
+            <hr style="margin:8px 0;"> 
+            <div class="measurement-value">TR = <strong>${tr.toFixed(2)} mm</strong></div> `;
+        updateCalculationBox(wp.msr, wp.vsc);
+
+        // Position Arrows (based on hardcoded offsets defined in wpData)
+        msrArrow.style.left = `${wp.msrArrowOffset}px`;
+        msrArrow.style.top = `190px`; // Adjusted Vertical Position
+        vscArrow.style.left = `${wp.vscArrowOffset}px`;
+        vscArrow.style.top = `230px`; // Adjusted Vertical Position
+
+        // Position Measurement Box
+        measurementBox.style.left = `${wp.msrArrowOffset + 100}px`;
+        measurementBox.style.top = `100px`;
+
+        measurementBox.style.display = 'block';
+
+        // Appear one after another
+        setTimeout(() => { msrArrow.style.display = 'block'; }, 100);
+        setTimeout(() => { vscArrow.style.display = 'block'; }, 800);
+      }, 700);
+    }
+
+    window.addEventListener('load', () => {
+      vernier.style.transform = `translateX(0px)`;
+      piece1.style.display = piece2.style.display = 'none';
+      msrArrow.style.display = vscArrow.style.display = 'none';
+      measurementBox.style.display = 'none';
+      document.getElementById('calculationBox').style.display = 'block';
+    }); 
+  </script>
+</body>
+
+</html>

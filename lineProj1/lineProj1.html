@@ -1,0 +1,253 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Line Projection - Precision Projections</title>
+    <link rel="icon" href="./favicon.ico" />
+
+<style>
+  :root { --red: #c40000; --yellow: #cc9900; }
+  body { margin:0; display:flex; flex-direction: column; background:#fff; font-family: Arial, sans-serif; }
+  
+  #header {
+    background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+    padding: 15px;
+    text-align: center;
+    border-bottom: 3px solid var(--red);
+  }
+  
+  #header h2 { color: var(--red); margin: 0; font-size: 18px; text-transform: uppercase; }
+  
+  #main-container { display: flex; flex: 1; height: calc(100vh - 85px); }
+  
+  #sidebar {
+    width: 280px;
+    background: #fdfdfd;
+    padding: 15px;
+    border-right: 1px solid #ddd;
+    overflow-y: auto;
+  }
+  
+  .step-item {
+    padding: 10px;
+    margin-bottom: 8px;
+    background: #fff;
+    border: 1px solid #eee;
+    border-left: 4px solid #ccc;
+    cursor: pointer;
+    font-size: 12px;
+    transition: 0.2s;
+  }
+  
+  .step-item.active { border-left-color: var(--red); background: #fff5f5; font-weight: bold; }
+  
+  #canvas-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  #controls { margin-bottom: 10px; }
+  
+  button { padding: 8px 15px; font-size: 13px; cursor: pointer; background: var(--red); color: white; border: none; border-radius: 4px; margin: 0 5px; }
+  button:disabled { background: #ddd; cursor: not-allowed; }
+  
+  svg { width: 95%; height: 500px; background: #fff; border: 1px solid #eee; }
+
+  .red { stroke: var(--red); stroke-width: 2.2; fill: none; }
+  .yellow { stroke: var(--yellow); stroke-width: 1.2; fill: none; }
+  .dim-text { fill: var(--red); font-size: 13px; font-weight: 700; }
+  .label { fill: var(--red); font-size: 16px; font-weight: 800; }
+  .point { fill: var(--red); }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h2>Engineering Drawing: Projection of Lines</h2>
+  <p>Question: Draw the projection a line of length 40mm located 20mm above HP, 15mm infront of VP and inclined at an angle of 35° to VP.</p>
+</div>
+
+<div id="main-container">
+  <div id="sidebar"><div id="step-list"></div></div>
+  <div id="canvas-area">
+    <div id="controls" style="margin: 10px 0px;">
+      <button id="prevBtn">← Previous</button>
+      <button id="nextBtn">Next →</button>
+    <button onclick="window.location.href='./index.html'">Home</button>
+
+    </div>
+    <svg id="svg" viewBox="0 0 1000 500">
+      <defs>
+        <marker id="dimArrowStart" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <polygon points="7,0 2,4 7,8" fill="#c40000"></polygon>
+        </marker>
+        <marker id="dimArrowEnd" markerWidth="8" markerHeight="8" refX="1" refY="4" orient="auto">
+          <polygon points="1,0 6,4 1,8" fill="#c40000"></polygon>
+        </marker>
+      </defs>
+      <g id="drawLayer"></g>
+    </svg>
+  </div>
+</div>
+
+<script>
+const MM = 96/25.4;
+const xyY = 240, eX = 350;
+const epY = xyY - (20 * MM);
+const eY = xyY + (15 * MM);
+const angleDeg = 35;
+const angleRad = angleDeg * Math.PI / 180;
+const lengthMM = 40 * MM;
+
+const fX = eX + lengthMM * Math.cos(angleRad);
+const fY = eY + lengthMM * Math.sin(angleRad);
+
+function create(tag, att) {
+  const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for(let k in att) el.setAttribute(k, att[k]);
+  document.getElementById('drawLayer').appendChild(el);
+  return el;
+}
+
+const steps = [
+  {
+    name: "1. XY Reference",
+    draw: () => {
+      create('line', {x1: 100, y1: xyY, x2: 900, y2: xyY, class: 'red'});
+      create('text', {x: 80, y: xyY + 5, class: 'label'}).textContent = 'X';
+      create('text', {x: 910, y: xyY + 5, class: 'label'}).textContent = 'Y';
+    }
+  },
+  {
+    name: "2. Point e'",
+    draw: () => {
+      create('circle', {cx: eX, cy: epY, r: 3, class: 'point'});
+      create('text', {x: eX - 25, y: epY - 5, class: 'label'}).textContent = "e'";
+    }
+  },
+  {
+    name: "3. Dimension 20mm",
+    draw: () => {
+      const dx = eX - 60;
+      create('line', {x1: dx - 10, y1: epY, x2: eX, y2: epY, class: 'yellow', 'stroke-dasharray': '2'});
+      create('line', {
+        x1: dx, y1: epY + 6, x2: dx, y2: xyY - 8,
+        class: 'red', 'marker-start': 'url(#dimArrowStart)', 'marker-end': 'url(#dimArrowEnd)'
+      });
+      // Text moved to the left of the line, facing left (270deg rotation)
+      const tx = dx - 8, ty = (epY + xyY)/2;
+      create('text', {
+        x: tx, y: ty, class: 'dim-text',
+        transform: `rotate(270, ${tx}, ${ty})`,
+        'text-anchor': 'middle'
+      }).textContent = '20';
+    }
+  },
+  {
+    name: "4. Point e",
+    draw: () => {
+      create('line', {x1: eX, y1: epY, x2: eX, y2: eY, class: 'yellow'});
+      create('circle', {cx: eX, cy: eY, r: 3, class: 'point'});
+      create('text', {x: eX - 25, y: eY + 20, class: 'label'}).textContent = "e";
+    }
+  },
+  {
+    name: "5. Dimension 15mm",
+    draw: () => {
+      const dx = eX - 60;
+      create('line', {x1: dx - 10, y1: eY, x2: eX, y2: eY, class: 'yellow', 'stroke-dasharray': '2'});
+      create('line', {
+        x1: dx, y1: xyY + 8, x2: dx, y2: eY - 6,
+        class: 'red', 'marker-start': 'url(#dimArrowStart)', 'marker-end': 'url(#dimArrowEnd)'
+      });
+      // Text moved to the left of the line, facing left (270deg rotation)
+      const tx = dx - 8, ty = (xyY + eY)/2;
+      create('text', {
+        x: tx, y: ty, class: 'dim-text',
+        transform: `rotate(270, ${tx}, ${ty})`,
+        'text-anchor': 'middle'
+      }).textContent = '15';
+    }
+  },
+  {
+    name: "6. Horizontal Locus",
+    draw: () => {
+      create('line', {x1: eX - 50, y1: eY, x2: eX + 450, y2: eY, class: 'yellow'});
+    }
+  },
+  {
+    name: "7. Top View (ef) & Angle",
+    draw: () => {
+      create('line', {x1: eX, y1: eY, x2: fX, y2: fY, class: 'red'});
+      create('circle', {cx: fX, cy: fY, r: 3, class: 'point'});
+      create('text', {x: fX + 10, y: fY + 20, class: 'label'}).textContent = "f";
+      
+      const r = 45;
+      const arcPath = `M ${eX + r} ${eY} A ${r} ${r} 0 0 1 ${eX + r * Math.cos(angleRad)} ${eY + r * Math.sin(angleRad)}`;
+      create('path', {d: arcPath, stroke: '#c40000', fill: 'none', 'stroke-width': 1.2});
+      create('text', {x: eX + r + 10, y: eY + 15, class: 'dim-text'}).textContent = '35°';
+    }
+  },
+  {
+    name: "8. Dimension 40mm",
+    draw: () => {
+      const off = 40;
+      const ux = Math.cos(angleRad), uy = Math.sin(angleRad);
+      const nx = -uy, ny = ux;
+      const p0 = { x: eX + nx*off, y: eY + ny*off };
+      const p1 = { x: fX + nx*off, y: fY + ny*off };
+
+      create('line', {x1: eX, y1: eY, x2: p0.x, y2: p0.y, class: 'yellow'});
+      create('line', {x1: fX, y1: fY, x2: p1.x, y2: p1.y, class: 'yellow'});
+      create('line', {
+        x1: p0.x + ux*6, y1: p0.y + uy*6, x2: p1.x - ux*6, y2: p1.y - uy*6,
+        class: 'red', 'marker-start': 'url(#dimArrowStart)', 'marker-end': 'url(#dimArrowEnd)'
+      });
+      
+      // Text moved above the line (closer to the origin point by reducing nx offset)
+      const tx = (p0.x + p1.x)/2 - nx*8, ty = (p0.y + p1.y)/2 - ny*8;
+      create('text', {
+        x: tx, y: ty, class: 'dim-text', 'text-anchor': 'middle',
+        transform: `rotate(${angleDeg}, ${tx}, ${ty})`
+      }).textContent = '40';
+    }
+  },
+  {
+    name: "9. Projector from f",
+    draw: () => {
+      create('line', {x1: fX, y1: 50, x2: fX, y2: 450, class: 'yellow'});
+    }
+  },
+  {
+    name: "10. Front View (e'f')",
+    draw: () => {
+      create('line', {x1: eX, y1: epY, x2: fX, y2: epY, class: 'red'});
+      create('circle', {cx: fX, cy: epY, r: 3, class: 'point'});
+      create('text', {x: fX + 10, y: epY - 10, class: 'label'}).textContent = "f'";
+    }
+  }
+];
+
+let current = 0;
+const list = document.getElementById('step-list');
+
+function render() {
+  document.getElementById('drawLayer').innerHTML = '';
+  steps.forEach((s, i) => {
+    if(i <= current) s.draw();
+    list.children[i].className = 'step-item' + (i === current ? ' active' : '');
+  });
+  document.getElementById('prevBtn').disabled = current === 0;
+  document.getElementById('nextBtn').disabled = current === steps.length - 1;
+}
+
+steps.forEach((s, i) => {
+  const d = document.createElement('div');
+  d.className = 'step-item';
+  d.innerHTML = `<strong>${s.name}</strong>`;
+  d.onclick = () => { current = i; render(); };
+  list.appendChild(d);
+});
+
+document.getElementById('prevBtn').onclick = () => { if(current > 0) { current--; render(); }};
+document.getElementById('nextBtn').onclick = () => { if(current < steps.length - 1) { current++; render(); }};
+render();
+</script>
+</body>
+</html>

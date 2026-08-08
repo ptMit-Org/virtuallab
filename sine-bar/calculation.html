@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sine Bar calculation</title>
+  <link rel="icon" href="./images/favicon.ico" />
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f9ff;
+      color: #222;
+      padding: 30px;
+      max-width: 900px;
+      margin: 0 auto;
+      font-size: 18px;
+      /* Base size increased */
+    }
+
+    h1 {
+      font-size: 32px;
+      margin-bottom: 30px;
+      color: #111;
+      border-bottom: 4px solid #66c2cd;
+      padding-bottom: 15px;
+    }
+
+    .box {
+      border: 1px solid #ccc;
+      padding: 40px;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    }
+
+    .step-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #000;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      text-decoration: underline;
+      text-decoration-color: #ddd;
+      text-underline-offset: 6px;
+    }
+
+    /* Textbook Math Style */
+    .math-block {
+      background: #f8f8f8;
+      /* Light grey instead of black */
+      color: #333;
+      padding: 20px;
+      border-left: 6px solid #888;
+      border-radius: 4px;
+      font-family: "Times New Roman", Times, serif;
+      /* Math looks better in Serif */
+      font-size: 24px;
+      /* Big math text */
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .math-row {
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .note {
+      color: #555;
+      margin-bottom: 10px;
+      font-style: italic;
+      font-size: 18px;
+    }
+
+    /* Result Box */
+    .result {
+      margin-top: 40px;
+      padding: 30px;
+      background: #e0f7fa;
+      /* Light teal background */
+      border: 2px solid #00acc1;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 28px;
+      /* Very large result text */
+      color: #006064;
+      text-align: center;
+    }
+
+    /* Button Styling */
+    .button-container {
+      margin-top: 40px;
+    }
+
+    a.button {
+      display: inline-block;
+      padding: 15px 30px;
+      background: #66c2cd;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 20px;
+      transition: background 0.2s, transform 0.1s;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    a.button:hover {
+      background: #55aab4;
+      transform: translateY(-2px);
+    }
+
+    .error {
+      color: #d32f2f;
+      font-weight: bold;
+      font-size: 20px;
+      background: #ffebee;
+      padding: 20px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Calculation Breakdown</h1>
+
+  <div id="content" class="box">
+    <div id="calculation"></div>
+
+    <div class="button-container">
+      <a class="button" href="lab.html">← Back to Lab</a>
+    </div>
+  </div>
+
+  <script>
+    function fmt(x, dp = 5) { return (typeof x === 'number') ? x.toFixed(dp) : x; }
+
+    const params = new URLSearchParams(window.location.search);
+    let h = parseFloat(params.get('h'));
+    let L = parseFloat(params.get('L'));
+
+    const container = document.getElementById('calculation');
+
+    if (!h || !L) {
+      container.innerHTML = `<p class="error">No data found. Please run the simulation in the Lab first.</p>`;
+    } else {
+      const ratio = h / L;
+      const thetaRad = Math.asin(ratio);
+      const thetaDeg = thetaRad * 180 / Math.PI;
+
+      let html = '';
+
+      // Section: Given Data
+      html += `<div class="step-title">Given Data</div>`;
+      html += `<div class="math-block">
+                 <span class="math-row">Height (h) = <b>${h} mm</b></span>
+                 <span class="math-row">Length (L) = <b>${L} mm</b></span>
+               </div>`;
+
+      // Section: Step 1
+      html += `<div class="step-title">Step 1: Sine Formula</div>`;
+      html += `<div class="note">We use the sine bar principle:</div>`;
+      html += `<div class="math-block">
+                 <span class="math-row">sin(θ) = h / L</span>
+                 <span class="math-row">sin(θ) = ${h} / ${L}</span>
+                 <span class="math-row">sin(θ) = <b>${fmt(ratio, 5)}</b></span>
+               </div>`;
+
+      // Section: Step 2
+      html += `<div class="step-title">Step 2: Find Angle (Inverse Sine)</div>`;
+      html += `<div class="math-block">
+                 <span class="math-row">θ = sin⁻¹(${fmt(ratio, 5)})</span>
+                 <span class="math-row">θ = <b>${fmt(thetaRad, 5)} rad</b></span>
+               </div>`;
+
+      // Section: Step 3
+      html += `<div class="step-title">Step 3: Convert to Degrees</div>`;
+      html += `<div class="note">Multiply radians by (180 / π):</div>`;
+      html += `<div class="math-block">
+                 <span class="math-row">θ (deg) = ${fmt(thetaRad, 5)} × 57.296</span>
+               </div>`;
+
+      // Final Result
+      html += `<div class="result">
+                 Final Angle: θ = ${fmt(thetaDeg, 2)}°
+               </div>`;
+
+      container.innerHTML = html;
+    }
+  </script>
+</body>
+
+</html>

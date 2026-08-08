@@ -1,0 +1,769 @@
+/*drawing offset*/
+    var scale;
+    var xOffset=0;
+    var yOffset=0;
+    var dragMode=0;//0==none, 1=world, 2=vernier, 3= object
+
+    var mx, my; //prev mouse positions
+    var bgColor = "rgb(255,255,255)";
+    var fgColor="orange";//rgb(255,255,255)";
+    var instructionStep = 1;
+
+
+    var loadedItems=0;
+    const itemsToLoad=4;
+    //gauge variables
+    var imgThimble=new Image();
+    imgThimble.src="thimble.png"
+    imgThimble.onload=itemloaded;
+    var imgSpindle=new Image();
+    imgSpindle.src="spindle.png"
+    imgSpindle.onload=itemloaded;
+    var imgBase=new Image();
+    imgBase.src="micrometer_base.png"
+    imgBase.onload=itemloaded;
+    var imgTexture=new Image();
+    imgTexture.src="texture9.png"
+    imgTexture.onload=itemloaded;
+    var imgSimphy=new Image();
+    var textPattern=null;
+    var gradient=null;
+
+    var tickSound = new Audio("tick.wav");
+    tickSound.onload=itemloaded;
+
+    const scaleOriginX=539;
+    const scaleOriginY=100;
+
+    const spindleOriginX=200;
+    const spindleOriginY=79;
+
+    const thimbleY1=49;
+    const thimbleY2=40;
+    const thimbleY3=31;
+    const thimbleX1=0; //thimble leftmost pos in  thimble.png
+    const thimbleX2=40; //thimbal division display location in thimble.png
+    const thimbleX3=440; //thimble leftmost pos in  thimble.png
+    const unit="mm";
+
+    const mainScaleLengthPixels=200;
+
+    const majorTickLengthPixels=20;
+    const minorTickLengthPixels=10;
+    const vernierMajorTickLengthPixels=30;
+    const vernierMinorTickLengthPixels=18;
+    const scaleColor="black";
+
+    var mainScaleDivisions=30;
+    var msd_pixels=mainScaleLengthPixels/mainScaleDivisions;
+    var msdValue=0.5;
+    var circularScaleDivisions=50;
+    var msr=0;
+    var csr=0;
+    var zeroError=0;
+    var displayInfo=false;
+    var objectWidthPixel=25;
+
+    var precision;
+    var randomZeroError=true;
+    var randomMainScaleDivisions=true;
+    var randomCircularScaleDivision=true;
+    var randomObjectWidthPixel=true;
+    var randomObjectShape=true;
+    var objectShape='rectangle'; // 'rectangle' or 'circle'
+    var objectRadius=15;
+    var objectHeight=100;
+    var objectTobeMeasured={x:xOffset+ window.innerWidth-100,y:yOffset+window.innerHeight-110,w:30,h:100,radius:15,shape:'rectangle',state:1};//state =0=hide, 1= visible but not snapped, 2=snapped
+
+    // create a pane variable and a safe stub. Actual Tweakpane initialization
+    // will be attempted once the DOM is ready so that the `#gui` container
+    // (present in micrometer.html) is available. If Tweakpane is missing,
+    // the stub keeps existing calls like pane.refresh() safe.
+    let pane = {
+        refresh: function() {},
+        addTab: function() { return { pages: [] }; },
+        addInput: function() { return { on: function(){} }; },
+        addButton: function() { return { on: function(){} }; },
+    };
+
+    // Ensure pane is initialized after DOM content is loaded so that
+    // document.getElementById('gui') can be found. This also makes the
+    // Workpieces tab reliably appear when `micrometer.html` is opened.
+    document.addEventListener('DOMContentLoaded', function () {
+        try {
+            // If no #gui exists in the page, create one and append to body.
+            if (!document.getElementById('gui')) {
+                const guiDiv = document.createElement('div');
+                guiDiv.id = 'gui';
+                // minimal positioning so it doesn't block canvas
+                guiDiv.style.position = 'absolute';
+                guiDiv.style.top = '10px';
+                guiDiv.style.right = '10px';
+                document.body.appendChild(guiDiv);
+            }
+
+            if (typeof Tweakpane !== 'undefined' && Tweakpane && typeof Tweakpane.Pane === 'function') {
+                pane = new Tweakpane.Pane({container:document.getElementById('gui'), title:'Micrometer Settings'});
+                // Create a single 'Workpieces' tab (Device/Create removed)
+                const tab = pane.addTab({ pages: [{ title: 'Workpieces' }] });
+                // Add workpiece buttons
+                if (tab && tab.pages && tab.pages[0]) {
+                    tab.pages[0].addButton({ title: 'Cylinder (8 mm)' }).on('click', function () { if (typeof loadWorkpiece === 'function') loadWorkpiece('cylinder'); });
+                    tab.pages[0].addButton({ title: 'Square (5 mm)' }).on('click', function () { if (typeof loadWorkpiece === 'function') loadWorkpiece('square'); });
+                }
+            }
+        } catch (err) {
+            // Keep the stub if anything goes wrong; log to console for debugging
+            console.error('Failed to initialize Tweakpane for micrometer settings:', err);
+        }
+    });
+
+
+    var canvas=document.getElementById("myCanvas");
+    canvas.width=window.innerWidth* devicePixelRatio;
+    canvas.height=window.innerHeight* devicePixelRatio;
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+    scale=(canvas.width/1500);
+
+    var ctx=canvas.getContext("2d");
+    ctx.font = "30px Arial";
+
+    window.addEventListener('resize',function(ev) { return resize(ev); });
+    var hammertime;
+    paint();
+    var intiScale=scale;
+
+    // Pointer lock and fixed micrometer interaction implementation
+    canvas.addEventListener('click', function() {
+        canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock || canvas.webkitRequestPointerLock;
+        if (canvas.requestPointerLock) {
+            canvas.requestPointerLock();
+        }
+    });
+
+    document.addEventListener('pointerlockchange', lockChangeAlert, false);
+    document.addEventListener('mozpointerlockchange', lockChangeAlert, false);
+    document.addEventListener('webkitpointerlockchange', lockChangeAlert, false);
+
+    function lockChangeAlert() {
+        var centerDot = document.getElementById('center-dot');
+        if (document.pointerLockElement === canvas ||
+            document.mozPointerLockElement === canvas ||
+            document.webkitPointerLockElement === canvas) {
+            centerDot.style.display = 'block';
+            document.addEventListener("mousemove", updateThimbleRotation, false);
+        } else {
+            centerDot.style.display = 'none';
+            document.removeEventListener("mousemove", updateThimbleRotation, false);
+        }
+    }
+
+    function updateThimbleRotation(e) {
+        // Use movementY for vertical mouse movement to rotate thimble
+        let delta = e.movementY || e.mozMovementY || e.webkitMovementY || 0;
+        if (delta !== 0) {
+            rotateVernier(delta > 0 ? 1 : -1);
+        }
+    }
+
+    function itemloaded(){
+        loadedItems++;
+        if(loadedItems==itemsToLoad){
+            hammertime = new Hammer(canvas);
+            hammertime.get('pinch').set({ enable: true });
+            hammertime.get('pan').set({ direction: Hammer.DIRECTION_ALL, threshold: 0, });
+            hammertime.on('panstart', function(ev) {
+                // Disable drag to move micrometer, as micrometer is fixed now
+                // No action on panstart
+            });
+            hammertime.on('panend', function(ev) {
+                // No action on panend
+            });
+            hammertime.on('panmove', function(ev) {
+                // No action on panmove
+            });
+
+            hammertime.on('pinchstart', function(ev) {
+                intiScale=scale;
+            });
+
+            hammertime.on('pinch', function(ev) {
+                let oldScale=scale;
+                let x = ev.center.x/scale;
+                let y = ev.center.y/scale;
+                scale=intiScale*ev.scale;
+                xOffset-= x*(scale-oldScale);
+                yOffset-= y*(scale-oldScale);
+                paint();
+            });
+
+            canvas.addEventListener("mousewheel",mouseWheelMoved);
+            canvas.addEventListener("mousedown", mousePressed);
+            canvas.addEventListener("mouseup", mouseReleased);
+            canvas.addEventListener("mousemove", mouseDragged);
+            window.addEventListener('keydown',onKeyEvent,false);
+
+            document.querySelector(".trigger_popup_fricc").onclick=function(){
+                document.querySelector('.hover_bkgr_fricc').style.display = "block";
+            };
+            document.querySelector('.hover_bkgr_fricc').onclick =function(){
+                document.querySelector('.hover_bkgr_fricc').style.display = "none";
+            };
+            document.querySelector('.popupCloseButton').onclick=function(){
+                document.querySelector('.hover_bkgr_fricc').style.display = "none";
+            };
+        }
+        paint();
+    }
+
+    function resize(){
+        if(window.innerWidth<10||window.innerHeight<10)return;
+        canvas.width=window.innerWidth* devicePixelRatio;
+        canvas.height=window.innerHeight* devicePixelRatio;
+        canvas.style.width = window.innerWidth + 'px';
+        canvas.style.height = window.innerHeight + 'px';
+        scale*=(window.innerWidth/canvas.width);
+        pane.refresh();
+    }
+
+    init();
+
+    function init(){
+        resize();
+    }
+
+    function createProblem(){
+        if(randomCircularScaleDivision)circularScaleDivisions=(1+Math.round(Math.random()*3))*25;
+        if(randomZeroError)zeroError=Math.round(2*circularScaleDivisions*(Math.random()-0.5));
+        if(randomMainScaleDivisions)mainScaleDivisions=10*(1+Math.round(4*Math.random()));
+        if(randomObjectShape) objectTobeMeasured.shape = Math.random() > 0.5 ? 'rectangle' : 'circle'; else objectTobeMeasured.shape = objectShape;
+        if(randomObjectWidthPixel){
+            if(objectTobeMeasured.shape == 'circle'){
+                objectTobeMeasured.radius = mainScaleLengthPixels * (1 + 5 * Math.random()) / 20;
+                objectTobeMeasured.w = 2 * objectTobeMeasured.radius;
+            } else {
+                objectWidthPixel = mainScaleLengthPixels * (1 + 5 * Math.random()) / 10;
+                objectTobeMeasured.w = objectWidthPixel;
+                objectTobeMeasured.h = objectHeight;
+            }
+        } else {
+            if(objectTobeMeasured.shape == 'circle'){
+                objectTobeMeasured.radius = objectRadius;
+                objectTobeMeasured.w = 2 * objectRadius;
+            } else {
+                objectTobeMeasured.w = objectWidthPixel;
+                objectTobeMeasured.h = objectHeight;
+            }
+        }
+        objectTobeMeasured.state=1;
+        instructionStep = 2;
+        updateInstructions();
+        objectTobeMeasured.x = 20;
+        objectTobeMeasured.y = 20;
+        if(objectTobeMeasured.shape == 'circle'){
+            // Adjust snapping tolerance and y position for better fit
+            if(Math.abs(objectTobeMeasured.x-spindleOriginX)<150 && Math.abs(objectTobeMeasured.y-(scaleOriginY-objectTobeMeasured.radius))<objectTobeMeasured.radius+20){
+                objectTobeMeasured.x=spindleOriginX;
+                objectTobeMeasured.y=scaleOriginY-objectTobeMeasured.radius + 5; // slight offset for better fit
+                objectTobeMeasured.state=2;
+            }
+        } else {
+            if(Math.abs(objectTobeMeasured.x-spindleOriginX)<200 && Math.abs(objectTobeMeasured.y-scaleOriginY+objectTobeMeasured.h/2)<objectTobeMeasured.h/2+50){
+                objectTobeMeasured.x=spindleOriginX;
+                objectTobeMeasured.y=scaleOriginY-objectTobeMeasured.h/2;
+                objectTobeMeasured.state=2;
+            }
+        }
+        pane.refresh();
+
+        rotateVernier(0);
+    }
+
+    function rotateVernier(div){
+        csr+=div;
+        if (csr<0) {
+            csr=circularScaleDivisions+csr;
+            msr-=1;
+        }else if(csr>=circularScaleDivisions){
+            csr=csr-circularScaleDivisions;
+            msr+=1;
+        }
+        let correctedReading=getCorrectedReading();
+
+        if(correctedReading<=0){
+            msr=0;
+            csr=0;
+            tickSound.muted=false;
+            if(tickSound.paused)tickSound.play();
+        }
+        if(correctedReading>=mainScaleDivisions*msdValue){
+            msr=mainScaleDivisions;
+            csr=0;
+            tickSound.muted=false;
+            if(tickSound.paused)tickSound.play();
+        }
+        update();
+    }
+
+    function update(){
+        msd_pixels=mainScaleLengthPixels/mainScaleDivisions;
+        precision=(circularScaleDivisions%3==0||circularScaleDivisions%7==0)?3:2;
+
+        if(objectTobeMeasured.state==2){
+            let v=(msr+csr/circularScaleDivisions)*msd_pixels
+            if(v<objectTobeMeasured.w){
+                msr=Math.floor(objectTobeMeasured.w/msd_pixels);
+                csr=Math.floor((objectTobeMeasured.w/msd_pixels-msr)*circularScaleDivisions);
+                if(tickSound.paused)tickSound.play();
+            }
+	    if(objectTobeMeasured.state == 2){
+                instructionStep = 4;
+                updateInstructions();
+            }
+        }
+        paint();
+        updateDigitalReading();
+    }
+
+    function updateDigitalReading() {
+        const valueElement = document.getElementById('measurement-value');
+        const mainScaleElement = document.getElementById('main-scale-reading');
+        const circularScaleElement = document.getElementById('circular-scale-reading');
+        const zeroErrorElement = document.getElementById('zero-error-reading');
+        const correctedElement = document.getElementById('corrected-reading');
+        if (valueElement && mainScaleElement && circularScaleElement && zeroErrorElement && correctedElement) {
+            let mainScaleReading = getMainScaleReading() * msdValue;
+            let circularScaleReading = (getCircularScaleReading() * msdValue) / circularScaleDivisions;
+            let zeroErrorReading = getZeroError();
+            let correctedReading = getCorrectedReading();
+
+            valueElement.textContent = correctedReading.toFixed(3) + ' mm';
+            mainScaleElement.textContent = mainScaleReading.toFixed(3) + ' mm';
+            circularScaleElement.textContent = circularScaleReading.toFixed(3) + ' mm';
+            zeroErrorElement.textContent = zeroErrorReading.toFixed(3) + ' mm';
+            correctedElement.textContent = correctedReading.toFixed(3) + ' mm';
+	    instructionStep = 5;
+            updateInstructions();
+        }
+    }
+
+    function paint(){
+        ctx.lineWidth=1.5;
+        ctx.fillStyle=bgColor;
+        ctx.strokeStyle=fgColor;
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+        if(loadedItems<itemsToLoad){
+            ctx.font = "30px Arial";
+            ctx.fillStyle=fgColor;
+            outString(canvas.width/2,canvas.height/2,"Loading ..."+(loadedItems*100/itemsToLoad).toFixed(0)+"%",1,1);
+            return;
+        }
+        ctx.scale(scale*devicePixelRatio,scale*devicePixelRatio);
+        ctx.translate(xOffset,yOffset);
+        ctx.save();
+
+        //draw  Spindle first
+        let shift=(msr+csr/circularScaleDivisions)*msd_pixels;
+        ctx.drawImage(imgSpindle,spindleOriginX+shift,spindleOriginY);
+
+        //draw Base of gauge
+        ctx.drawImage(imgBase,0,0);
+
+        //draw ruler on main scale
+        ctx.translate(scaleOriginX,scaleOriginY);
+        ctx.fillStyle=scaleColor;
+        ctx.strokeStyle=scaleColor;
+        let x=-msd_pixels*zeroError/circularScaleDivisions,y=0,ticklength=0;
+        ctx.font = '12pt sans-serif';
+        let drawLowerTicks=mainScaleDivisions>20;
+        for (let i=0;i<=mainScaleDivisions;i++){
+            ticklength=(i % 5==0)?majorTickLengthPixels:minorTickLengthPixels;
+            if(drawLowerTicks && i%2==1)ticklength=-minorTickLengthPixels;
+            drawLine(x,y,x,y-ticklength);
+            if (i%10==0)outString(x, (y-ticklength-3),i*msdValue,1,2 );
+            x+=msd_pixels;
+        }
+
+        ctx.restore();
+        ctx.save();
+
+        ctx.fillStyle="rgb(156,172,156)";
+        ctx.font = '12pt sans-serif';
+
+        ctx.fillStyle="orange";
+        outString(300, 488,1,1);
+
+        //draw Circular scale
+        let N=circularScaleDivisions/4;
+        let R=scaleOriginY-thimbleY1;
+        ctx.drawImage(imgThimble,scaleOriginX+shift,thimbleY3);
+        ctx.rect(scaleOriginX+shift,thimbleY3,(thimbleX3-thimbleX2-153),2*(scaleOriginY-thimbleY3-1));
+        if(textPattern==null){
+            textPattern= ctx.createPattern( imgTexture, 'repeat' );
+        }
+
+        let offsetY=(msr*circularScaleDivisions+csr)*R*Math.PI/N/2;
+        let s=1;
+        ctx.fillStyle=textPattern;
+        ctx.scale(s,s);
+        ctx.translate(scaleOriginX+shift+thimbleX2+49,scaleOriginY+offsetY/s);
+
+        R=scaleOriginY-thimbleY3;
+
+        ctx.fillRect(0,-(R+offsetY)/s,(thimbleX3-thimbleX2-153)/s,2*R/s);
+
+        ctx.restore();
+        ctx.save();
+        if(gradient==null){
+            gradient=ctx.createLinearGradient(thimbleX2,thimbleY3,thimbleX2,thimbleY3+2*R);
+            gradient.addColorStop(0,"black");
+            gradient.addColorStop(0.5,"rgb(184,203,184)");
+            gradient.addColorStop(1,"black");
+        }
+
+        x=scaleOriginX+shift;
+        ctx.globalAlpha=0.6;
+        ctx.fillStyle=gradient;
+        ctx.fillRect(x+thimbleX2+49,thimbleY3,(thimbleX3-thimbleX2-153),2*R);
+        ctx.globalAlpha=1;
+
+        ctx.fillStyle=scaleColor;
+        ctx.strokeStyle=scaleColor;
+
+        x=scaleOriginX+shift;
+        y=scaleOriginY;
+        ctx.font = '10pt sans-serif';
+
+        R=scaleOriginY-thimbleY1;
+        let dy1=0,dy2=0;
+        let dth=Math.PI/2/N;
+        let divPos;
+        let sinTh=0
+        let csrWithZE=getCircularScaleReading();
+        drawLine(x,thimbleY1-1,x,thimbleY1+2*R+1);
+        for (let i=0;i<N;i++){
+            sinTh=Math.sin(i*dth);
+            if(sinTh>0.7)ctx.globalAlpha=1-3*(sinTh-0.7)
+            dy1=R*sinTh;
+            dy2=dy1*(R+4)/R;
+            y=scaleOriginY-dy1;
+            divPos=mod(csrWithZE+i,circularScaleDivisions);
+            ticklength=vernierMinorTickLengthPixels;
+            if(divPos%5==0){
+                ticklength=vernierMajorTickLengthPixels;
+                dy2=dy1*(R+8)/R;
+                if(i<N-2)outString(x+thimbleX2+4, scaleOriginY-dy2,divPos,0,1 );
+            }
+            drawLine(x,y,x+ticklength,scaleOriginY-dy2);
+            if(i==0)continue;
+            dy2=dy1*(R+4)/R;
+            y=scaleOriginY+dy1;
+            divPos=mod(csrWithZE-i,circularScaleDivisions);
+            ticklength=vernierMinorTickLengthPixels;
+            if(divPos%5==0){
+                ticklength=vernierMajorTickLengthPixels;
+                dy2=dy1*(R+8)/R;
+                if(i<N-2)outString(x+thimbleX2+4, scaleOriginY+dy2,divPos,0,1 );
+            }
+            drawLine(x,y,x+ticklength,scaleOriginY+dy2);
+        }
+        ctx.restore();
+        ctx.fillStyle=fgColor;
+        ctx.font = '12pt sans-serif';
+
+        if(objectTobeMeasured.state>0){
+            if(objectTobeMeasured.shape == 'circle'){
+                let grd = ctx.createRadialGradient(objectTobeMeasured.x, objectTobeMeasured.y, 0, objectTobeMeasured.x, objectTobeMeasured.y, objectTobeMeasured.radius);
+                grd.addColorStop(0, "rgb(220,230,210)");
+                grd.addColorStop(1, "rgb(120,120,120)");
+                ctx.fillStyle = grd;
+                ctx.beginPath();
+                ctx.arc(objectTobeMeasured.x, objectTobeMeasured.y, objectTobeMeasured.radius, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.strokeStyle = scaleColor;
+                ctx.stroke();
+            } else {
+                let grd=ctx.createLinearGradient(objectTobeMeasured.x,objectTobeMeasured.y,objectTobeMeasured.x+objectTobeMeasured.w,objectTobeMeasured.y);
+                grd.addColorStop(0,"rgb(120,120,120)")
+                grd.addColorStop(0.5,"rgb(220,230,210)")
+                grd.addColorStop(1,"rgb(120,120,120)")
+                ctx.fillStyle=grd;
+                ctx.fillRect(objectTobeMeasured.x+1,objectTobeMeasured.y,objectTobeMeasured.w,objectTobeMeasured.h);
+                ctx.strokeStyle=scaleColor;
+                ctx.strokeRect(objectTobeMeasured.x+1,objectTobeMeasured.y,objectTobeMeasured.w,objectTobeMeasured.h);
+            }
+            ctx.fillStyle=fgColor;
+        }
+
+        if(displayInfo)drawInfo();
+        ctx.resetTransform();
+    }
+
+    function drawInfo(){
+        ctx.lineWidth=1.5;
+        ctx.fillStyle=fgColor;
+        ctx.strokeStyle=fgColor;
+        let x=scaleOriginX-msd_pixels*zeroError/circularScaleDivisions + getMainScaleReading()*msd_pixels;
+        let y=scaleOriginY+2+minorTickLengthPixels;
+        let arrowSize=5;
+        drawLineWithArrows(x,y,x, y+50,arrowSize,arrowSize,true,false);
+        outString(x, y+53,getMainScaleReading()+"MSD = "+formatValue(getMainScaleReading()*msdValue),1,0);
+
+        let gappixel=msd_pixels*(msr+csr/circularScaleDivisions);
+        x=scaleOriginX+gappixel+thimbleX2;
+        y=scaleOriginY;
+        drawLineWithArrows(x,y,x+40, y,arrowSize,arrowSize,true,false);
+        outString(x+47, y,getCircularScaleReading()+"CSD = "+formatValue(msdValue*getCircularScaleReading()/circularScaleDivisions),0,1);
+
+        x=spindleOriginX-1;
+        y=spindleOriginY-20;
+        drawLineWithArrows(x-30,y,x, y,arrowSize,arrowSize,false,true);
+        x=spindleOriginX+gappixel+3;
+        y=spindleOriginY-20;
+        drawLineWithArrows(x,y,x+30, y,arrowSize,arrowSize,true,false);
+        let mr=getMeasuredReading();
+        let cr=getCorrectedReading();
+        let ze=getZeroError();
+        y=spindleOriginY-42;
+        x=spindleOriginX+gappixel/2;
+        if(ze==0){
+            outString(x, y,formatValue(cr),1,1);
+        }else if(ze>0){
+            outString(x, y,formatValue(mr)+' - '+formatValue(ze)+" = "+formatValue(cr),1,1);
+        }else{
+            outString(x, y,formatValue(mr)+' + '+formatValue(-ze)+" = "+formatValue(cr),1,1);
+        }
+    }
+
+    function getZeroError(){
+        return (zeroError/circularScaleDivisions)*msdValue;
+    }
+
+    function formatValue(s){
+        return s.toFixed(precision)+unit;
+    }
+    function getMainScaleReading(){
+        return Math.floor((msr*circularScaleDivisions+csr+zeroError)/circularScaleDivisions);
+    }
+
+    function getCircularScaleReading(){
+        return mod(csr+zeroError,circularScaleDivisions);
+    }
+
+    function getMeasuredReading(){
+        return getCorrectedReading()+getZeroError();
+    }
+
+    function getCorrectedReading(){
+        return (msr+csr/circularScaleDivisions)*msdValue;
+    }
+
+    function mod(a,n){
+        return ((a % n ) + n ) % n;
+    }
+    function drawLine(x1,y1,x2,y2){
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+    }
+
+    function drawLineWithArrows(x0,y0,x1,y1,aWidth,aLength,arrowStart,arrowEnd){
+        var dx=x1-x0;
+        var dy=y1-y0;
+        var angle=Math.atan2(dy,dx);
+        var length=Math.sqrt(dx*dx+dy*dy);
+        ctx.save();
+        ctx.translate(x0,y0);
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.moveTo(0,0);
+        ctx.lineTo(length,0);
+        if(arrowStart){
+            ctx.moveTo(aLength,-aWidth);
+            ctx.lineTo(0,0);
+            ctx.lineTo(aLength,aWidth);
+        }
+        if(arrowEnd){
+            ctx.moveTo(length-aLength,-aWidth);
+            ctx.lineTo(length,0);
+            ctx.lineTo(length-aLength,aWidth);
+        }
+        ctx.stroke();
+        ctx.restore();
+    }
+    function outString( x,y, s, x_align, y_align) {
+        var fm=ctx.measureText(s);
+        var h=10;
+        switch (y_align) {
+            case 0:
+                y += h;
+                break;
+            case 1:
+                y += h / 2;
+                break;
+            case 2:
+                break;
+        }
+        switch (x_align) {
+            case 0:
+                ctx.fillText(s, x+3, y);
+                break;
+            case 1:
+                ctx.fillText(s, x - fm.width/2, y);
+                break;
+            case 2:
+                ctx.fillText(s, x - fm.width / 2, y);
+                break;
+        }
+    }
+
+    function myTouchMove(te){
+        te.preventDefault();
+        var touch = te.touches[0];
+        var mouseEvent = new MouseEvent("mousemove", {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        canvas.dispatchEvent(mouseEvent);
+    }
+
+    function myTouchStart(te){
+        te.preventDefault();
+        var touch = te.touches[0];
+        var mouseEvent = new MouseEvent("mousedown", {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        canvas.dispatchEvent(mouseEvent);
+    }
+
+    function myTouchEnd(te){
+        te.preventDefault();
+        var mouseEvent = new MouseEvent("mouseup", {
+            clientX: -1,
+            clientY: -1
+        });
+        canvas.dispatchEvent(mouseEvent);
+    }
+
+    function getMousePos(event){
+        return [event.clientX ,event.clientY];
+    }
+
+    function mousePressed(me) {
+        let pos = getMousePos(me);
+        mx = pos[0] / scale - xOffset;
+        my = pos[1] / scale - yOffset;
+        if (objectTobeMeasured.state > 0) {
+            if (objectTobeMeasured.shape == 'circle') {
+                if (Math.pow(mx - objectTobeMeasured.x, 2) + Math.pow(my - objectTobeMeasured.y, 2) < Math.pow(objectTobeMeasured.radius, 2)) {
+                    dragMode = 3;
+                }
+            } else {
+                if (mx > objectTobeMeasured.x && mx < objectTobeMeasured.x + objectTobeMeasured.w &&
+                    my > objectTobeMeasured.y && my < objectTobeMeasured.y + objectTobeMeasured.h) {
+                    dragMode = 3;
+                }
+            }
+        }
+        me.preventDefault();
+    }
+
+    function mouseReleased(me) {
+        if (dragMode == 3) {
+            // Check for snapping
+            if (objectTobeMeasured.shape == 'circle') {
+                // Adjust snapping tolerance and y position for better fit
+                if (Math.abs(objectTobeMeasured.x - spindleOriginX) < 150 && Math.abs(objectTobeMeasured.y - (scaleOriginY - objectTobeMeasured.radius + 5)) < objectTobeMeasured.radius + 20) {
+                    objectTobeMeasured.x = spindleOriginX;
+                    objectTobeMeasured.y = scaleOriginY - objectTobeMeasured.radius + 5; // slight offset for better fit
+                    objectTobeMeasured.state = 2;
+		    instructionStep = 3;
+                    updateInstructions();
+                } else {
+                    objectTobeMeasured.state = 1;
+                }
+            } else {
+                if (Math.abs(objectTobeMeasured.x - spindleOriginX) < 200 && Math.abs(objectTobeMeasured.y - scaleOriginY + objectTobeMeasured.h / 2) < objectTobeMeasured.h / 2 + 50) {
+                    objectTobeMeasured.x = spindleOriginX;
+                    objectTobeMeasured.y = scaleOriginY - objectTobeMeasured.h / 2;
+                    objectTobeMeasured.state = 2;
+		    instructionStep = 3;
+                    updateInstructions();
+                } else {
+                    objectTobeMeasured.state = 1;
+                }
+            }
+            update();
+        }
+        dragMode = 0;
+        me.preventDefault();
+    }
+
+    function mouseWheelMoved(me) {
+        var scroll=me.wheelDelta>0?1:-1;
+        rotateVernier(scroll);
+        me.preventDefault();
+    }
+
+    function mouseDragged(me) {
+        if (dragMode == 3) {
+            let pos = getMousePos(me);
+            let nx = pos[0] / scale - xOffset;
+            let ny = pos[1] / scale - yOffset;
+            objectTobeMeasured.x += nx - mx;
+            objectTobeMeasured.y += ny - my;
+            mx = nx;
+            my = ny;
+            paint();
+        }
+        me.preventDefault();
+    }
+
+    function onKeyEvent(e){
+        if(e.keyCode==37 ||e.keyCode==38){
+            rotateVernier(-1);
+        }
+        else if (e.keyCode==39||e.keyCode==40){
+            rotateVernier(1);
+        }
+        else if (e.keyCode==33){
+            scale*=1.05;
+            update();
+        }
+        else if (e.keyCode==34){
+            scale*=0.96195;
+            update();
+        }else {
+            return false;
+        }
+        e.preventDefault();
+
+    }
+
+
+    animate();
+
+    function updateInstructions() {
+        const box = document.getElementById("instruction-box");
+        switch (instructionStep) {
+            case 1:
+                box.textContent = "1. Choose the workpiece from the Workpieces tab.";
+                break;
+            case 2:
+                box.textContent = "2. Drag and place the workpiece between the jaws.";
+                break;
+            case 3:
+                box.textContent = "3. Rotate the thimble until it touches the object.";
+                break;
+            case 4:
+                box.textContent = "4. Read the micrometer value at the bottom right.";
+                break;
+            case 5:
+                box.textContent = "✅ Done! Try another object.";
+                break;
+        }
+    }
+

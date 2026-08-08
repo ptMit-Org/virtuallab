@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pneumatic Comparator - Educational Simulation</title>
+    <link rel="stylesheet" href="./style.css">
+    <link rel="icon" href="./favicon.ico" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-content">
+            <h1 class="nav-title">Pneumatic Comparator Simulation</h1>
+            <a href="./index.html" class="nav-home-btn">Introduction</a>
+        </div>
+    </nav>
+
+    <div id="simulation-page" class="page active">
+        <div class="container">
+            <div class="page-header">
+                <h2></h2>
+            </div>
+
+            <div class="simulation-container">
+                <div class="control-panel">
+                    <div class="display-group">
+                        <div class="digital-display">
+                            <h4>Current Deviation</h4>
+                            <div class="deviation-reading" id="deviation-display">0.00</div>
+                            <span class="unit">mm</span>
+                        </div>
+                        <div class="status-display">
+                            <h4>System Status</h4>
+                            <div class="status-text" id="status-text">Ready for measurement</div>
+                        </div>
+                    </div>
+
+                    <div class="control-buttons">
+                        <button class="btn btn--primary" id="plot-graph-btn">📊 Plot Graph</button>
+                        <button class="btn btn--secondary" id="reset-data-btn">🔄 Reset Data</button>
+                        <div class="measurement-count">
+                            Measurements: <span id="measurement-count">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="simulation-area">
+                    <svg class="comparator-diagram" viewBox="0 0 1400 800">
+                        <g id="air-particles"></g>
+
+                        <defs>
+                            <pattern id="transparent-bg" patternUnits="userSpaceOnUse" width="4" height="4">
+                                <rect width="4" height="4" fill="rgba(255, 255, 255, 0.8)" />
+                            </pattern>
+                        </defs>
+
+                        <g class="component" id="compressor">
+                            <rect x="50" y="280" width="80" height="80" fill="var(--color-slate-500)" rx="8" />
+                            <rect x="60" y="300" width="15" height="20" fill="var(--color-primary)" rx="2" />
+                            <rect x="85" y="300" width="15" height="20" fill="var(--color-primary)" rx="2" />
+                            <rect x="110" y="300" width="15" height="20" fill="var(--color-primary)" rx="2" />
+                            <text x="90" y="375" text-anchor="middle" class="component-label">Air Compressor</text>
+                            <circle cx="70" cy="310" r="2" class="compressor-piston" fill="var(--color-teal-300)" />
+                            <circle cx="95" cy="310" r="2" class="compressor-piston" fill="var(--color-teal-300)" />
+                            <circle cx="120" cy="310" r="2" class="compressor-piston" fill="var(--color-teal-300)" />
+                        </g>
+
+                        <g class="component" id="filter">
+                            <rect x="180" y="305" width="60" height="30" fill="var(--color-gray-400)" rx="6" />
+                            <rect x="190" y="315" width="40" height="2" fill="var(--color-primary)" />
+                            <rect x="190" y="320" width="40" height="2" fill="var(--color-primary)" />
+                            <text x="210" y="355" text-anchor="middle" class="component-label">Air Filter</text>
+                        </g>
+
+                        <g class="component" id="regulator">
+                            <rect x="280" y="300" width="70" height="40" fill="var(--color-brown-600)" rx="6" />
+                            <circle cx="315" cy="290" r="18" fill="var(--color-surface)" stroke="var(--color-border)"
+                                stroke-width="2" />
+                            <text x="315" y="295" text-anchor="middle" class="gauge-text">2 bar</text>
+                            <line x1="315" y1="290" x2="325" y2="285" stroke="var(--color-error)" stroke-width="2" />
+                            <text x="315" y="365" text-anchor="middle" class="component-label">Pressure Regulator</text>
+                        </g>
+
+                        <g class="component" id="control-orifice">
+                            <rect x="390" y="315" width="40" height="10" fill="var(--color-orange-500)" rx="2" />
+                            <text x="410" y="355" text-anchor="middle" class="component-label">Control Orifice</text>
+                        </g>
+
+                        <g class="component" id="water-tank">
+                            <rect x="500" y="450" width="120" height="180" fill="none" stroke="var(--color-border)"
+                                stroke-width="3" rx="8" />
+                            <rect x="505" y="550" width="110" height="75" fill="rgba(50, 184, 198, 0.4)"
+                                class="water-level" />
+                            <text x="560" y="650" text-anchor="middle" class="component-label">Water Tank</text>
+                        </g>
+
+                        <g class="component" id="manometer">
+                            <rect x="640" y="250" width="20" height="300" fill="none" stroke="var(--color-border)"
+                                stroke-width="3" />
+                            <path d="M 660 550 Q 700 570 740 550" fill="none" stroke="var(--color-border)"
+                                stroke-width="3" />
+                            <rect x="740" y="250" width="20" height="300" fill="none" stroke="var(--color-border)"
+                                stroke-width="3" />
+
+                            <rect x="645" y="390" width="10" height="20" fill="var(--color-teal-300)"
+                                class="water-column" id="water-column-left" />
+                            <rect x="745" y="390" width="10" height="20" fill="var(--color-teal-300)"
+                                class="water-column" id="water-column-right" />
+
+                            <g class="scale">
+                                <text x="780" y="260" class="scale-text">+15</text>
+                                <text x="780" y="300" class="scale-text">+10</text>
+                                <text x="780" y="340" class="scale-text">+5</text>
+                                <text x="780" y="400" class="scale-text">0</text>
+                                <text x="780" y="440" class="scale-text">-5</text>
+                                <text x="780" y="480" class="scale-text">-10</text>
+                                <text x="780" y="520" class="scale-text">-15</text>
+                                <line x1="760" y1="400" x2="775" y2="400" stroke="var(--color-border)"
+                                    stroke-width="2" />
+                                <line x1="765" y1="340" x2="775" y2="340" stroke="var(--color-border)"
+                                    stroke-width="1" />
+                                <line x1="765" y1="440" x2="775" y2="440" stroke="var(--color-border)"
+                                    stroke-width="1" />
+                            </g>
+                            <text x="700" y="575" text-anchor="middle" class="component-label">Manometer</text>
+                        </g>
+
+                        <path d="M 450 320 Q 520 280 620 280 Q 720 280 850 315" fill="none"
+                            stroke="rgba(50, 184, 198, 0.6)" stroke-width="8" class="tube flexible-tube" />
+
+                        <g class="component" id="measuring-head">
+                            <rect x="850" y="300" width="50" height="50" fill="var(--color-slate-500)" rx="8" />
+                            <rect x="900" y="315" width="40" height="8" fill="var(--color-primary)" rx="1"
+                                class="measuring-probe" />
+                            <rect x="900" y="327" width="40" height="8" fill="var(--color-primary)" rx="1"
+                                class="measuring-probe" />
+                            <circle cx="940" cy="320" r="6" fill="var(--color-primary)" class="probe-tip" />
+                            <circle cx="940" cy="332" r="6" fill="var(--color-primary)" class="probe-tip" />
+                            <text x="875" y="375" text-anchor="middle" class="component-label">Measuring Head</text>
+                            <text x="875" y="390" text-anchor="middle" class="component-label">(Dual Branch)</text>
+                        </g>
+
+                        <g class="workpiece" id="standard-workpiece">
+                            <rect x="1100" y="300" width="80" height="40" fill="var(--color-success)" rx="8"
+                                class="workpiece-body clickable" />
+                            <rect x="1110" y="310" width="60" height="20" fill="var(--color-background)" rx="4"
+                                class="hollow-center" />
+                            <ellipse cx="1100" cy="320" rx="8" ry="10" fill="var(--color-background)"
+                                class="hollow-opening" />
+                            <text x="1140" y="325" text-anchor="middle" class="workpiece-label">STANDARD</text>
+                            <text x="1140" y="365" text-anchor="middle" class="component-label">Click to Test</text>
+                            <text x="1140" y="380" text-anchor="middle" class="component-label">(Hollow Cylinder)</text>
+                        </g>
+
+                        <g class="workpiece" id="testing-workpiece">
+                            <rect x="1100" y="420" width="80" height="40" fill="var(--color-error)" rx="8"
+                                class="workpiece-body clickable" />
+                            <rect x="1110" y="430" width="60" height="20" fill="var(--color-background)" rx="4"
+                                class="hollow-center" />
+                            <ellipse cx="1100" cy="440" rx="8" ry="10" fill="var(--color-background)"
+                                class="hollow-opening" />
+                            <text x="1140" y="445" text-anchor="middle" class="workpiece-label">TESTING</text>
+                            <text x="1140" y="485" text-anchor="middle" class="component-label">Click to Test</text>
+                            <text x="1140" y="500" text-anchor="middle" class="component-label">(Hollow Cylinder)</text>
+                        </g>
+
+                        <path d="M 130 320 L 180 320" fill="none" stroke="rgba(50, 184, 198, 0.6)" stroke-width="8"
+                            class="tube" />
+                        <path d="M 240 320 L 280 320" fill="none" stroke="rgba(50, 184, 198, 0.6)" stroke-width="8"
+                            class="tube" />
+                        <path d="M 350 320 L 390 320" fill="none" stroke="rgba(50, 184, 198, 0.6)" stroke-width="8"
+                            class="tube" />
+
+                        <path d="M 430 320 L 450 320" fill="none" stroke="rgba(50, 184, 198, 0.6)" stroke-width="8"
+                            class="tube" />
+
+                        <path d="M 450 320 L 450 200 L 650 200 L 650 250" fill="none" stroke="rgba(50, 184, 198, 0.6)"
+                            stroke-width="6" class="tube" />
+
+                        <path d="M 650 250 L 620 250 L 620 600 L 580 600" fill="none" stroke="rgba(50, 184, 198, 0.6)"
+                            stroke-width="6" class="tube dip-tube" />
+
+                        <circle cx="450" cy="320" r="5" fill="var(--color-primary)" />
+                        <circle cx="650" cy="250" r="5" fill="var(--color-primary)" />
+                    </svg>
+                </div>
+
+                <div class="instructions-panel">
+                    <div class="card">
+                        <div class="card__header">
+                            <h4>Measurement Instructions</h4>
+                        </div>
+                        <div class="card__body">
+                            <p><strong>How to Use:</strong></p>
+                            <ol>
+                                <li>Click on the <span style="color: var(--color-success);">green standard
+                                        workpiece</span> to see it slide and enclose the measuring head</li>
+                                <li>Observe the stable manometer reading (no deviation)</li>
+                                <li>Click on the <span style="color: var(--color-error);">red testing workpiece</span>
+                                    to see measurement with deviations</li>
+                                <li>Watch the manometer water levels change with each measurement</li>
+                                <li>Use "Plot Graph" to visualize measurement trends</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="graph-modal">
+        <div class="modal-backdrop" onclick="closeModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Deviation Measurements Graph</h3>
+                <button class="btn btn--outline" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="chart-container" style="position: relative; height: 400px;">
+                    <canvas id="deviation-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p><strong>Submitted by:</strong> RAGUL, ABINESH, VENGADESH, KALYAN SAI</p>
+        </div>
+    </footer>
+
+    <script src="./js/app.js"></script>
+</body>
+
+</html>

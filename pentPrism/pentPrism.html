@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Pentagonal Prism</title>
+        <link rel="icon" href="./favicon.ico" />
+
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+      <p id="currentTime"></p>
+      <script src="script.js"></script>
+  </body>
+</html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Pentagonal Prism — Stepwise Projection</title>
+
+<style>
+  body{background:#f3f6fb;font-family:Inter,Arial,sans-serif;display:flex;justify-content:center;padding:18px;margin:0}
+  .sheet{width:980px;background:#fff;padding:16px;border-radius:10px;box-shadow:0 10px 25px rgba(0,0,0,0.08)}
+  h1{text-align:center;font-size:18px;margin:0 0 12px}
+  .controls{text-align:center;margin-bottom:10px}
+  .controls button{padding:8px 14px;margin:0 6px;border-radius:6px;border:0;background:#111;color:#fff;cursor:pointer}
+  .desc{font-size:15px;text-align:center;margin:8px 0;color:#333;line-height:1.4}
+  canvas{display:block;margin:8px auto;border:1px solid #ddd;background:#fff}
+</style>
+</head>
+<body>
+
+<div class="sheet">
+  <h1>Pentagonal Prism — Stepwise Projection
+  </h1>
+  <p style="text-align: center;">Question: A pentagonal prism of side 30 mm and height 70 mm is above HP with one of it's rectangular face parallel to HP and the axis is perpendicular to VP.  Draw the top view and front view of the prism.</p>
+  <div class="controls">
+    <button id="prev">◀ Previous</button>
+    <button id="next">Next ▶</button>
+    <button id="all">Show All</button>
+    <button id="reset">Reset</button>
+    <button onclick="window.location.href='./index.html'">Home</button>
+
+  </div>
+  <div class="desc" id="descText"></div>
+  <canvas id="canvas" width="940" height="940"></canvas>
+</div>
+
+<script>
+const canvas=document.getElementById('canvas');
+const ctx=canvas.getContext('2d');
+const nextBtn=document.getElementById('next');
+const prevBtn=document.getElementById('prev');
+const allBtn=document.getElementById('all');
+const resetBtn=document.getElementById('reset');
+const descText=document.getElementById('descText');
+
+let step=0, MAX_STEP=9;
+const CX=canvas.width/2, XY_Y=480;
+const FRONT_CY=XY_Y-220, TOP_FRONT_CY=XY_Y+120;
+const side=30, axis=70, SCALE=4;
+
+const MED_YELLOW = "#e6d500";
+
+const stepDescriptions=[
+  "",
+  "1. Draw XY line.",
+  "2. Draw pentagon of side 30mm (2H).",
+  "3. Mark the points of pentagon.",
+  "4. Draw construction lines from each corner (2H).",
+  "5. Draw top view with axis length 70mm (2H).",
+  "6. Mark points in top view.",
+  "7. Draw dark object lines.",
+  "8. Mention dimensions (All dimensions are in mm)."
+];
+
+function toRad(d){return d*Math.PI/180;}
+function pentModel(s){
+  const pts=[];
+  for(let i=0;i<5;i++){
+    const a=toRad(90+72*i);
+    pts.push([s*Math.cos(a),s*Math.sin(a)]);
+  }
+  return pts;
+}
+
+function solid(x1,y1,x2,y2,w=2,c='#900'){
+  ctx.beginPath();
+  ctx.moveTo(x1,y1);
+  ctx.lineTo(x2,y2);
+  ctx.lineWidth=w;
+  ctx.strokeStyle=c;
+  ctx.stroke();
+}
+
+function dashed(x1,y1,x2,y2){
+  ctx.beginPath();
+  ctx.setLineDash([6,4]);
+  ctx.strokeStyle='#900';
+  ctx.lineWidth=1.6;
+  ctx.moveTo(x1,y1);
+  ctx.lineTo(x2,y2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function lightLine(x1,y1,x2,y2,c=MED_YELLOW){
+  ctx.beginPath();
+  ctx.moveTo(x1,y1);
+  ctx.lineTo(x2,y2);
+  ctx.strokeStyle=c;
+  ctx.lineWidth=1.1;
+  ctx.stroke();
+}
+
+function dot(x,y,r=3,c='#000'){
+  ctx.beginPath();
+  ctx.arc(x,y,r,0,2*Math.PI);
+  ctx.fillStyle=c;
+  ctx.fill();
+}
+
+function drawXY(){
+  solid(60,XY_Y,canvas.width-60,XY_Y,1.5,MED_YELLOW);
+  ctx.font='14px Arial';
+  ctx.fillStyle="#000";
+  ctx.fillText('X',70,XY_Y-8);
+  ctx.fillText('Y',canvas.width-80,XY_Y-8);
+}
+
+function dimParallel(x1,y1,x2,y2,text,offset=25){
+  const angle=Math.atan2(y2-y1,x2-x1);
+  const xm=(x1+x2)/2, ym=(y1+y2)/2;
+  const nx=-Math.sin(angle), ny=Math.cos(angle);
+  const xt=xm+nx*(offset+12), yt=ym+ny*(offset+12);
+  ctx.save();
+  ctx.strokeStyle=MED_YELLOW; 
+  ctx.lineWidth=1.1;
+  ctx.beginPath();
+  ctx.moveTo(x1,y1);
+  ctx.lineTo(x1+nx*(offset+5),y1+ny*(offset+5));
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2+nx*(offset+5),y2+ny*(offset+5));
+  ctx.stroke();
+
+  const xa1=x1+nx*offset, ya1=y1+ny*offset;
+  const xa2=x2+nx*offset, ya2=y2+ny*offset;
+  solid(xa1,ya1,xa2,ya2,1.3,'#d00');
+
+  function arrowHead(x,y,ang){
+    ctx.beginPath();
+    ctx.moveTo(x,y);
+    ctx.lineTo(x-10*Math.cos(ang+Math.PI/8),y-10*Math.sin(ang+Math.PI/8));
+    ctx.lineTo(x-10*Math.cos(ang-Math.PI/8),y-10*Math.sin(ang-Math.PI/8));
+    ctx.closePath(); 
+    ctx.fillStyle="#d00"; 
+    ctx.fill();
+  }
+  arrowHead(xa1,ya1,angle+Math.PI);
+  arrowHead(xa2,ya2,angle);
+
+  ctx.translate(xt,yt);
+  ctx.rotate(angle+Math.PI);
+  ctx.fillStyle="#d00"; 
+  ctx.font="13px Arial";
+  ctx.fillText(text, -8, -6);
+  ctx.restore();
+}
+
+const model=pentModel(side);
+const fpts=model.map(p=>({x:CX+p[0]*SCALE,y:FRONT_CY-p[1]*SCALE}));
+const tFront=model.map(p=>({x:CX+p[0]*SCALE,y:TOP_FRONT_CY}));
+const tRear=model.map(p=>({x:CX+p[0]*SCALE,y:TOP_FRONT_CY+axis*SCALE}));
+
+const labels=["a′(1)","b′(2)","c′(3)","d′(4)","e′(5)"];
+const topUp=["a","b","(c)","(d)","e"];
+const topDown=["1","2","(3)","(4)","5"];
+
+function drawStep(s){
+  switch(s){
+    case 1: drawXY(); break;
+
+    case 2:
+      ctx.beginPath();
+      ctx.moveTo(fpts[0].x,fpts[0].y);
+      for(let i=1;i<5;i++) ctx.lineTo(fpts[i].x,fpts[i].y);
+      ctx.closePath();
+      ctx.strokeStyle=MED_YELLOW;
+      ctx.lineWidth=1.1;
+      ctx.stroke();
+      break;
+
+    case 3:
+      ctx.font='13px Arial';
+      for(let i=0;i<5;i++){
+        dot(fpts[i].x,fpts[i].y,3);
+        ctx.fillText(labels[i],fpts[i].x-18,fpts[i].y-8);
+      }
+      break;
+
+    case 4:
+      for(let i=0;i<5;i++){
+        lightLine(fpts[i].x,fpts[i].y,tFront[i].x,tFront[i].y);
+      }
+      break;
+
+    case 5:
+      ctx.beginPath();
+      ctx.moveTo(tFront[0].x,tFront[0].y);
+      for(let i=1;i<5;i++) ctx.lineTo(tFront[i].x,tFront[i].y);
+      ctx.closePath();
+      ctx.strokeStyle=MED_YELLOW;
+      ctx.lineWidth=1.1;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(tRear[0].x,tRear[0].y);
+      for(let i=1;i<5;i++) ctx.lineTo(tRear[i].x,tRear[i].y);
+      ctx.closePath();
+      ctx.strokeStyle=MED_YELLOW;
+      ctx.stroke();
+
+      for(let i=0;i<5;i++){
+        lightLine(tFront[i].x,tFront[i].y,tRear[i].x,tRear[i].y,MED_YELLOW);
+      }
+      break;
+
+    case 6:
+      ctx.font='13px Arial';
+      for(let i=0;i<5;i++){
+        dot(tFront[i].x,tFront[i].y,2.6);
+        dot(tRear[i].x,tRear[i].y,2.6);
+      }
+      for(let i=0;i<5;i++){
+        ctx.fillText(topUp[i],tFront[i].x-10,tFront[i].y-8);
+        ctx.fillText(topDown[i],tRear[i].x-10,tRear[i].y+16);
+      }
+      break;
+
+    case 7:
+      // Front View
+      ctx.beginPath();
+      ctx.moveTo(fpts[0].x,fpts[0].y);
+      for(let i=1;i<5;i++) ctx.lineTo(fpts[i].x,fpts[i].y);
+      ctx.closePath();
+      ctx.lineWidth=2;
+      ctx.strokeStyle='#900';
+      ctx.stroke();
+
+      // Top Front View (3rd & 4th edges dashed)
+      for(let i=0;i<5;i++){
+        let n=(i+1)%5;
+        if(i==2 || i==3){
+          dashed(tFront[i].x,tFront[i].y,tFront[n].x,tFront[n].y);
+        }else{
+          solid(tFront[i].x,tFront[i].y,tFront[n].x,tFront[n].y,2,'#900');
+        }
+      }
+
+      // Vertical Edges (3rd & 4th dashed)
+      for(let i=0;i<5;i++){
+        if(i==2 || i==3){
+          dashed(tFront[i].x,tFront[i].y,tRear[i].x,tRear[i].y);
+        }else{
+          solid(tFront[i].x,tFront[i].y,tRear[i].x,tRear[i].y,1.6,'#900');
+        }
+      }
+
+      // Rear polygon
+      ctx.beginPath();
+      ctx.moveTo(tRear[0].x,tRear[0].y);
+      for(let i=1;i<5;i++) ctx.lineTo(tRear[i].x,tRear[i].y);
+      ctx.closePath();
+      ctx.strokeStyle='#900';
+      ctx.stroke();
+      break;
+
+    case 8:
+      const A=fpts[0], B=fpts[1];
+      dimParallel(A.x,A.y,B.x,B.y,"30",25);
+
+      const sideX=tRear[2].x;
+      dimParallel(sideX,TOP_FRONT_CY,sideX,TOP_FRONT_CY+axis*SCALE,"70",70);
+      break;
+  }
+}
+
+function redraw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  descText.textContent=stepDescriptions[step];
+  for(let i=1;i<=step;i++) drawStep(i);
+}
+
+nextBtn.onclick=()=>{if(step<MAX_STEP)step++;redraw();}
+prevBtn.onclick=()=>{if(step>0)step--;redraw();}
+allBtn.onclick=()=>{step=MAX_STEP;redraw();}
+resetBtn.onclick=()=>{
+  step=0;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  descText.textContent=stepDescriptions[0];
+};
+
+redraw();
+</script>
+</body>
+</html>

@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Conic Sections: Ellipse</title>
+  <link rel="icon" href="./favicon.ico" />
+
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      margin: 20px;
+      text-align: center;
+      background: #ffffff;
+      color: #111;
+    }
+
+    #procedure {
+      margin: 15px 0;
+      font-size: 16px;
+      font-weight: bold;
+      min-height: 24px;
+    }
+
+    #canvasWrap {
+      border: 1px solid #ccc;
+      display: inline-block;
+      padding: 8px;
+      background: #fff;
+    }
+
+    canvas {
+      background: #fff;
+      display: block;
+    }
+
+    .navButtons {
+      margin: 15px 0;
+    }
+
+    button {
+      padding: 8px 18px;
+      margin: 0 6px;
+      font-size: 15px;
+      border: 1px solid #444;
+      background: #f8f8f8;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #e6e6e6;
+    }
+
+    h2 {
+      margin-bottom: 6px;
+    }
+
+    .ecc {
+      font-size: 16px;
+      margin-bottom: 12px;
+    }
+
+    .label {
+      font-weight: bold;
+    }
+
+    html,
+    body {
+      overflow-y: auto;
+    }
+
+    /* allow scrolling if viewport smaller */
+  </style>
+</head>
+
+<body>
+
+  <h2>Conic Sections: Ellipse</h2>
+  <p style="text-align: center;">Question: Construct an ellipse given the distance of the focus from the directrix as 60
+    mm and eccentricity as 2/3.</p>
+
+
+  <div class="ecc">Eccentricity: <span class="label" id="eccLabel">e = 2/3</span></div>
+
+  <div class="navButtons">
+    <button id="prevBtn">Previous Step</button>
+    <button id="startBtn">Start</button>
+    <button id="nextBtn">Next Step</button>
+    <button onclick="window.location.href='./index.html'">Home</button>
+
+  </div>
+
+  <div id="procedure"></div>
+
+  <div id="canvasWrap">
+    <!-- increased canvas height so AG line and arc are visible -->
+    <canvas id="c" width="1200" height="900"></canvas>
+  </div>
+
+  <script>
+    (function () {
+      // mm to px
+      const mm2px = mm => mm * (96 / 25.4);
+
+      const canvas = document.getElementById('c');
+      const ctx = canvas.getContext('2d');
+
+      // --- parameters ---
+      const FD_MM = 60;             // focus distance from directrix (mm)
+      const INCLEN_MM = 120;       // inclined line nominal length (mm) — visual
+      const INCL_POINTS = 5;       // marks 1..5
+      const INCL_INTERVAL_MM = 5;  // same spacing as parabola (5 mm)
+      let OFFSET_STEP_MM = 5;      // initial vertical spacing candidate (mm)
+      const OFFSET_MAX_ALLOWED = 30; // prefer <= 30 verticals
+      const EXTEND_DIST_MM = 250;  // AG extension
+      const ANGLE_DEG = 20;        // 20° downward
+      const VERT_LINE_LEN_MM = 100;
+
+      const leftA_x = 120;
+      // compute rightA_x after canvas known
+      const rightA_x = canvas.width - 120;
+
+      // place axis lower so there's more room above for AG arc/line
+      const axisY = Math.round(canvas.height * 0.62);
+
+      const topMargin = 40;
+      const bottomMargin = canvas.height - 40;
+
+      let ECC = 0.7; // default eccentricity
+
+      const procedureTexts = [
+        "Draw the reference axis AA horizontally.",
+        "Draw the directrix DD vertically.",
+        "Mark focus F on axis, 60 mm from directrix.",
+        "Draw an inclined line at 20° above the axis and mark 1–5.",
+        "Connect point 5 with F.",
+        "From points 1–4 draw parallels to 5–F; vertex V1 is where the 3rd parallel meets axis.",
+        "Draw a vertical from V1 above the axis.",
+        "With centre V1 and radius V1-F draw arc to find G; join A to G and extend AG.",
+        "Generate vertical lines starting from right of V1 with equal spacing.",
+        "Mark 1',2',... where verticals meet AG (extended).",
+        "Mark 1'',2'',... where verticals meet the axis.",
+        "Measure each pair 1' - 1'',... with centre as F, draw arcs in the respective lines.",
+        "Join all computed intersection points smoothly to sketch the ellipse and mark V2 (right vertex).",
+        "Draw a 60 mm dimension line."
+      ];
+
+      let step = 0;
+      const maxStep = procedureTexts.length;
+
+      function clear() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+      // smoothing helper (Catmull-Rom -> Bezier)
+      function drawSmooth(points) {
+        if (!points || points.length < 2) return;
+        const pts = [];
+        for (const p of points) {
+          const nx = Number(p.x), ny = Number(p.y);
+          if (!isFinite(nx) || !isFinite(ny)) continue;
+          const last = pts[pts.length - 1];
+          if (!last || last.x !== nx || last.y !== ny) pts.push({ x: nx, y: ny });
+        }
+        if (pts.length < 2) return;
+
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+
+        if (pts.length === 2) {
+          const p0 = pts[0], p1 = pts[1];
+          const dx = p1.x - p0.x, dy = p1.y - p0.y;
+          const dist = Math.hypot(dx, dy) || 1;
+          const px = -dy / dist, py = dx / dist;
+          const handle = dist * 0.25;
+          ctx.bezierCurveTo(p0.x + dx * 0.5 + px * handle, p0.y + dy * 0.5 + py * handle,
+            p0.x + dx * 0.5 - px * handle, p0.y + dy * 0.5 - py * handle,
+            p1.x, p1.y);
+          ctx.stroke();
+          return;
+        }
+
+        const t = 0.5;
+        for (let i = 0; i < pts.length - 1; i++) {
+          const p0 = pts[i - 1] || pts[i];
+          const p1 = pts[i];
+          const p2 = pts[i + 1];
+          const p3 = pts[i + 2] || p2;
+          const cp1x = p1.x + (p2.x - p0.x) * t / 6;
+          const cp1y = p1.y + (p2.y - p0.y) * t / 6;
+          const cp2x = p2.x - (p3.x - p1.x) * t / 6;
+          const cp2y = p2.y - (p3.y - p1.y) * t / 6;
+          if ([cp1x, cp1y, cp2x, cp2y].every(Number.isFinite)) {
+            ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+          } else {
+            const mx = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2;
+            ctx.quadraticCurveTo(mx, my, p2.x, p2.y);
+          }
+        }
+        ctx.stroke();
+      }
+
+      // analytic rightmost intersection for axis (V2) from formula:
+      // Solve ECC*(x - Dx) = (x - Fx) -> x = (ECC*Dx - Fx) / (ECC - 1)
+      function analyticEndX(Dx, Fx, e) {
+        const denom = (e - 1);
+        if (Math.abs(denom) < 1e-9) return null;
+        return (e * Dx - Fx) / denom;
+      }
+
+      // compute circumcenter through 3 points; returns {cx,cy,r} or null if degenerate
+      function circleFrom3Points(p1, p2, p3) {
+        const x1 = p1.x, y1 = p1.y;
+        const x2 = p2.x, y2 = p2.y;
+        const x3 = p3.x, y3 = p3.y;
+
+        const a = x1 - x2, b = y1 - y2;
+        const c = x1 - x3, d = y1 - y3;
+        const e = ((x1 * x1 - x2 * x2) + (y1 * y1 - y2 * y2)) / 2.0;
+        const f = ((x1 * x1 - x3 * x3) + (y1 * y1 - y3 * y3)) / 2.0;
+        const det = a * d - b * c;
+        if (Math.abs(det) < 1e-8) return null; // nearly collinear
+
+        const cx = (d * e - b * f) / det;
+        const cy = (-c * e + a * f) / det;
+        const r = Math.hypot(cx - x1, cy - y1);
+        if (!isFinite(cx) || !isFinite(cy) || !isFinite(r) || r === 0) return null;
+        return { cx, cy, r };
+      }
+
+      function draw(stepIndex) {
+        clear();
+        const procElem = document.getElementById("procedure");
+        procElem.textContent = stepIndex === 0 ? "" : `Step ${stepIndex}: ${procedureTexts[stepIndex - 1]}`;
+
+        const labels = [];
+        function addLabel(text, x, y) { labels.push({ text, x, y }); }
+
+        const A = { x: leftA_x, y: axisY };
+        const F = { x: leftA_x + mm2px(FD_MM), y: axisY };
+
+        // ---- COMPUTE ALL GEOMETRY FIRST (no drawing) ----
+
+        // incline geometry
+        const ang = -ANGLE_DEG * Math.PI / 180; // negative -> below axis
+        const start = { x: leftA_x, y: axisY };
+        const totalLength = mm2px(INCLEN_MM);
+        const Iend = { x: start.x + Math.cos(ang) * totalLength, y: start.y + Math.sin(ang) * totalLength };
+
+        const inclinePts = [];
+        if (stepIndex >= 4) {
+          for (let i = 1; i <= INCL_POINTS; i++) {
+            const d = mm2px(INCL_INTERVAL_MM * i);
+            const t = Math.min(1, d / totalLength);
+            const px = start.x + (Iend.x - start.x) * t;
+            const py = start.y + (Iend.y - start.y) * t;
+            inclinePts.push({ x: px, y: py });
+          }
+        }
+
+        // p5 / connection
+        let p5 = null;
+        if (stepIndex >= 5 && inclinePts.length >= 5) p5 = inclinePts[4];
+
+        // parallels and axis intersections -> V1
+        let axisIntersects = [];
+        let V1 = null;
+        if (stepIndex >= 6 && p5) {
+          const v = { x: F.x - p5.x, y: F.y - p5.y };
+          const m = Math.hypot(v.x, v.y) || 1;
+          const dir = { x: v.x / m, y: v.y / m };
+          for (let i = 0; i < 4; i++) {
+            const P = inclinePts[i];
+            const tA = (axisY - P.y) / dir.y;
+            if (tA > 0) {
+              const ix = P.x + dir.x * tA;
+              axisIntersects.push({ x: ix, y: axisY });
+            }
+          }
+          if (axisIntersects[2]) V1 = axisIntersects[2];
+        }
+
+        // V1_top
+        let V1_top = null;
+        if (stepIndex >= 7 && V1) V1_top = { x: V1.x, y: V1.y - mm2px(VERT_LINE_LEN_MM) };
+
+        // G and AG_end
+        let G = null;
+        let AG_end = null;
+        if (stepIndex >= 8 && V1 && F) {
+          const r = Math.hypot(V1.x - F.x, V1.y - F.y);
+          G = { x: V1.x, y: V1.y - r };
+          const dx = G.x - A.x, dy = G.y - A.y;
+          const len = Math.hypot(dx, dy) || 1;
+          const ux = dx / len, uy = dy / len;
+          AG_end = { x: G.x + ux * mm2px(EXTEND_DIST_MM), y: G.y + uy * mm2px(EXTEND_DIST_MM) };
+        }
+
+        // verticals (compute but do not draw yet)
+        const verticals = [];
+        if (stepIndex >= 9 && V1 && AG_end && F) {
+          const Dx = leftA_x, Fx = F.x;
+          const endX_analytic = analyticEndX(Dx, Fx, ECC);
+          let endX = (isFinite(endX_analytic) && endX_analytic > V1.x + 1) ? endX_analytic : (V1.x + mm2px(OFFSET_STEP_MM * OFFSET_MAX_ALLOWED));
+
+          // determine spacing in mm so count <= OFFSET_MAX_ALLOWED
+          let spacingMM = OFFSET_STEP_MM;
+          let spacingPx = mm2px(spacingMM);
+          let count = Math.ceil((endX - (V1.x + spacingPx)) / spacingPx);
+          while (count > OFFSET_MAX_ALLOWED && spacingMM < 40) {
+            spacingMM += 1;
+            spacingPx = mm2px(spacingMM);
+            count = Math.ceil((endX - (V1.x + spacingPx)) / spacingPx);
+          }
+
+          let ox = V1.x + spacingPx;
+          let n = 1;
+          while (ox <= endX + 1 && n <= 200) {
+            let interAG = null;
+            const denom = AG_end.x - A.x;
+            if (Math.abs(denom) > 1e-6) {
+              const t = (ox - A.x) / denom;
+              const yAG = A.y + (AG_end.y - A.y) * t;
+              interAG = { x: ox, y: yAG };
+            }
+            const interAxis = { x: ox, y: axisY };
+            verticals.push({ ox, interAG, interAxis });
+            n++;
+            ox += spacingPx;
+          }
+        }
+
+        // compute upperPts/lowerPts (construction points)
+        const upperPts = [], lowerPts = [];
+        if (stepIndex >= 12 && F) {
+          for (const v of verticals) {
+            if (!v.interAG) continue;
+            const x = v.ox;
+            const D = Math.abs(x - leftA_x);
+            const dx = x - F.x;
+            const radius = ECC * D;
+            const inside = radius * radius - dx * dx;
+            if (inside < 0) continue;
+            const s = Math.sqrt(inside);
+            const yU = F.y - s;
+            const yL = F.y + s;
+            upperPts.push({ x, y: yU });
+            lowerPts.push({ x, y: yL });
+          }
+        }
+
+        // prepare high-resolution samples for step 13 (used for final ellipse drawing)
+        let upperSample = [], lowerSample = [];
+        if (stepIndex >= 13 && V1 && F) {
+          const Dx = leftA_x, Fx = F.x;
+          const endX_analytic = analyticEndX(Dx, Fx, ECC);
+          let endX = (isFinite(endX_analytic) && endX_analytic > V1.x + 1) ? endX_analytic : (V1.x + mm2px(OFFSET_STEP_MM * OFFSET_MAX_ALLOWED));
+
+          upperSample.push({ x: V1.x, y: V1.y });
+          lowerSample.push({ x: V1.x, y: V1.y });
+
+          const sampleCount = 180;
+          for (let i = 1; i <= sampleCount; i++) {
+            const t = i / sampleCount;
+            const x = V1.x + t * (endX - V1.x);
+            const D = Math.abs(x - Dx);
+            const dx = x - Fx;
+            const radius = ECC * D;
+            const inside = radius * radius - dx * dx;
+            if (inside < 0) continue;
+            const s = Math.sqrt(inside);
+            upperSample.push({ x, y: F.y - s });
+            lowerSample.push({ x, y: F.y + s });
+          }
+
+          upperSample.sort((a, b) => a.x - b.x);
+          lowerSample.sort((a, b) => a.x - b.x);
+        }
+
+        // ---- PASS 1: DRAW ALL YELLOW CONSTRUCTION FIRST (TRUE BACK) ----
+        // Important: do NOT draw any filled points (black/red) yet. Yellow drawings go first so they are at the very back.
+
+        // Step 4: inclined line (yellow)
+        if (stepIndex >= 4) {
+          ctx.strokeStyle = "yellow";
+          ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(start.x, start.y); ctx.lineTo(Iend.x, Iend.y); ctx.stroke();
+        }
+
+        // Step 5: join point 5 to F (yellow)
+        if (stepIndex >= 5 && p5) {
+          ctx.strokeStyle = "yellow";
+          ctx.beginPath(); ctx.moveTo(p5.x, p5.y); ctx.lineTo(F.x, F.y); ctx.stroke();
+        }
+
+        // Step 6: parallels from 1..4 parallel to p5-F (yellow)
+        if (stepIndex >= 6 && p5) {
+          const v = { x: F.x - p5.x, y: F.y - p5.y };
+          const m = Math.hypot(v.x, v.y) || 1;
+          const dir = { x: v.x / m, y: v.y / m };
+          for (let i = 0; i < 4; i++) {
+            const P = inclinePts[i];
+            const tA = (axisY - P.y) / dir.y;
+            if (tA > 0) {
+              const ix = P.x + dir.x * tA;
+              ctx.strokeStyle = "yellow";
+              ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.lineTo(ix, axisY); ctx.stroke();
+            }
+          }
+        }
+
+        // Step 7: vertical from V1 (yellow)
+        if (stepIndex >= 7 && V1) {
+          ctx.strokeStyle = "yellow";
+          ctx.beginPath(); ctx.moveTo(V1.x, V1.y); ctx.lineTo(V1.x, V1.y - mm2px(VERT_LINE_LEN_MM)); ctx.stroke();
+        }
+
+        // Step 8: arc (around V1) to show intersection and AG line + extension (yellow)
+        // === Step 8 ===
+        if (stepIndex >= 8 && F && G) {
+          const cx = V1.x, cy = V1.y;
+          const r = Math.hypot(cx - F.x, cy - F.y);
+
+          // angles of F and G relative to centre V1
+          let aF = Math.atan2(F.y - cy, F.x - cx);
+          let aG = Math.atan2(G.y - cy, G.x - cx);
+
+          // normalize angle difference to ensure the shortest arc path
+          let delta = aG - aF;
+          if (delta <= -Math.PI) delta += 2 * Math.PI;
+          else if (delta > Math.PI) delta -= 2 * Math.PI;
+
+          const anticlockwise = (delta < 0);
+
+          ctx.strokeStyle = "yellow";
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, aF, aG, anticlockwise);
+          ctx.stroke();
+        }
+
+        // Step 9: vertical offset lines (yellow)
+        if (stepIndex >= 9 && verticals.length) {
+          ctx.strokeStyle = "yellow";
+          for (const v of verticals) {
+            ctx.beginPath(); ctx.moveTo(v.ox, topMargin); ctx.lineTo(v.ox, bottomMargin); ctx.stroke();
+          }
+        }
+
+        // End of yellow pass — everything below this will be drawn on top of yellow lines.
+
+        // ---- PASS 2: DRAW MAIN GEOMETRY (above yellow) ----
+
+        // Step 1: axis A (blue)
+        if (stepIndex >= 1) {
+          ctx.strokeStyle = "blue";
+          ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(30, axisY); ctx.lineTo(canvas.width - 30, axisY); ctx.stroke();
+          addLabel("A", A.x - 12, axisY - 8);
+          addLabel("A", rightA_x - 12, axisY - 8);
+        }
+
+        // Step 2: directrix D (blue)
+        if (stepIndex >= 2) {
+          ctx.strokeStyle = "blue";
+          ctx.beginPath(); ctx.moveTo(leftA_x, topMargin); ctx.lineTo(leftA_x, bottomMargin); ctx.stroke();
+          addLabel("D", leftA_x - 18, topMargin + 12);
+          addLabel("D", leftA_x - 18, bottomMargin - 6);
+        }
+
+        // Step 3: focus F (red)
+        if (stepIndex >= 3) {
+          ctx.fillStyle = "black";
+          ctx.beginPath(); ctx.arc(F.x, F.y, 5, 0, 2 * Math.PI); ctx.fill();
+          addLabel("F", F.x + 8, F.y - 8);
+        }
+
+        // Step 4: draw black incline points and labels (they must be above yellow)
+        if (stepIndex >= 4) {
+          for (let i = 0; i < inclinePts.length; i++) {
+            const p = inclinePts[i];
+            ctx.fillStyle = "black";
+            ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, 2 * Math.PI); ctx.fill();
+            addLabel(String(i + 1), p.x + 6, p.y - 10);
+          }
+        }
+
+        // Step 5: p5 marker (black)
+        if (stepIndex >= 5 && p5) {
+          ctx.fillStyle = "black";
+          ctx.beginPath(); ctx.arc(p5.x, p5.y, 3, 0, 2 * Math.PI); ctx.fill();
+        }
+
+        // Step 6: mark V1 (black) and label
+        if (stepIndex >= 6 && V1) {
+          ctx.fillStyle = "black";
+          ctx.beginPath(); ctx.arc(V1.x, V1.y, 5, 0, 2 * Math.PI); ctx.fill();
+          addLabel("V1", V1.x + 8, V1.y + 16);
+        }
+
+        // Step 7: (vertical already drawn in yellow) optionally mark the top
+        if (stepIndex >= 7 && V1_top) {
+          // small marker at top (black)
+          ctx.fillStyle = "yellow";
+          ctx.beginPath(); ctx.arc(V1_top.x, V1_top.y, 1.8, 0, 2 * Math.PI); ctx.fill();
+        }
+
+        // Step 8: mark G (black) and label (yellow arc/AG already behind)
+        if (stepIndex >= 8 && G) {
+          ctx.fillStyle = "black";
+          ctx.beginPath(); ctx.arc(G.x, G.y, 4, 0, 2 * Math.PI); ctx.fill();
+          addLabel("G", G.x - 18, G.y - 6);
+        }
+
+        // Step 9-11: vertical labels & axis markers (above yellow)
+        if (stepIndex >= 9 && verticals.length) {
+          let n = 1;
+          for (const v of verticals) {
+            if (v.interAG && stepIndex >= 10) {
+              // small black dot where vertical meets AG
+              ctx.fillStyle = "black";
+              ctx.beginPath(); ctx.arc(v.interAG.x, v.interAG.y, 3, 0, 2 * Math.PI); ctx.fill();
+              addLabel(n + "'", v.interAG.x - 6, v.interAG.y - 12);
+            }
+            if (stepIndex >= 11) {
+              addLabel(n + "″", v.interAxis.x + 6, v.interAxis.y + 18);
+            }
+            n++;
+          }
+        }
+
+        // Step 12: draw construction points (red)
+        if (stepIndex >= 12) {
+          for (const p of upperPts) {
+            ctx.fillStyle = "red";
+            ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, 2 * Math.PI); ctx.fill();
+          }
+          for (const p of lowerPts) {
+            ctx.fillStyle = "red";
+            ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, 2 * Math.PI); ctx.fill();
+          }
+        }
+
+        // Step 13: draw ellipse — WITH arc-smoothing only near V1 (upper & lower first 3 points as arc), rest via drawSmooth
+        let V2 = null;
+        if (stepIndex >= 13 && upperSample.length) {
+          ctx.strokeStyle = "red";
+          ctx.lineWidth = 3;
+          ctx.lineJoin = 'round';
+          ctx.lineCap = 'round';
+
+          // UPPER
+          if (upperSample.length >= 3) {
+            const p0 = upperSample[0], p1 = upperSample[1], p2 = upperSample[2];
+            const circ = circleFrom3Points(p0, p1, p2);
+            if (circ) {
+              const { cx, cy, r } = circ;
+              const a0 = Math.atan2(p0.y - cy, p0.x - cx);
+              const a2 = Math.atan2(p2.y - cy, p2.x - cx);
+              const cross = (p1.x - p0.x) * (p2.y - p1.y) - (p1.y - p0.y) * (p2.x - p1.x);
+              const anticlockwise = cross < 0;
+              ctx.beginPath();
+              ctx.arc(cx, cy, r, a0, a2, anticlockwise);
+              ctx.stroke();
+              if (upperSample.length > 2) {
+                const rest = upperSample.slice(2);
+                drawSmooth(rest);
+              }
+            } else {
+              drawSmooth(upperSample);
+            }
+          } else if (upperSample.length >= 2) {
+            drawSmooth(upperSample);
+          }
+
+          // LOWER
+          if (lowerSample.length >= 3) {
+            const p0 = lowerSample[0], p1 = lowerSample[1], p2 = lowerSample[2];
+            const circ = circleFrom3Points(p0, p1, p2);
+            if (circ) {
+              const { cx, cy, r } = circ;
+              const a0 = Math.atan2(p0.y - cy, p0.x - cx);
+              const a2 = Math.atan2(p2.y - cy, p2.x - cx);
+              const cross = (p1.x - p0.x) * (p2.y - p1.y) - (p1.y - p0.y) * (p2.x - p1.x);
+              const anticlockwise = cross < 0;
+              ctx.beginPath();
+              ctx.arc(cx, cy, r, a0, a2, anticlockwise);
+              ctx.stroke();
+              if (lowerSample.length > 2) {
+                const rest = lowerSample.slice(2);
+                drawSmooth(rest);
+              }
+            } else {
+              drawSmooth(lowerSample);
+            }
+          } else if (lowerSample.length >= 2) {
+            drawSmooth(lowerSample);
+          }
+
+          // compute V2 on axis (rounded for stable labeling)
+          const Dx = leftA_x, Fx = F.x;
+          const endX_analytic = analyticEndX(Dx, Fx, ECC);
+          let endX = (isFinite(endX_analytic) && endX_analytic > V1.x + 1) ? endX_analytic : (V1.x + mm2px(OFFSET_STEP_MM * OFFSET_MAX_ALLOWED));
+          if (isFinite(endX) && endX > V1.x + 1) {
+            V2 = { x: Math.round(endX), y: axisY };
+            ctx.fillStyle = "red";
+            ctx.beginPath(); ctx.arc(V2.x, V2.y, 5, 0, 2 * Math.PI); ctx.fill();
+            addLabel("V2", V2.x + 18, V2.y + 16);
+          }
+        }
+
+        // Step 14: dimension line (60 mm)
+        if (stepIndex === 14 && F) {
+          const dimLineY = bottomMargin - 5;
+          const startX = leftA_x;
+          const endX = F.x;
+          ctx.strokeStyle = "red";
+          ctx.beginPath(); ctx.moveTo(startX, dimLineY); ctx.lineTo(endX, dimLineY); ctx.stroke();
+          const arrow = 6;
+          ctx.beginPath(); ctx.moveTo(startX, dimLineY); ctx.lineTo(startX + arrow, dimLineY - arrow); ctx.lineTo(startX + arrow, dimLineY + arrow); ctx.fill();
+          ctx.beginPath(); ctx.moveTo(endX, dimLineY); ctx.lineTo(endX - arrow, dimLineY - arrow); ctx.lineTo(endX - arrow, dimLineY + arrow); ctx.fill();
+          addLabel("60", (startX + endX) / 2 - 10, dimLineY - 10);
+        }
+
+        // finally draw labels
+        ctx.fillStyle = "black";
+        ctx.font = "14px sans-serif";
+        for (const l of labels) ctx.fillText(l.text, l.x, l.y);
+      }
+
+      // controls
+      document.getElementById('startBtn').onclick = () => { step = 0; draw(step); };
+      document.getElementById('prevBtn').onclick = () => { step = Math.max(0, step - 1); draw(step); };
+      document.getElementById('nextBtn').onclick = () => { step = Math.min(maxStep, step + 1); draw(step); };
+
+      // allow changing eccentricity
+      const eccLabel = document.getElementById('eccLabel');
+      eccLabel.onclick = () => {
+        const val = prompt("Enter eccentricity e (0 < e < 1). Current: " + ECC, ECC);
+        const num = Number(val);
+        if (!isNaN(num) && num > 0 && num < 1) {
+          ECC = num;
+          eccLabel.textContent = "e = " + ECC;
+          draw(step);
+        } else {
+          alert("Invalid eccentricity. Must be number between 0 and 1.");
+        }
+      };
+
+      // initial draw
+      draw(step);
+
+    })();
+  </script>
+</body>
+
+</html>

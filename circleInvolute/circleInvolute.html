@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Involute Construction</title>
+  <link rel="icon" href="./favicon.ico" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Body is light gray */
+    body {
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: #f7f7f7;
+    }
+
+    /* Canvas is explicitly set to white */
+    #drawingCanvas {
+      background: #fff;
+      border-radius: 0.75rem;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+      /* Set max-width to 100% of its container */
+      max-width: 100%;
+    }
+
+    .step-button {
+      transition: all .15s;
+      cursor: pointer;
+    }
+
+    .step-button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
+    /* Custom utility classes for the 7:3 ratio */
+    .w-7\/10 {
+      width: 70%;
+    }
+
+    .w-3\/10 {
+      width: 30%;
+    }
+  </style>
+</head>
+
+<body class="p-4 flex flex-col items-center min-h-screen">
+  <div class="max-w-7xl w-full text-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Involute Construction — Circle</h1>
+  </div>
+
+  <div class="w-full max-w-7xl flex space-x-6">
+
+    <div id="left-panel" class="w-7/10 flex flex-col items-center">
+
+      <p id="step-description" class="text-sm text-gray-700 h-10 mb-2 font-semibold w-full text-left pl-2">Click Next to
+        start.</p>
+
+      <div class="w-full flex justify-center border border-gray-200 rounded-lg shadow-md bg-white p-2">
+        <canvas id="drawingCanvas" width="850" height="450"></canvas>
+      </div>
+
+      <div class="mt-4 flex justify-center space-x-4 w-full">
+        <button id="prev-btn" class="step-button bg-gray-300 text-gray-800 p-3 rounded-lg font-medium" disabled>Previous
+          Step</button>
+        <button id="next-btn" class="step-button bg-blue-500 text-white p-3 rounded-lg font-medium">Next Step</button>
+        <button onclick="window.location.href='./index.html'" style="cursor: pointer;" class="bg-blue-500 text-white p-3 rounded-lg font-medium">Home</button>
+
+      </div>
+    </div>
+
+    <div id="right-panel"
+      class="w-3/10 p-4 bg-white border border-gray-200 rounded-lg shadow-md max-h-[85vh] overflow-y-auto">
+      <h2 class="text-lg font-semibold text-gray-800 mb-3 sticky top-0 bg-white pt-1">Construction Steps List (57 Steps
+        Total)</h2>
+      <ol id="step-list" class="list-decimal pl-5 text-sm space-y-1">
+        <li>Draw the **tangent PQ ($\pi D$)** and divide it into 12 parts **(1' to 12')** (12 sub-steps).</li>
+        <li>Draw the given circle (center O) and divide it into 12 parts **(1 to 12)** (2 sub-steps).</li>
+        <li>Draw tangents from the circle divisions **(1, 2, 3... 12)** (12 sub-steps).</li>
+        <li>Mark P₁ to P₁₂ by **highlighting the distance $\mathbf{P k'}$** and using **arcs** to transfer this distance
+          to the tangent at $\mathbf{k}$. (12 Sub-Steps)</li>
+        <li>Draw the smooth involute curve segments **(P to P₁, P₁ to P₂, etc.)** (12 sub-steps).</li>
+        <li>Mark M on the curve, draw OM, and find midpoint C (2 sub-steps).</li>
+        <li>Draw semicircle (center C, radius MC) to locate B.</li>
+        <li>Draw the **Normal (MB)** at M.</li>
+        <li>Draw the **Tangent (NT)** at M.</li>
+      </ol>
+    </div>
+
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const canvas = document.getElementById('drawingCanvas');
+      const ctx = canvas.getContext('2d', { alpha: false });
+      const prevBtn = document.getElementById('prev-btn');
+      const nextBtn = document.getElementById('next-btn');
+      const stepDescription = document.getElementById('step-description');
+      const stepListItems = document.querySelectorAll('#step-list li');
+
+      // Virtual geometry (center of circle at (0,0) in virtual coords)
+      const R_virtual = 55;            // base radius in virtual units
+      const MAIN_DIVISIONS = 12;
+      const CURVE_POINTS = MAIN_DIVISIONS * 4; // denser sampling for smoothness
+
+      // Total steps: 0 to 56 = 57 steps
+      const MAX_STEP = 56;
+      const CIRCUMFERENCE_LENGTH = 2 * Math.PI * R_virtual;
+      const DIVISION_LENGTH = CIRCUMFERENCE_LENGTH / MAIN_DIVISIONS;
+
+      let currentStep = 0;
+      let involutePoints = [];
+      let divisionPoints = [];
+      let P12 = {}, M = {}, C = {}, B_exact = {}, N = {}, T = {};
+
+      // Transform parameters (computed per layout)
+      let scale = 1, tx = 0, ty = 0, margin = 20;
+      const VIRTUAL_WIDTH = 850;
+      const VIRTUAL_HEIGHT = 450;
+      canvas.width = VIRTUAL_WIDTH;
+      canvas.height = VIRTUAL_HEIGHT;
+
+      const toRad = d => d * Math.PI / 180;
+
+      const getCirclePointV = (angleDeg) => {
+        return {
+          x: R_virtual * Math.cos(toRad(angleDeg)),
+          y: -R_virtual * Math.sin(toRad(angleDeg))
+        };
+      };
+
+      function calculateVirtualPoints() {
+        const stepAngle = 360 / CURVE_POINTS;
+        const mainStepAngle = 360 / MAIN_DIVISIONS;
+        const pts = [];
+        const divs = [];
+        const P0 = getCirclePointV(0);
+        pts.push(P0);
+
+        for (let k = 1; k <= CURVE_POINTS; k++) {
+          const angleDeg = k * stepAngle;
+          const angleRad = toRad(angleDeg);
+          const Dk = getCirclePointV(angleDeg);
+          const Lk = R_virtual * angleRad;
+          const tangentAngle = toRad(angleDeg - 90);
+          const Pk = {
+            x: Dk.x + Lk * Math.cos(tangentAngle),
+            y: Dk.y - Lk * Math.sin(tangentAngle)
+          };
+          pts.push(Pk);
+          if (k % (CURVE_POINTS / MAIN_DIVISIONS) === 0) divs.push(Dk);
+        }
+        involutePoints = pts;
+        divisionPoints = divs;
+        P12 = pts[CURVE_POINTS];
+
+        const M_index = 8 * (CURVE_POINTS / MAIN_DIVISIONS);
+        M = pts[M_index];
+        C = { x: (M.x + 0) / 2, y: (M.y + 0) / 2 };
+        const B_div_index = 8;
+        const B_div_angle = B_div_index * mainStepAngle;
+        B_exact = getCirclePointV(B_div_angle);
+
+        const angleMB = Math.atan2(B_exact.y - M.y, B_exact.x - M.x);
+        const angleTangent = angleMB + Math.PI / 2;
+        const tangentLength = 80;
+        T = { x: M.x + tangentLength * Math.cos(angleTangent), y: M.y + tangentLength * Math.sin(angleTangent) };
+        N = { x: M.x - tangentLength * Math.cos(angleTangent), y: M.y - tangentLength * Math.sin(angleTangent) };
+      }
+
+      function computeBoundingBox() {
+        let minX = -R_virtual, maxX = R_virtual + CIRCUMFERENCE_LENGTH, minY = -R_virtual, maxY = R_virtual;
+        for (const p of involutePoints) {
+          if (p.x < minX) minX = p.x;
+          if (p.x > maxX) maxX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.y > maxY) maxY = p.y;
+        }
+        // Also include Tangent/Normal lines in bounding box calculation
+        minX = Math.min(minX, N.x, T.x);
+        maxX = Math.max(maxX, N.x, T.x);
+        minY = Math.min(minY, N.y, T.y);
+        maxY = Math.max(maxY, N.y, T.y);
+
+        return { minX, maxX, minY, maxY, width: maxX - minX, height: maxY - minY };
+      }
+
+      function computeTransform() {
+        const bbox = computeBoundingBox();
+        const availW = VIRTUAL_WIDTH - margin * 2;
+        const availH = VIRTUAL_HEIGHT - margin * 2;
+
+        scale = Math.min(availW / bbox.width, availH / bbox.height);
+        if (scale > 4) scale = 4;
+
+        // *** CENTERING ADJUSTMENT ***
+        // Calculate translation (tx, ty) to center the entire bounding box
+        tx = -bbox.minX * scale + (VIRTUAL_WIDTH - bbox.width * scale) / 2;
+        ty = -bbox.minY * scale + (VIRTUAL_HEIGHT - bbox.height * scale) / 2;
+
+        // Apply the new style dimensions to make the canvas fit the responsive container
+        canvas.style.width = '100%';
+        canvas.style.height = 'auto';
+      }
+
+      function setFontSizeAfterTransform(basePx) {
+        ctx.font = `${Math.max(8, basePx / Math.max(0.0001, scale))}px Inter, Arial`;
+      }
+
+      function drawLabel(txt, vx, vy, ox = 5, oy = 5, color = '#000', basePx = 12) {
+        setFontSizeAfterTransform(basePx);
+        ctx.fillStyle = color;
+        ctx.fillText(txt, vx + ox, vy + oy);
+      }
+
+      function drawCircleOnlyVirtual() {
+        ctx.beginPath();
+        ctx.arc(0, 0, R_virtual, 0, Math.PI * 2);
+        ctx.lineWidth = 1.5 / Math.max(0.0001, scale);
+        ctx.strokeStyle = '#999';
+        ctx.stroke();
+        ctx.fillStyle = '#999';
+        ctx.fillRect(-2, -2, 4, 4);
+        drawLabel('O', 0, 0, 6, 10, '#999', 12);
+        drawLabel('P', involutePoints[0].x, involutePoints[0].y, -16, 16, '#999', 14);
+      }
+
+      function drawDivisionsVirtual(upToK) {
+        for (let k = 1; k <= upToK; k++) {
+          const Dk = divisionPoints[k - 1];
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(Dk.x, Dk.y);
+          ctx.lineWidth = 0.6 / Math.max(0.0001, scale);
+          ctx.strokeStyle = 'rgba(150,150,150,0.6)';
+          ctx.stroke();
+          drawLabel(String(k), Dk.x, Dk.y, Dk.x > 0 ? 6 : -14, Dk.y > 0 ? 6 : -6, '#999', 11);
+        }
+      }
+
+      function drawLinePQVirtual(upToDivisions) {
+        const Px = involutePoints[0].x;
+        const Py = involutePoints[0].y;
+        const Qx = Px + CIRCUMFERENCE_LENGTH;
+        const Qy = Py;
+
+        // Draw solid PQ line
+        ctx.beginPath();
+        ctx.moveTo(Px, Py);
+        ctx.lineTo(Qx, Qy);
+        ctx.setLineDash([]);
+        ctx.lineWidth = 2.0 / Math.max(0.0001, scale);
+        ctx.strokeStyle = '#1e40af';
+        ctx.stroke();
+
+        // Labels for P, Q, pi D (Always visible)
+        drawLabel('P', Px, Py, -16, 16, '#1e40af', 14);
+        drawLabel('Q', Qx, Qy, 6, 16, '#1e40af', 14);
+        drawLabel('π D', (Px + Qx) / 2, Py, -15, -10, '#1e40af', 14);
+
+        // PQ tick marks (1' to 12') - Drawn incrementally
+        const dx = CIRCUMFERENCE_LENGTH / MAIN_DIVISIONS;
+        for (let i = 1; i <= upToDivisions; i++) {
+          const px = Px + i * dx;
+          ctx.beginPath();
+          ctx.moveTo(px, Py - (3 / scale));
+          ctx.lineTo(px, Py + (3 / scale));
+          ctx.lineWidth = 1 / Math.max(0.0001, scale);
+          ctx.strokeStyle = '#1e40af';
+          ctx.stroke();
+          drawLabel(i + "'", px, Py, -6, 16, '#1e40af', 10);
+        }
+      }
+
+      function highlightCircumferenceSegment(k) {
+        if (k === 0 || k > MAIN_DIVISIONS) return;
+        const Px = involutePoints[0].x;
+        const Py = involutePoints[0].y;
+        const dx = CIRCUMFERENCE_LENGTH / MAIN_DIVISIONS;
+        const K_prime_x = Px + k * dx;
+
+        ctx.beginPath();
+        ctx.moveTo(Px, Py);
+        ctx.lineTo(K_prime_x, Py);
+
+        ctx.lineWidth = 4 / Math.max(0.0001, scale);
+        ctx.strokeStyle = '#10b981'; // Bright Green for highlight
+        ctx.stroke();
+      }
+
+      function drawTangentsAndPointsVirtual(upToK_Tangents, upToK_Ppoints, highlightCurrentP) {
+        const stepMultiplier = CURVE_POINTS / MAIN_DIVISIONS;
+
+        // 1. Draw Tangent lines (only up to the current limit)
+        for (let k = 1; k <= upToK_Tangents; k++) {
+          const Dk = divisionPoints[k - 1];
+          const Pk = involutePoints[k * stepMultiplier];
+
+          // Draw Tangent line (from Dk to Pk)
+          ctx.beginPath();
+          ctx.moveTo(Dk.x, Dk.y);
+          ctx.lineTo(Pk.x, Pk.y);
+          ctx.lineWidth = 1 / Math.max(0.0001, scale);
+          ctx.strokeStyle = 'rgba(30,64,175,0.45)';
+          ctx.stroke();
+        }
+
+        // 2. Draw Pk point and label (up to upToK_Ppoints)
+        for (let k = 1; k <= upToK_Ppoints; k++) {
+          const Pk = involutePoints[k * stepMultiplier];
+
+          ctx.beginPath();
+          ctx.arc(Pk.x, Pk.y, 2.4 / Math.max(0.0001, scale), 0, Math.PI * 2);
+          ctx.fillStyle = '#666';
+          ctx.fill();
+
+          const labelColor = (k === upToK_Ppoints && highlightCurrentP) ? '#dc2626' : '#666';
+          drawLabel(`P${k}`, Pk.x, Pk.y, -15, 0, labelColor, 13);
+        }
+      }
+
+      function drawArcSegment(k) {
+        if (k === 0 || k > MAIN_DIVISIONS) return;
+
+        const Dk = divisionPoints[k - 1];
+        const stepMultiplier = CURVE_POINTS / MAIN_DIVISIONS;
+        const Pk = involutePoints[k * stepMultiplier];
+
+        const tangentLength = Math.hypot(Pk.x - Dk.x, Pk.y - Dk.y);
+        const angleRad = Math.atan2(Pk.y - Dk.y, Pk.x - Dk.x);
+        const arcSweep = toRad(5);
+
+        ctx.beginPath();
+        ctx.arc(Dk.x, Dk.y, tangentLength, angleRad - arcSweep, angleRad + arcSweep);
+
+        ctx.lineWidth = 1.0 / Math.max(0.0001, scale);
+        ctx.strokeStyle = '#dc2626'; // Red color for the arc
+        ctx.setLineDash([3 / Math.max(0.0001, scale), 3 / Math.max(0.0001, scale)]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      function drawInvolutePath(segmentsToDraw) {
+        const stepMultiplier = CURVE_POINTS / MAIN_DIVISIONS;
+        const pointsToDraw = segmentsToDraw * stepMultiplier;
+
+        // Draw Pk points 
+        for (let k = 1; k <= MAIN_DIVISIONS; k++) {
+          const Pk = involutePoints[k * stepMultiplier];
+          ctx.beginPath();
+          ctx.arc(Pk.x, Pk.y, 2.4 / Math.max(0.0001, scale), 0, Math.PI * 2);
+          ctx.fillStyle = '#666';
+          ctx.fill();
+          drawLabel(`P${k}`, Pk.x, Pk.y, -15, 0, '#666', 13);
+        }
+
+        if (pointsToDraw === 0) return;
+
+        // 1. Draw ALL previous segments in normal color (P to P[segmentsToDraw-1])
+        ctx.beginPath();
+        ctx.moveTo(involutePoints[0].x, involutePoints[0].y);
+        for (let i = 1; i <= pointsToDraw; i++) {
+          ctx.lineTo(involutePoints[i].x, involutePoints[i].y);
+        }
+        ctx.lineWidth = 2.4 / Math.max(0.0001, scale);
+        ctx.strokeStyle = '#666';
+        ctx.stroke();
+
+        // 2. Highlight the segment that was just added 
+        if (segmentsToDraw > 0) {
+          ctx.beginPath();
+          const startPointIndex = (segmentsToDraw - 1) * stepMultiplier;
+          const endPointIndex = segmentsToDraw * stepMultiplier;
+
+          ctx.moveTo(involutePoints[startPointIndex].x, involutePoints[startPointIndex].y);
+          for (let i = startPointIndex + 1; i <= endPointIndex; i++) {
+            ctx.lineTo(involutePoints[i].x, involutePoints[i].y);
+          }
+          ctx.lineWidth = 4.0 / Math.max(0.0001, scale);
+          ctx.strokeStyle = '#dc2626'; // Highlight color
+          ctx.stroke();
+        }
+      }
+
+      function drawPointM(highlight = false) {
+        ctx.beginPath();
+        ctx.arc(M.x, M.y, 3.4 / Math.max(0.0001, scale), 0, Math.PI * 2);
+        ctx.fillStyle = highlight ? '#dc2626' : '#999';
+        ctx.fill();
+        drawLabel('M', M.x, M.y, 6, 6, highlight ? '#dc2626' : '#999', 14);
+      }
+
+      function drawLineOMAndC(highlight = false) {
+        drawPointM(false);
+
+        // Draw OM line
+        ctx.beginPath();
+        ctx.moveTo(M.x, M.y);
+        ctx.lineTo(0, 0);
+        ctx.lineWidth = 1.5 / Math.max(0.0001, scale);
+        ctx.strokeStyle = highlight ? 'rgba(255,0,0,0.6)' : 'rgba(255,0,0,0.25)';
+        ctx.stroke();
+
+        // Draw C point
+        ctx.beginPath();
+        ctx.arc(C.x, C.y, 3.0 / Math.max(0.0001, scale), 0, Math.PI * 2);
+        ctx.fillStyle = highlight ? '#dc2626' : '#999';
+        ctx.fill();
+        drawLabel('C', C.x, C.y, -15, 0, highlight ? '#dc2626' : '#999', 12);
+      }
+
+
+      function drawSemiCircleAndBVirtual() {
+        drawLineOMAndC(false);
+
+        const radiusMC = Math.hypot(M.x - C.x, M.y - C.y);
+        ctx.beginPath(); ctx.arc(C.x, C.y, radiusMC, 0, Math.PI * 2);
+        ctx.setLineDash([3 / Math.max(0.0001, scale), 6 / Math.max(0.0001, scale)]);
+        ctx.lineWidth = 1.0 / Math.max(0.0001, scale);
+        ctx.strokeStyle = '#aaa'; ctx.stroke(); ctx.setLineDash([]);
+
+        ctx.beginPath(); ctx.arc(B_exact.x, B_exact.y, 3.0 / Math.max(0.0001, scale), 0, Math.PI * 2);
+        ctx.fillStyle = '#999';
+        ctx.fill();
+        drawLabel('B', B_exact.x, B_exact.y, -15, 0, '#999', 12);
+      }
+
+      function drawNormalVirtual() {
+        ctx.beginPath(); ctx.moveTo(M.x, M.y); ctx.lineTo(B_exact.x, B_exact.y);
+        ctx.lineWidth = 3.0 / Math.max(0.0001, scale);
+        ctx.strokeStyle = '#dc2626'; // Red
+        ctx.stroke();
+        drawLabel('Normal (MB)', (M.x + B_exact.x) / 2, (M.y + B_exact.y) / 2, -35, 10, '#dc2626', 12);
+      }
+
+      function drawTangentVirtual() {
+        ctx.beginPath(); ctx.moveTo(N.x, N.y); ctx.lineTo(T.x, T.y);
+        ctx.lineWidth = 3.0 / Math.max(0.0001, scale);
+        ctx.strokeStyle = '#16a34a'; // Green
+        ctx.stroke();
+        drawLabel('N', N.x, N.y, 6, 6, '#16a34a', 12);
+        drawLabel('T', T.x, T.y, 6, 6, '#16a34a', 12);
+        drawLabel('Tangent (NT)', (N.x + T.x) / 2, (N.y + T.y) / 2, -35, 10, '#16a34a', 12);
+      }
+
+      function clearCanvas() {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      function applyTransform() {
+        ctx.setTransform(scale, 0, 0, scale, tx, ty);
+      }
+
+      // CORE LOGIC for rendering steps
+      function renderStep() {
+        clearCanvas();
+        stepListItems.forEach(li => li.classList.remove('font-bold', 'text-blue-600'));
+        prevBtn.disabled = currentStep <= 1;
+        nextBtn.disabled = currentStep >= MAX_STEP;
+
+        // Step 1: PQ Line Division (Runs from step 2 to 13)
+        const pqDivisionsToDraw = Math.min(Math.max(0, currentStep - 1), MAIN_DIVISIONS);
+
+        // Step 3: Tangent Division (Runs from step 16 to 27)
+        const tangentLinesToDraw = Math.min(Math.max(0, currentStep - 15), MAIN_DIVISIONS);
+
+        // Step 4: Pk Point Drawing (Runs from step 28 to 39)
+        const pkPointsToDraw = Math.min(Math.max(0, currentStep - 27), MAIN_DIVISIONS);
+
+        // Step 5: Involute Curve Drawing (Runs from step 40 to 51)
+        const involuteSegmentsToDraw = Math.min(Math.max(0, currentStep - 39), MAIN_DIVISIONS);
+
+        // Determine the overall construction stage based on the NEW ORDER
+        let constructionStage = 0;
+        if (currentStep >= 1) constructionStage = 1; // PQ Line
+        if (currentStep >= 2) constructionStage = 2; // PQ Divisions 1' to 12'
+        if (currentStep >= 14) constructionStage = 3; // Base Circle (Step 2.0)
+        if (currentStep >= 15) constructionStage = 4; // Circle Divisions (Step 2.1)
+        if (currentStep >= 16) constructionStage = 5; // Tangents (12 sub-steps)
+        if (currentStep >= 28) constructionStage = 6; // P_k Points (12 sub-steps)
+        if (currentStep >= 40) constructionStage = 7; // Involute Curve (12 sub-steps)
+        if (currentStep >= 52) constructionStage = 8; // M Point (Step 6.1)
+        if (currentStep >= 53) constructionStage = 9; // OM, C (Step 6.2)
+        if (currentStep >= 54) constructionStage = 10; // Semicircle, B (Step 7)
+        if (currentStep >= 55) constructionStage = 11; // Normal (MB) (Step 8)
+        if (currentStep >= 56) constructionStage = 12; // Tangent (NT) (Step 9)
+
+
+        // --- Drawing Logic ---
+        applyTransform();
+
+        // Step 1 & 2: Draw PQ Line and its divisions up to the current step
+        if (constructionStage >= 1) {
+          drawLinePQVirtual(pqDivisionsToDraw);
+        }
+
+        // Step 3: Draw Base Circle (only the circle at 14, circle + divisions at 15+)
+        if (constructionStage >= 3) {
+          drawCircleOnlyVirtual();
+        }
+        if (constructionStage >= 4) {
+          drawDivisionsVirtual(MAIN_DIVISIONS);
+        }
+
+        // Step 4: Draw tangents and Pk points
+        if (constructionStage >= 5) {
+          const pPointsLimit = constructionStage >= 6 ? pkPointsToDraw : 0;
+          const highlightP = constructionStage >= 6 && currentStep <= 39;
+
+          drawTangentsAndPointsVirtual(tangentLinesToDraw, pPointsLimit, highlightP);
+        }
+
+        // Step 4.x: String Cut Visualization
+        if (constructionStage >= 6 && currentStep <= 39) {
+          highlightCircumferenceSegment(pkPointsToDraw);
+          drawArcSegment(pkPointsToDraw);
+        }
+
+        // Step 5: Draw the granular involute segments
+        if (constructionStage >= 7) {
+          drawInvolutePath(involuteSegmentsToDraw);
+        }
+
+        // Step 6: Normal/Tangent Setup (M, OM, C)
+        if (constructionStage >= 8) {
+          drawPointM(currentStep === 52);
+        }
+        if (constructionStage >= 9) {
+          drawLineOMAndC(currentStep === 53);
+        }
+
+        // Step 7: Semicircle, B
+        if (constructionStage >= 10) drawSemiCircleAndBVirtual();
+
+        // Step 8: Normal (MB)
+        if (constructionStage >= 11) drawNormalVirtual();
+
+        // Step 9: Tangent (NT)
+        if (constructionStage >= 12) drawTangentVirtual();
+
+
+        // --- Description and Highlighting Logic ---
+        if (currentStep === 0) {
+          stepDescription.textContent = "Click 'Next Step' to begin the construction.";
+        } else if (currentStep === 1) {
+          stepDescription.textContent = "Step 1.0: Draw the tangent line PQ, representing the circumference length (πD).";
+          stepListItems[0].classList.add('font-bold', 'text-blue-600');
+        } else if (currentStep >= 2 && currentStep <= 13) {
+          const currentDivision = currentStep - 1;
+          stepDescription.textContent = `Step 1.${currentDivision}: Mark division point ${currentDivision}' on PQ. The length of each division is calculated as: **(πD) / 12**.`;
+          stepListItems[0].classList.add('font-bold', 'text-blue-600');
+        } else if (currentStep === 14) {
+          stepDescription.textContent = "Step 2.0: Draw the base circle (center O).";
+          stepListItems[1].classList.add('font-bold', 'text-blue-600');
+        } else if (currentStep === 15) {
+          stepDescription.textContent = "Step 2.1: Divide the base circle into 12 equal parts (labeled 1 to 12).";
+          stepListItems[1].classList.add('font-bold', 'text-blue-600');
+        } else if (currentStep >= 16 && currentStep <= 27) {
+          const currentTangent = currentStep - 15;
+          stepDescription.textContent = `Step 3.${currentTangent}: Draw the tangent line extending from division point **${currentTangent}** on the base circle.`;
+          stepListItems[2].classList.add('font-bold', 'text-blue-600');
+        } else if (currentStep >= 28 && currentStep <= 39) {
+          const currentPk = currentStep - 27;
+          stepDescription.textContent = `Step 4.${currentPk}: Use the highlighted string length (**P ${currentPk}'**) as radius, centered at point **${currentPk}**, to cut the tangent line at **P${currentPk}**.`;
+          stepListItems[3].classList.add('font-bold', 'text-blue-600');
+        } else if (currentStep >= 40 && currentStep <= 51) {
+          const currentSegment = currentStep - 39;
+          const previousSegment = currentSegment - 1;
+          const previousLabel = (previousSegment === 0) ? 'P' : `P${previousSegment}`;
+          stepDescription.textContent = `Step 5.${currentSegment}: Draw the involute curve segment connecting **${previousLabel} to P${currentSegment}**.`;
+          stepListItems[4].classList.add('font-bold', 'text-blue-600');
+        } else if (currentStep === 52) {
+          stepDescription.textContent = "Step 6.1: Mark point **M** on the completed involute curve (for Normal/Tangent construction).";
+          stepListItems[5].classList.add('font-bold', 'text-blue-600');
+        } else if (currentStep === 53) {
+          stepDescription.textContent = "Step 6.2: Draw line **OM** to the center and find its **midpoint C**.";
+          stepListItems[5].classList.add('font-bold', 'text-blue-600');
+        } else if (currentStep === 54) {
+          stepDescription.textContent = "Step 7: Draw semicircle (center C, radius MC) to locate point B on the base circle (finding the center of curvature).";
+          stepListItems[6].classList.add('font-bold', 'text-blue-600');
+        } else if (currentStep === 55) {
+          stepDescription.textContent = "Step 8: Draw the **Normal (MB)** line at point M.";
+          stepListItems[7].classList.add('font-bold', 'text-blue-600');
+        } else if (currentStep === 56) {
+          stepDescription.textContent = "Step 9: Draw the **Tangent (NT)** line perpendicular to the Normal at point M. Construction complete!";
+          stepListItems[8].classList.add('font-bold', 'text-blue-600');
+        }
+      }
+
+      // Interactivity
+      prevBtn.addEventListener('click', () => {
+        if (currentStep > 0) { currentStep--; renderStep(); }
+      });
+      nextBtn.addEventListener('click', () => {
+        if (currentStep < MAX_STEP) { currentStep++; renderStep(); }
+      });
+
+      // Initial calculation + fit
+      calculateVirtualPoints();
+
+      // Call computeTransform once initially and on resize
+      function initialRenderAndSetup() {
+        computeTransform();
+        renderStep();
+      }
+
+      initialRenderAndSetup();
+
+      window.addEventListener('resize', initialRenderAndSetup);
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hexagonal Prism - Final Engineering Projection</title>
+    <link rel="icon" href="./favicon.ico" />
+
+    <style>
+        body { margin: 0; display: flex; flex-direction: column; align-items: center; background-color: #f8f9fa; font-family: 'Segoe UI', Arial, sans-serif; }
+        svg { width: 95vw; height: 85vh; background: white; border: 1px solid red; margin-top: 10px; }
+        .controls { margin: 15px; display: flex; align-items: center; gap: 15px; }
+        button { padding: 8px 20px; font-size: 14px; cursor: pointer; border: 1px solid red; background: white; border-radius: 4px; }
+        button:hover { background: red; color: white; }
+        .step { display: none; }
+
+        .line-obj { stroke: red; stroke-width: 2; fill: none; }
+        .line-proj { stroke: yellow; stroke-width: 1; stroke-dasharray: none; }
+        .line-ref { stroke: #cc0000; stroke-width: 2; }
+        .line-dim { stroke: red; stroke-width: 1; fill: none; }
+        .line-final { stroke: red; stroke-width: 2.5; fill: none; }
+        .point-meet { fill: #cc0000; }
+
+        text { font-size: 11px; font-style: italic; fill: red; }
+        .dim-text { font-size: 12px; font-style: normal; font-weight: bold; fill: red; }
+        .label-blue { font-size: 10px; fill: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>Prjection of Hexagonal Prism</h1>
+    <p>Question: Draw the front view and top view of a hexagonal pyramid of base side 30mm and length 70mm, inclined to VP at an angle of 45°</p>
+
+    <div class="controls">
+        <button onclick="prevStep()">Previous</button>
+        <div id="status">Step 1 of 6</div>
+        <button onclick="nextStep()">Next</button>
+        <button onclick="window.location.href='./index.html'">Home</button>
+    
+    </div>
+
+<svg viewBox="0 0 1000 600">
+    <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="red" />
+        </marker>
+        <marker id="arrowhead-rev" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto-start-reverse">
+            <polygon points="0 0, 10 3.5, 0 7" fill="red" />
+        </marker>
+    </defs>
+
+    <g class="step">
+        <line x1="50" y1="280" x2="950" y2="280" class="line-ref"/>
+        <text x="60" y="270" font-weight="bold">X</text>
+        <text x="930" y="270" font-weight="bold">Y</text>
+    </g>
+
+    <g class="step">
+        <polygon points="180,80 140,105 140,155 180,180 220,155 220,105" class="line-obj"/>
+        <text x="125" y="100">a'(1')</text><text x="125" y="165">b'(2')</text>
+        <text x="175" y="195">c'(3')</text><text x="225" y="165">d'(4')</text>
+        <text x="225" y="100">e'(5')</text><text x="175" y="70">f'(6')</text>
+
+        <line x1="115" y1="105" x2="115" y2="155" class="line-dim"
+              marker-start="url(#arrowhead-rev)" marker-end="url(#arrowhead)"/>
+        <text x="95" y="135" class="dim-text">30</text>
+    </g>
+
+    <g class="step">
+        <line x1="140" y1="155" x2="140" y2="280" class="line-proj"/>
+        <line x1="180" y1="180" x2="180" y2="280" class="line-proj"/>
+        <line x1="220" y1="155" x2="220" y2="280" class="line-proj"/>
+
+        <circle cx="140" cy="280" r="3" class="point-meet"/>
+        <circle cx="180" cy="280" r="3" class="point-meet"/>
+        <circle cx="220" cy="280" r="3" class="point-meet"/>
+    </g>
+
+    <g class="step">
+        <rect x="140" y="280" width="80" height="180" class="line-obj"/>
+        <line x1="180" y1="280" x2="180" y2="460" class="line-obj"/>
+
+        <text x="125" y="275">(1)2</text><text x="175" y="275">(3)6</text><text x="225" y="275">(4)5</text>
+        <text x="125" y="475">(a)b</text><text x="175" y="475">(c)f</text><text x="225" y="475">(d)e</text>
+
+        <line x1="90" y1="280" x2="90" y2="460" class="line-dim"
+              marker-start="url(#arrowhead-rev)" marker-end="url(#arrowhead)"/>
+        <text x="70" y="380" class="dim-text" transform="rotate(-90, 70, 380)">70</text>
+    </g>
+
+    <g class="step">
+        <g transform="translate(650, 280) rotate(45)">
+            <rect x="0" y="0" width="180" height="80" class="line-obj"/>
+            <line x1="0" y1="40" x2="180" y2="40" class="line-obj"/>
+
+            <text x="-35" y="15" transform="rotate(-45, -35, 15)">5(4)</text>
+            <text x="185" y="15" transform="rotate(-45, 185, 15)">c(3)</text>
+            <text x="-35" y="75" transform="rotate(-45, -35, 75)">1(2)</text>
+        </g>
+
+        <path d="M 710,280 A 60,60 0 0 1 692,322"
+              fill="none" stroke="red" stroke-width="1.5"/>
+        <text x="715" y="315" class="dim-text">45°</text>
+    </g>
+
+    <g class="step">
+        <line x1="180" y1="80" x2="749" y2="80" class="line-proj"/> 
+        <line x1="220" y1="105" x2="777" y2="105" class="line-proj"/>
+        <line x1="220" y1="155" x2="777" y2="155" class="line-proj"/>
+        <line x1="180" y1="180" x2="749" y2="180" class="line-proj"/>
+
+        <line x1="650" y1="280" x2="650" y2="105" class="line-proj"/> 
+        <line x1="622" y1="308" x2="622" y2="80" class="line-proj"/>  
+        <line x1="593" y1="337" x2="593" y2="105" class="line-proj"/> 
+        <line x1="777" y1="407" x2="777" y2="105" class="line-proj"/> 
+        <line x1="749" y1="435" x2="749" y2="80" class="line-proj"/>  
+        <line x1="720" y1="464" x2="720" y2="105" class="line-proj"/> 
+
+        <polygon points="650,155 622,180 593,155 593,105 622,80 650,105" class="line-final"/>
+        <polygon points="777,155 749,180 720,155 720,105 749,80 777,105" class="line-final"/>
+
+        <line x1="650" y1="105" x2="777" y2="105" class="line-final"/>
+        <line x1="622" y1="80"  x2="749" y2="80"  class="line-final"/>
+        <line x1="593" y1="105" x2="720" y2="105" class="line-final"/>
+        <line x1="593" y1="155" x2="720" y2="155" class="line-final"/>
+        <line x1="622" y1="180" x2="749" y2="180" class="line-final"/>
+        <line x1="650" y1="155" x2="777" y2="155" class="line-final"/>
+
+        <text x="655" y="102" class="label-blue">5'</text>
+        <text x="618" y="75"  class="label-blue">6'</text>
+        <text x="575" y="102" class="label-blue">1'</text>
+        <text x="575" y="162" class="label-blue">2'</text>
+        <text x="618" y="193" class="label-blue">3'</text>
+        <text x="655" y="162" class="label-blue">4'</text>
+
+        <text x="782" y="102" class="label-blue">e'</text>
+        <text x="745" y="75"  class="label-blue">f'</text>
+        <text x="705" y="102" class="label-blue">a'</text>
+        <text x="705" y="162" class="label-blue">b'</text>
+        <text x="745" y="193" class="label-blue">c'</text>
+        <text x="782" y="162" class="label-blue">d'</text>
+    </g>
+</svg>
+
+
+
+<script>
+    let currentStep = 0;
+    const steps = document.querySelectorAll(".step");
+    const statusText = document.getElementById("status");
+
+    function update() {
+        steps.forEach((s, i) => s.style.display = i <= currentStep ? "block" : "none");
+        statusText.innerText = `Step ${currentStep + 1} of ${steps.length}`;
+    }
+
+    function nextStep() {
+        if (currentStep < steps.length - 1) {
+            currentStep++;
+            update();
+        }
+    }
+
+    function prevStep() {
+        if (currentStep > 0) {
+            currentStep--;
+            update();
+        }
+    }
+
+    update();
+</script>
+</body>
+</html>

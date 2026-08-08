@@ -1,0 +1,84 @@
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #f6f9fc;
+  margin: 0;
+  color: #111;
+}
+header {
+  background: #0b63d3;
+  color: white;
+  padding: 20px;
+  text-align: center;
+  text-decoration-color: white;
+}
+nav {
+  margin-top: 10px;
+}
+nav a {
+  color: white;
+  text-decoration: none;
+  margin: 0 15px;
+  font-weight: bold;
+}
+nav a:hover {
+  text-decoration: underline;
+}
+main {
+  max-width: 850px;
+  margin: 30px auto;
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+h1 {
+  color: #f6f6f7;
+}
+h2{
+  color: #0b63d3;
+}
+.main-img {
+  width: 100%;
+  max-width: 500px;
+  display: block;
+  margin: 20px auto;
+}
+.procedure-imgs img {
+  width: 45%;
+  margin: 5px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+}
+.calculator {
+  margin-top: 25px;
+  background: #f2f7ff;
+  padding: 20px;
+  border-radius: 10px;
+}
+button {
+  background: #0b63d3;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+button:hover {
+  background: #094f9d;
+}
+.question {
+  background: #f9fbfe;
+  border: 1px solid #e1e6ef;
+  padding: 14px 18px;
+  border-radius: 10px;
+  margin-bottom: 18px;
+}
+.correct { background-color: #d4edda; border-color: #28a745; }
+.incorrect { background-color: #f8d7da; border-color: #dc3545; }
+footer {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-size: 0.9rem;
+}

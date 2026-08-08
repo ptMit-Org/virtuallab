@@ -1,0 +1,356 @@
+/* General Reset */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f0f0f0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Prevent full page scroll, handle inside panels */
+}
+
+/* --- Top Header (Teal Style) --- */
+.top-bar {
+  background-color: #148086; /* Teal color from image */
+  color: white;
+  padding: 0 20px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  z-index: 10;
+}
+
+.top-bar h1 {
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.intro-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid white;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+.intro-btn:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* --- Main Layout (3 Columns) --- */
+.main-container {
+  display: flex;
+  flex: 1;
+  height: calc(100vh - 60px);
+}
+
+.panel {
+  background: white;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #ddd;
+}
+
+.panel-header {
+  background-color: #fff;
+  border-bottom: 2px solid #ddd;
+  padding: 15px;
+  font-size: 20px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: #333;
+  text-transform: uppercase;
+}
+
+.panel-content {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+/* Left Sidebar - Controls */
+.left-panel {
+  width: 280px;
+  min-width: 280px;
+}
+
+/* Center Stage - Simulation */
+.center-stage {
+  flex: 1;
+  background-color: #e6f7ff; /* Light blue sky background */
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end; /* Align lab container to bottom */
+  overflow: hidden;
+  border-right: 1px solid #ddd;
+}
+
+/* Right Sidebar - Instructions */
+.right-panel {
+  width: 300px;
+  min-width: 300px;
+  border-left: 1px solid #ddd;
+  border-right: none;
+}
+
+/* --- Lab Container Logic (Preserved but styled) --- */
+#lab-container {
+  position: relative;
+  width: 600px;
+  height: 450px; /* Increased height slightly */
+  margin-bottom: 0; /* Flush with bottom */
+}
+
+/* The Floor */
+#lab-container::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -50%;
+  width: 200%;
+  height: 165px; /* Matches the bottom offset of base */
+  background-color: #686d76; /* Dark grey floor */
+  z-index: 0;
+  border-top: 3px solid #555;
+}
+
+/* Simulation Elements */
+#base {
+  position: absolute;
+  bottom: 0px; /* Adjusted relative to container bottom */
+  left: 50px;
+  width: 500px;
+  z-index: 1;
+}
+
+/* ... inside style.css ... */
+
+/* 1. Lower the Sine Bar (The pivot point) */
+#sinebar {
+  position: absolute;
+  bottom: 195px;  /* Reduced from 195px */
+  left: 120px;
+  width: 400px;
+  transform-origin: left bottom;
+  transition: transform 0.8s ease;
+  z-index: 2;
+}
+
+/* 2. Lower the Taper Object (Test piece sitting on sine bar) */
+#taperbar {
+  position: absolute;
+  bottom: 269px; /* Reduced from 268px to match sinebar drop */
+  left: 120px;
+  width: 150px;
+  transform-origin: left bottom;
+  transition: transform 0.8s ease;
+  z-index: 3;
+}
+
+/* 3. Lower the Slip Gauge (The stack underneath) */
+#slipgauge {
+  position: absolute;
+  left: 450px;
+  width: 50px;
+  height: 0px;
+  bottom: 216px; /* Reduced from 235px. This acts as the "Floor" level */
+  transition: all 0.8s ease;
+  z-index: 1; /* Move behind sinebar so the roller sits ON it */
+  background-color: #aaa; /* Grey color for visibility */
+}
+
+/* 4. Lower the Dial Gauge */
+#dialGauge {
+  position: absolute;
+  bottom: 352px; /* Reduced from 345px */
+  left: 50px;
+  width: 90px;
+  z-index: 4;
+  transition: left 2s linear;
+}
+
+#readingBox {
+  position: absolute;
+  top: 36.5%;
+  left: 50.5%;
+  transform: translate(-50%, -50%);
+  background: #e5e5e5;
+  border: 1px solid #444;
+  border-radius: 4px;
+  width: 45px;
+  height: 18px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: bold;
+  color: black;
+  line-height: 18px;
+}
+
+/* --- UI Controls Styling --- */
+.control-label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 16px; /* Increased from 14px */
+  font-weight: 600; /* Made bolder */
+  color: #333; /* Darker color for better contrast */
+}
+
+.styled-select {
+  width: 100%;
+  padding: 12px; /* Bigger touch target */
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fafafa;
+  font-size: 16px; /* Increased from 14px */
+}
+
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 25px;
+}
+
+.action-btn {
+  padding: 12px 15px; /* Bigger buttons */
+  border: 1px solid #ccc;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700; /* Bolder text */
+  font-size: 16px; /* Increased from default */
+  transition: all 0.2s;
+  letter-spacing: 0.5px;
+}
+
+.action-btn:hover {
+  background: #f0f0f0;
+  border-color: #bbb;
+}
+
+.action-btn.primary {
+  background-color: #66c2cd;
+  color: white;
+  border: none;
+}
+
+.action-btn.primary:hover {
+  background-color: #55aab4;
+}
+
+/* Gauge List */
+.gauge-display-container h3 {
+    font-size: 16px; /* Increased header size */
+    margin-bottom: 12px;
+    border-bottom: 2px solid #eee; /* Thicker line */
+    padding-bottom: 8px;
+    color: #222;
+}
+
+#splitGaugeList {
+  font-size: 15px; /* Increased from 13px */
+  color: #333;
+}
+
+.gauge-block {
+  background: #333;
+  color: white;
+  padding: 8px 12px; /* Larger block padding */
+  margin-bottom: 6px;
+  border-radius: 4px;
+  font-size: 14px; /* Increased from 12px */
+  display: inline-block;
+  width: 100%;
+  text-align: center;
+  font-weight: bold;
+  animation: fadeIn 0.5s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.sumDisplay {
+    margin-top: 15px;
+    font-size: 16px;
+    font-weight: 800; /* Extra bold */
+    text-align: right;
+    border-top: 2px dashed #bbb;
+    padding-top: 10px;
+    color: #000;
+}
+
+/* Instructions List */
+.instruction-list {
+  padding-left: 20px;
+  color: #444; /* Darker text */
+  font-size: 16px; /* Increased from 14px */
+  line-height: 1.6;
+}
+
+.instruction-list li {
+  margin-bottom: 12px;
+}
+
+/* Results Area */
+.mt-auto {
+  margin-top: auto;
+  border-top: 2px solid #ddd;
+  border-bottom: none;
+}
+
+.results-area {
+  background: #fdfdfd;
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+}
+
+.info-box {
+  text-align: left;
+  width: 100%;
+  font-size: 16px; /* Increased result text size */
+}
+
+.info-box div {
+    margin-bottom: 10px;
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.placeholder-text {
+  color: #999;
+  font-style: italic;
+  display: block;
+  text-align: center;
+  font-size: 15px;
+}
+
+.glowBlue {
+  background: rgba(102, 194, 205, 0.15);
+  border: 2px solid #66c2cd;
+  padding: 15px;
+  border-radius: 8px;
+  color: #000;
+  font-weight: bold;
+  text-align: center;
+  display: block;
+  margin-top: 10px;
+  font-size: 18px; /* Make final result pop */
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}

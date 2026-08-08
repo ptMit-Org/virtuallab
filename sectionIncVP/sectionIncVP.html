@@ -1,0 +1,290 @@
+<!doctype html>
+<html>  
+<head>  
+<meta charset="utf-8"/>  
+<title>Section of Solids - Inverted & Perpendicular</title>  
+<meta name="viewport" content="width=device-width,initial-scale=1" />  
+<style>  
+  :root {   
+    --red:#c40000;   
+    --bg:#fff;   
+    --yellow:orange;   
+    --blue:#007bff;   
+    --green:green;   
+    --light-grey: #e8e8e8;  
+  }  
+  html,body{height:100%; margin:0; font-family:Arial,Helvetica,sans-serif; background:var(--bg);}   
+  #app { display:flex; height:100vh; overflow:hidden; }  
+  #sidebar{ width:320px; padding:16px; box-sizing:border-box; background:#f7f7f7; border-right:1px solid #eee; overflow:auto; }
+  .step-item{ padding:12px; margin:8px 0; background:white; border-left:4px solid var(--light-grey); cursor:pointer; border-radius: 4px; transition: 0.2s; }
+  .step-item:hover { background: #eee; }
+  .step-item.active{ border-left-color:var(--red); background:#fff5f5; font-weight:700; }
+  #main{ flex:1 1 auto; display:flex; flex-direction:column; height:100vh; box-sizing:border-box; position: relative; }
+  .topbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; border-bottom:1px solid #eee; background:linear-gradient(#fff,#fafafa); }
+  .title { font-size:24px; color:var(--red); margin:0; font-weight:700; text-transform: uppercase; }
+  .subtitle { font-size:13px; color:#666; margin-top:2px; }
+  #controls { display:flex; gap:8px; align-items:center; }
+  button{ padding:8px 14px; border:0; border-radius:6px; background:var(--red); color:#fff; cursor:pointer; font-weight: bold; }
+  button:disabled{ background:#ccc; cursor:not-allowed; }
+  .btn-secondary { background: #666; }
+  #legend-box { position: absolute; top: 80px; right: 20px; background: white; padding: 12px; border: 1.5px solid #ddd; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 100; font-size: 13px; pointer-events: none; }
+  .legend-item { display: flex; align-items: center; margin-bottom: 6px; gap: 10px; }
+  .legend-line { width: 30px; height: 3px; border-radius: 2px; }
+  #svgWrap{ flex:1 1 auto; width:100%; height: calc(100vh - 72px); box-sizing:border-box; overflow:hidden; background:#fff; }
+  svg{ width:100%; height:100%; display:block; background:#fff; cursor: grab; }
+  .red-outline { stroke:var(--red); fill:none; stroke-width:3; stroke-linecap:round; }
+  .yellow { stroke:var(--yellow); stroke-width:1; fill:none; }
+  .dotted { stroke:var(--yellow); stroke-width:1.5; fill:none; stroke-dasharray: 5 5; }
+  .green { stroke:var(--green); stroke-width:3.5; stroke-dasharray: 12 4 4 4; }
+  .axis-line { stroke: #333; stroke-width: 2.5; }
+  .axis-label { fill:var(--red); font-size:24px; font-weight:bold; }
+  .corner-label { fill:var(--red); font-size:18px; font-weight:800; text-anchor: middle; }
+  .hatch-line { stroke: var(--red); stroke-width: 1; opacity: 0.7; }
+  .note-text { font-size: 14px; font-weight: bold; fill: #333; }
+  .dim-line-red { stroke: var(--red); stroke-width: 1.5; marker-start: url(#arrow-start); marker-end: url(#arrow-end); }
+  .dim-proj-yellow { stroke: var(--yellow); stroke-width: 1.5; }
+  .dim-text { fill: var(--red); font-size: 18px; font-weight: bold; text-anchor: middle; }
+  @media (max-width:900px){ #sidebar, #legend-box { display:none } }
+</style>
+</head>  
+<body>  
+  <div id="app">  
+    <div id="sidebar">  
+      <h3 style="color:var(--red);margin:0 0 12px 0; border-bottom: 2px solid var(--red); padding-bottom: 5px;">Construction Steps</h3>  
+      <div id="stepList"></div>  
+    </div>  
+    <div id="main">  
+      <div class="topbar">  
+        <div>  
+          <div class="title">Section of Pentagonal Prism</div>  
+          <div class="subtitle">Draw the true shape of sectioned surface, front view and top view of a pentagonal prism which is sectioned by a cutting plane inclined <div>at an angle 30° to VP and 25mm above the base.</div> </div>
+        </div>  
+        <div id="controls">  
+          <button id="prevBtn" disabled>← Previous</button>  
+          <button id="nextBtn">Next →</button>  
+          <button id="zoomReset" class="btn-secondary">Reset View</button>
+          <button onclick="window.location.href='./index.html'">Home</button>
+  
+        </div>  
+      </div>  
+
+      <div id="legend-box">  
+        <div class="legend-item">  
+          <div class="legend-line" style="background: var(--yellow);"></div>  
+          <span>Yellow: Projectors</span>  
+        </div>  
+        <div class="legend-item">  
+          <div class="legend-line" style="background: var(--red);"></div>  
+          <span>Red: HB Outlines</span>  
+        </div>  
+        <div class="legend-item">  
+          <div class="legend-line" style="background: var(--green); border-bottom: 2px dashed #fff;"></div>  
+          <span>Green: Cutting Plane</span>  
+        </div>  
+      </div>  
+
+      <div id="svgWrap">  
+        <svg id="mainSvg" viewBox="0 -200 1200 1300">  
+          <defs id="svg-defs">  
+            <marker id="arrow-start" viewBox="0 0 10 10" refX="0" refY="5" markerWidth="6" markerHeight="6" orient="auto">  
+              <path d="M 10 0 L 0 5 L 10 10 Z" fill="var(--red)" />  
+            </marker>  
+            <marker id="arrow-end" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">  
+              <path d="M 0 0 L 10 5 L 0 10 Z" fill="var(--red)" />  
+            </marker>  
+          </defs>  
+          <g id="viewport">  
+            <g id="drawingLayer"></g>  
+            <text x="1150" y="1050" class="note-text" text-anchor="end">All Dimensions Are In mm</text>  
+          </g>  
+        </svg>  
+      </div>  
+    </div>
+  </div>  
+
+<script>  
+const MM = 3.5;   
+const axisY = 400;   
+const centerX = 550;  
+const side = 30 * MM;  
+const height = 60 * MM;  
+const angleDeg = 30;   
+const angleRad = angleDeg * Math.PI / 180;  
+
+// Offset increased to move X1Y1 closer to the pentagon
+const auxOffset = 280; 
+  
+const drawingLayer = document.getElementById('drawingLayer');  
+const defs = document.getElementById('svg-defs');  
+const viewport = document.getElementById('viewport');  
+const svg = document.getElementById('mainSvg');  
+  
+let zoom = 1, tx = 0, ty = 0, isPanning = false, startX, startY;  
+  
+function update() { viewport.setAttribute("transform", `translate(${tx}, ${ty}) scale(${zoom})`); }  
+document.getElementById("zoomReset").onclick = () => { zoom = 1; tx = 0; ty = 0; update(); goToStep(0); };  
+svg.onmousedown = (e) => { isPanning = true; startX = e.clientX - tx; startY = e.clientY - ty; svg.style.cursor = 'grabbing'; };  
+window.onmousemove = (e) => { if (isPanning) { tx = e.clientX - startX; ty = e.clientY - startY; update(); } };  
+window.onmouseup = () => { isPanning = false; svg.style.cursor = 'grab'; };  
+  
+function getRegularPentagon(cx, cy, s) {  
+    const R = s / (2 * Math.sin(Math.PI / 5));  
+    const pts = [];  
+    for (let i = 0; i < 5; i++) {  
+        const angle = -(Math.PI / 2) + (i * 2 * Math.PI / 5);  
+        pts.push({ x: cx + R * Math.cos(angle), y: cy - R * Math.sin(angle) });  
+    }  
+    return pts;  
+}  
+  
+const ptsTV = getRegularPentagon(centerX, axisY - 180, side);  
+const pivotY = axisY + (25 * MM); 
+const getYOnPlane = (x) => Math.tan(angleRad) * (x - centerX) + pivotY;  
+  
+function createEl(tag, attrs, parent = drawingLayer) {  
+  const el = document.createElementNS("http://www.w3.org/2000/svg", tag);  
+  for (let k in attrs) el.setAttribute(k, attrs[k]);  
+  parent.appendChild(el);  
+  return el;  
+}  
+  
+function hatchShape(pts, id) {  
+  const clip = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");  
+  clip.id = "clip-" + id;  
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");  
+  path.setAttribute("d", pts.map((p,i)=>(i===0?'M':'L')+`${p.x},${p.y}`).join(' ')+'Z');  
+  clip.appendChild(path);  
+  defs.appendChild(clip);  
+  const g = createEl("g", {"clip-path": `url(#clip-${id})`});  
+  for(let i=-2000; i<3000; i++) {  
+    createEl("line", {x1:-2000, y1:i*10, x2:2000, y2:i*10+4000, class:"hatch-line"}, g);  
+  }  
+}  
+
+function getAuxPoint(p) {  
+    let py = getYOnPlane(p.x);  
+    let distFromAxis = axisY - p.y; 
+    const perpAngle = angleRad - (Math.PI / 2);   
+    // drawingGap keeps the True Shape at a fixed distance from X1Y1 axis
+    const drawingGap = 100; 
+    return {  
+        x: p.x - (auxOffset + drawingGap + distFromAxis) * Math.cos(perpAngle),  
+        y: py - (auxOffset + drawingGap + distFromAxis) * Math.sin(perpAngle)  
+    };  
+}  
+  
+const steps = [  
+  { name: "Step 1: Reference XY Axis", draw: () => {  
+    createEl("line", {x1: 250, y1: axisY, x2: 850, y2: axisY, class: "axis-line"});  
+    createEl("text", {x:260, y:axisY-15, class:"axis-label"}).textContent = "X";  
+    createEl("text", {x:830, y:axisY-15, class:"axis-label"}).textContent = "Y";  
+  }},  
+  { name: "Step 2: Top View Outline", draw: () => {  
+    createEl("path", {d: ptsTV.map((p,i)=>(i===0?'M':'L')+`${p.x},${p.y}`).join(' ')+'Z', class: "red-outline"});  
+  }},  
+  { name: "Step 3: Top View Labels & Dim", draw: () => {  
+    const labels = ["1(a)","2(b)","3(c)","4(d)","5(e)"];  
+    ptsTV.forEach((p, i) => createEl("text", {x:p.x, y:p.y-20, class:"corner-label"}).textContent = labels[i]);  
+    
+    const p3 = ptsTV[2]; 
+    const p4 = ptsTV[3]; 
+    const dx = p4.x - p3.x;
+    const dy = p4.y - p3.y;
+    const len = Math.sqrt(dx*dx + dy*dy);
+    const nx = -dy / len;
+    const ny = dx / len;
+    const offset = 40; 
+    const ext = 10;    
+    const x1d = p3.x + nx * offset, y1d = p3.y + ny * offset;
+    const x2d = p4.x + nx * offset, y2d = p4.y + ny * offset;
+
+    createEl("line", {x1: p3.x, y1: p3.y, x2: p3.x + nx * (offset + ext), y2: p3.y + ny * (offset + ext), class: "dim-proj-yellow"});  
+    createEl("line", {x1: p4.x, y1: p4.y, x2: p4.x + nx * (offset + ext), y2: p4.y + ny * (offset + ext), class: "dim-proj-yellow"});  
+    createEl("line", {x1: x1d, y1: y1d, x2: x2d, y2: y2d, class: "dim-line-red"});  
+    createEl("text", {x: (x1d+x2d)/2 + nx*15, y: (y1d+y2d)/2 + ny*15, class: "dim-text"}).textContent = "30";  
+  }},  
+  { name: "Step 4: Projectors to XY", draw: () => {  
+    ptsTV.forEach((p, i) => {  
+      createEl("line", {x1:p.x, y1:p.y, x2:p.x, y2:axisY, class: (i===0?"dotted":"yellow")});  
+    });  
+  }},  
+  { name: "Step 5: Front View & Height", draw: () => {  
+    ptsTV.forEach((p, i) => {  
+      createEl("line", {x1:p.x, y1:axisY, x2:p.x, y2:axisY+height, class: (i===0?"dotted":"red-outline")});  
+    });  
+    createEl("line", {x1:Math.min(...ptsTV.map(p=>p.x)), y1:axisY+height, x2:Math.max(...ptsTV.map(p=>p.x)), y2:axisY+height, class: "red-outline"});  
+    const xH = Math.min(...ptsTV.map(p=>p.x)) - 100;  
+    createEl("line", {x1: xH, y1: axisY, x2: xH, y2: axisY+height, class: "dim-line-red"});  
+    createEl("text", {x: xH - 25, y: axisY + (height/2), class: "dim-text", transform: `rotate(-90, ${xH - 25}, ${axisY + (height/2)})`}).textContent = "60";  
+  }},  
+  { name: "Step 6: View Labels", draw: () => {  
+    let sorted = [...ptsTV].sort((a,b)=>a.x-b.x);  
+    const baseLabels = ["b'", "c'", "a'", "d'", "e'"];  
+    sorted.forEach((p, i) => createEl("text", {x:p.x + 12, y:axisY+20, class:"corner-label", "text-anchor": "start"}).textContent = baseLabels[i]);  
+  }},  
+  { name: "Step 7: Cutting Plane (30°)", draw: () => {  
+    const intersectX = centerX - (pivotY - axisY) / Math.tan(angleRad);  
+    createEl("line", {x1:intersectX, y1:axisY, x2:850, y2:getYOnPlane(850), class:"green"});  
+    const xDim = centerX + 150;  
+    createEl("line", {x1: xDim, y1: axisY, x2: xDim, y2: pivotY, class: "dim-line-red"});  
+    createEl("text", {x: xDim + 25, y: (axisY + pivotY)/2, class: "dim-text"}).textContent = "25";  
+  }},  
+  { name: "Step 8: Intersection Points", draw: () => {  
+    ptsTV.forEach((p) => createEl("circle", {cx:p.x, cy:getYOnPlane(p.x), r:5, fill:"green"}));  
+  }},  
+  { name: "Step 9: Sectional Top View", draw: () => {  
+    hatchShape(ptsTV, "sectional-tv-cut");  
+    createEl("path", {d: ptsTV.map((p,i)=>(i===0?'M':'L')+`${p.x},${p.y}`).join(' ')+'Z', class: "red-outline", "stroke-width": 2.5});  
+  }},  
+  { name: "Step 10: Auxiliary Axis X1Y1", draw: () => {  
+    let xS = 300, xE = 800;  
+    let y1 = getYOnPlane(xS) + auxOffset, y2 = getYOnPlane(xE) + auxOffset;  
+    createEl("line", {x1: xS, y1: y1, x2: xE, y2: y2, class: "axis-line"});  
+    createEl("text", {x:xS-40, y:y1, class:"axis-label"}).textContent = "X1";  
+    createEl("text", {x:xE+20, y:y2, class:"axis-label"}).textContent = "Y1";  
+  }},  
+  { name: "Step 11: Perpendicular Projectors", draw: () => {  
+    ptsTV.forEach(p => {  
+      let py = getYOnPlane(p.x), auxP = getAuxPoint(p);  
+      createEl("line", {x1:p.x, y1:py, x2:auxP.x, y2:auxP.y, class:"yellow"});  
+    });  
+  }},  
+  { name: "Step 12: Plot True Shape Points", draw: () => {  
+    ptsTV.forEach(p => { let ap = getAuxPoint(p); createEl("circle", {cx:ap.x, cy:ap.y, r:4, fill:"var(--red)"}); });  
+  }},  
+  { name: "Step 13: Final True Shape", draw: () => {  
+    let ts = ptsTV.map(p => getAuxPoint(p));  
+    hatchShape(ts, "ts-final");  
+    createEl("path", {d: ts.map((p,i)=>(i===0?'M':'L')+`${p.x},${p.y}`).join(' ')+'Z', class: "red-outline", "stroke-width": 4});  
+    ts.forEach((p, i) => createEl("text", {x:p.x+25, y:p.y, class: "corner-label"}).textContent = (i+1));  
+  } }  
+];  
+  
+let currentStep = 0;  
+function goToStep(idx) {  
+  if (idx < 0 || idx >= steps.length) return;  
+  currentStep = idx;  
+  drawingLayer.innerHTML = ''; defs.innerHTML = `  
+    <marker id="arrow-start" viewBox="0 0 10 10" refX="0" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 10 0 L 0 5 L 10 10 Z" fill="var(--red)" /></marker>  
+    <marker id="arrow-end" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="var(--red)" /></marker>`;  
+  for(let i=0; i<=currentStep; i++) steps[i].draw();  
+  document.querySelectorAll('.step-item').forEach((it, i) => it.classList.toggle('active', i === currentStep));  
+  document.getElementById('prevBtn').disabled = currentStep === 0;  
+  document.getElementById('nextBtn').disabled = currentStep === steps.length - 1;  
+}  
+  
+const list = document.getElementById('stepList');  
+steps.forEach((s, i) => {  
+  const div = document.createElement('div');  
+  div.className = 'step-item';  
+  div.innerHTML = `<strong>${s.name}</strong>`;  
+  div.onclick = () => goToStep(i);  
+  list.appendChild(div);  
+});  
+  
+document.getElementById('nextBtn').onclick = () => goToStep(currentStep + 1);  
+document.getElementById('prevBtn').onclick = () => goToStep(currentStep - 1);  
+goToStep(0);  
+</script>  
+</body>  
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="./static/favicon.ico" />
+    <title>External Taper</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="header-bar">
+        <h2 style="margin:0; color:white;">External Taper Angle</h2>
+        <div class="header-right">
+            <button class="nav-btn help-btn" onclick="toggleHelp()">? Help / Tutorial</button>
+            <a href="./index.html" class="intro-btn" style="text-decoration:none;">Introduction</a>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="center-panel">
+
+            <div class="top-bar">
+                <button id="btn-small" onclick="startMeasurement('small')">1) Measure Small Cross Section (d)</button>
+                <button id="btn-large" onclick="startMeasurement('large')">2) Measure Large Cross Section (D)</button>
+                <button id="btn-length" onclick="startMeasurement('length')">3) Measure Tapered Length (L)</button>
+                <button id="btn-calc" onclick="calculateResult()" disabled>4) Calculate Angle of Taper (θ)</button>
+            </div>
+
+            <div class="exp-area">
+
+                <div id="welcome-msg" class="info-box">
+                    Select a button above to start the experiment.
+                </div>
+
+                <div id="simulator-container" style="display:none;">
+
+
+                    <div class="vernier-stage">
+                        <img src="./static/vernier_body.png" class="vernier-body" alt="Vernier Scale">
+
+                        <div id="obj-small" class="object-shape circle-small"></div>
+                        <div id="obj-large" class="object-shape circle-large"></div>
+                        <div id="obj-length" class="object-shape trap-shape"></div>
+
+                        <img src="./static/vernier_jaw.png" class="vernier-jaw" id="vernierJaw" alt="Moving Jaw">
+
+                        <div id="arrows-group" style="display:none;">
+                            <div class="arrow-indicator ms-arrow"></div>
+                            <span class="arrow-text ms-text">Main Scale</span>
+                            <div class="arrow-indicator vs-arrow"></div>
+                            <span class="arrow-text vs-text">Vernier Scale</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="result-box" class="result-display" style="display:none;"></div>
+            </div>
+        </div>
+
+        <div class="right-ribbon">
+            <img src="./static/isometric_circular_bar.png" class="isometric-img" alt="Isometric View">
+
+            <div class="log-title">Experiment Log</div>
+
+            <div class="log-entry">
+                <div class="log-label">Small Cross Section (mm)</div>
+                <div id="val-small" class="log-value">-</div>
+            </div>
+            <div class="log-entry">
+                <div class="log-label">Large Cross Section (mm)</div>
+                <div id="val-large" class="log-value">-</div>
+            </div>
+            <div class="log-entry">
+                <div class="log-label">Tapered Length (mm)</div>
+                <div id="val-length" class="log-value">-</div>
+            </div>
+
+            <div id="input-section" class="input-box" style="display:none;">
+                <h4 id="input-title">Confirm Reading</h4>
+                <div id="error-msg" class="error-text" style="display:none;">Incorrect reading. Try again.</div>
+
+                <label>
+                    <span class="color-tag msr-tag"></span> MSR:
+                    <input type="number" id="in-msr" step="1" placeholder="0">
+                </label>
+                <label>
+                    <span class="color-tag vsd-tag"></span> VSC:
+                    <input type="number" id="in-vsd" step="1" placeholder="0">
+                </label>
+
+                <button onclick="submitReading()" class="confirm-btn">Confirm Reading</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="intro-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-content">
+            <span class="close-btn" onclick="toggleModal('intro-modal')">&times;</span>
+            <h2>Introduction & Theory</h2>
+            <p><strong>Aim:</strong> To determine the taper angle of a tapered bar using a Vernier caliper.</p>
+            <p><strong>Formula:</strong><br>
+                Taper angle θ = tan⁻¹[ (D - d) / (2L) ]
+            </p>
+            <ul>
+                <li><strong>D:</strong> Large Diameter</li>
+                <li><strong>d:</strong> Small Diameter</li>
+                <li><strong>L:</strong> Length between measurements</li>
+            </ul>
+            <p><strong>Procedure:</strong> Measure D, d, and L using the simulation, then enter the Main Scale Reading
+                (MSR) and Vernier Scale Coincidence (VSC) to record values.</p>
+        </div>
+    </div>
+    <div id="help-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-content help-card">
+            <span class="close-btn" onclick="toggleHelp()">&times;</span>
+
+            <h2 style="color:var(--primary); margin-top:0;">Experiment Tutorial</h2>
+
+            <div class="tutorial-steps">
+                <div class="step">
+                    <span class="step-num">1</span>
+                    <p><strong>Select Measurement:</strong> Click a button (e.g., "1) Measure Small Cross Section") to
+                        move the caliper jaw.</p>
+                </div>
+                <div class="step">
+                    <span class="step-num">2</span>
+                    <p><strong>Read Values:</strong>Read the Main Scale Reading (MSR)
+                        and Vernier Scale Coincidence (VSC).</p>
+                </div>
+                <div class="step">
+                    <span class="step-num">3</span>
+                    <p><strong>Enter Data:</strong> Input your readings in the box on the right sidebar and click
+                        "Confirm Reading".</p>
+                </div>
+            </div>
+
+            <div class="reference-section">
+                <h3> Reference Answer Key (Cheat Sheet)</h3>
+                <p>If you are stuck, use any of these accepted values to proceed:</p>
+
+                <table class="ref-table">
+                    <thead>
+                        <tr>
+                            <th>Measurement</th>
+                            <th>Accepted MSR (mm)</th>
+                            <th>Accepted VSC (div)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Small Cross Section (d)</strong></td>
+                            <td>22, 23, 24</td>
+                            <td>16, 17, 18</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Large Cross Section (D)</strong></td>
+                            <td>31, 32, 33</td>
+                            <td>12, 13, 14</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tapered Length (L)</strong></td>
+                            <td>69, 70, 71</td>
+                            <td>18, 19, 20</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script src="./js/script.js"></script>
+</body>
+
+</html>

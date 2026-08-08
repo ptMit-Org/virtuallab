@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Pentagonal Pyramid + Surface (with dimensions)</title>
+    <link rel="icon" href="./favicon.ico" />
+
+<style>
+  :root{--red:#e33;--yellow:#f7d23b}
+  body{margin:12px;font-family:Arial,Helvetica,sans-serif;background:#fff;color:#111;text-align:center}
+  #stepText{font-weight:700;margin:8px 0}
+  .controls{margin-bottom:8px}
+  button{padding:8px 12px;margin:0 6px;border:1px solid #777;border-radius:6px;background:#fff;cursor:pointer}
+  svg{display:block;margin:0 auto;max-width:1200px;width:100%;border:1px solid #eee;background:#fff}
+  text.red{fill:var(--red);font-weight:700;font-size:14px}
+  text.yel{fill:var(--yellow);font-weight:700;font-size:14px}
+</style>
+</head>
+<body>
+<h2 style="text-align: center; display: inline-block;">Pentagonal Pyramid: Development of Surface</h2>
+
+
+<!-- Question text -->
+<p id="q1" x="600" y="32"
+      text-anchor="middle"
+      font-size="18"
+      font-weight="900"
+      fill="#000" style="font-weight: 700;">
+  Question: A pentagonal pyramid of height 40 mm and base edge of 30 mm is resting on HP with its base such that one of its base edge is parallel to VP. Draw its simple projection and develop its surface.
+</p>
+<p id="q2" x="600" y="56"
+      text-anchor="middle"
+      font-size="18"
+      font-weight="700"
+      fill="#000" style="font-weight: 700;">
+  
+</p>
+
+<div id="stepText">Click Next Step to start.</div>
+<div class="controls">
+  <button id="prevBtn">Previous Step</button>
+  <button id="nextBtn">Next Step</button>
+  <button id="resetBtn">Reset</button>
+    <button onclick="window.location.href='./index.html'">Home</button>
+
+</div>
+
+<svg id="svg" viewBox="0 0 1200 560" xmlns="http://www.w3.org/2000/svg" aria-labelledby="t d">
+  <title id="t">Pyramid with development and dimensions</title>
+  <desc id="d">Left: pentagonal pyramid with projectors and true edge. Right: development. Final step shows dimensions and note that all dimensions are in mm.</desc>
+
+  <!-- XY only under pyramid -->
+  <line x1="60" y1="260" x2="600" y2="260" stroke="#000" stroke-width="1.8"/>
+  <text x="48"  y="264" font-weight="700">X</text>
+  <text x="608" y="264" font-weight="700">Y</text>
+
+  <!-- Left (pyramid) -->
+  <g id="leftPlan"></g>
+  <g id="leftLabels"></g>
+  <g id="leftRadials"></g>
+  <g id="leftProj"></g>
+  <g id="leftElev"></g>
+  <g id="dims"></g>
+
+  <!-- Right (surface) -->
+  <g id="right" transform="translate(600,0)">
+    <g id="dev"></g>
+  </g>
+</svg>
+
+<script>
+(() => {
+  const mm = 4;
+  const sidePX = 20 * mm;
+  const Rplan  = sidePX / (2 * Math.sin(Math.PI / 5));
+
+  const cx = 300, cy = 360;
+  const XY = 260;
+  const apex = { x: cx, y: 140 };
+
+  const plan = [];
+  for (let i = 0; i < 5; i++) {
+    const a = Math.PI / 2 + i * (2 * Math.PI / 5);
+    plan.push([cx + Rplan * Math.cos(a), cy + Rplan * Math.sin(a)]);
+  }
+
+  let iBottom = 0;
+  plan.forEach((p, i) => { if (p[1] > plan[iBottom][1]) iBottom = i; });
+  const rotate = (arr, k) => arr.slice(k).concat(arr.slice(0, k));
+  const planLbl = rotate(plan, iBottom);
+  const baseXY  = planLbl.map(p => [p[0], XY]);
+
+  const dist = (A, B) => Math.hypot(A.x - B[0], A.y - B[1]);
+  const slantLen = dist(apex, baseXY[1]);
+  const slantAng = Math.atan2(baseXY[1][1] - apex.y, baseXY[1][0] - apex.x);
+  const chordLen = Math.hypot(
+    planLbl[0][0] - planLbl[1][0],
+    planLbl[0][1] - planLbl[1][1]
+  );
+
+  // extra construction for O5", 6'
+  const planP5 = planLbl[4];                               // point 5 in plan
+  const O5Len  = Math.hypot(planP5[0] - cx, planP5[1] - cy);  // radius O–5
+  const EXT    = 8;                                        // slight extension only
+  const O5pp   = { x: cx + O5Len + EXT, y: cy };           // 5" slightly extended
+  const pt6p   = { x: O5pp.x, y: XY };                     // 6' on XY
+
+  const leftPlanG  = document.getElementById('leftPlan');
+  const leftLabels = document.getElementById('leftLabels');
+  const leftRadials= document.getElementById('leftRadials');
+  const leftProj   = document.getElementById('leftProj');
+  const leftElev   = document.getElementById('leftElev');
+  const dimsG      = document.getElementById('dims');
+  const dev        = document.getElementById('dev');
+  const stepText   = document.getElementById('stepText');
+  const q1 = document.getElementById('q1');
+  const q2 = document.getElementById('q2');
+
+  const SVG_NS     = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs = {}) => {
+    const n = document.createElementNS(SVG_NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    return n;
+  };
+
+  const Oloc = { x: 300, y: apex.y };
+  const TICK_LEN = 6;
+  const MAX_STEP = 16;
+  let step = 0;
+
+  function clearDrawing() {
+    [leftPlanG, leftLabels, leftRadials, leftProj, leftElev, dev, dimsG].forEach(g => {
+      while (g.firstChild) g.removeChild(g.firstChild);
+    });
+  }
+
+  function reset() {
+    clearDrawing();
+    step = 0;
+    stepText.textContent = 'Click Next Step to start.';
+    if (q1) q1.style.display = '';
+    if (q2) q2.style.display = '';
+  }
+
+  function addArrowHead(group, tipX, tipY, dirX, dirY, size) {
+    const len = Math.hypot(dirX, dirY) || 1;
+    const ux = dirX / len, uy = dirY / len;
+    const nx = -uy, ny = ux;
+
+    const baseX = tipX - ux * size;
+    const baseY = tipY - uy * size;
+    const leftX  = baseX + nx * (size * 0.6);
+    const leftY  = baseY + ny * (size * 0.6);
+    const rightX = baseX - nx * (size * 0.6);
+    const rightY = baseY - ny * (size * 0.6);
+
+    group.appendChild(el('polygon', {
+      points: [
+        tipX + ',' + tipY,
+        leftX + ',' + leftY,
+        rightX + ',' + rightY
+      ].join(' '),
+      fill: 'var(--red)',
+      stroke: 'none'
+    }));
+  }
+
+  // ---------- Steps 1–6 ----------
+  function s1(){
+    stepText.textContent = 'Step 1: Draw the top view of pentagonal pyramid and show center O.';
+    leftPlanG.appendChild(el('polygon', {
+      points: planLbl.map(p => p.join(',')).join(' '),
+      fill: 'none',
+      stroke: 'var(--red)',
+      'stroke-width': 3
+    }));
+    // O as +
+    leftPlanG.appendChild(el('line',{x1:cx-8,y1:cy,x2:cx+8,y2:cy,stroke:'var(--red)','stroke-width':3}));
+    leftPlanG.appendChild(el('line',{x1:cx,y1:cy-8,x2:cx,y2:cy+8,stroke:'var(--red)','stroke-width':3}));
+    leftLabels.appendChild(el('text',{x:cx-6,y:cy+22,class:'red'})).textContent='O';
+    const OFFSET=18;
+    planLbl.forEach((p,i)=>{
+      if(i===2||i===3){
+        const ang=Math.atan2(p[1]-cy,p[0]-cx);
+        const lx=p[0]+OFFSET*Math.cos(ang);
+        const ly=p[1]+OFFSET*Math.sin(ang);
+        leftLabels.appendChild(el('text',{x:lx-6,y:ly+18,class:'red'})).textContent=String(i+1);
+      }else{
+        leftLabels.appendChild(el('text',{x:p[0]-8,y:p[1]+20,class:'red'})).textContent=String(i+1);
+      }
+    });
+  }
+
+  function s2(){
+    stepText.textContent='Step 2: Join center O to all corners of the pentagon.';
+    planLbl.forEach(p=>{
+      leftRadials.appendChild(el('line',{x1:cx,y1:cy,x2:p[0],y2:p[1],stroke:'var(--red)','stroke-width':2.5}));
+    });
+  }
+
+  function s3(animate=false){
+    stepText.textContent='Step 3: Draw vertical projectors.';
+    if(!animate){
+      planLbl.forEach(p=>{
+        leftProj.appendChild(el('line',{
+          x1:p[0],y1:p[1],x2:p[0],y2:XY,
+          stroke:'var(--yellow)','stroke-width':2.0,'stroke-linecap':'round'
+        }));
+      });
+      return;
+    }
+    let i=0,delay=300;
+    function drawNext(){
+      if(i>=planLbl.length)return;
+      const p=planLbl[i];
+      leftProj.appendChild(el('line',{
+        x1:p[0],y1:p[1],x2:p[0],y2:XY,
+        stroke:'var(--yellow)','stroke-width':2.0,'stroke-linecap':'round'
+      }));
+      i++; if(i<planLbl.length)setTimeout(drawNext,delay);
+    }
+    drawNext();
+  }
+
+  function s4(){
+    stepText.textContent="Step 4: Draw the base on XY and mark 1′, 2′, (3′), (4′), 5′ above XY.";
+    leftElev.appendChild(el('polyline',{points:baseXY.map(p=>p.join(',')).join(' '),fill:'none',stroke:'var(--red)','stroke-width':3}));
+    const labels=["1′","2′","(3′)","(4′)","5′"];
+    baseXY.forEach((bp,i)=>{
+      const t=el('text',{x:bp[0]-10,y:bp[1]-6,class:'red'}); t.textContent = labels[i]; leftLabels.appendChild(t);
+    });
+  }
+
+  function s5(animate=false){
+    stepText.textContent='Step 5: Draw apex O′, its visible edges and vertical axis.';
+    leftElev.appendChild(el('circle',{cx:apex.x,cy:apex.y,r:6,stroke:'var(--red)','stroke-width':3,fill:'#fff'}));
+    leftElev.appendChild(el('text',{x:apex.x-10,y:apex.y-12,class:'red'})).textContent='O′';
+    const drawEdgesAndAxis=()=>{
+      [0,1,4].forEach(i=>{
+        leftElev.appendChild(el('line',{x1:apex.x,y1:apex.y,x2:baseXY[i][0],y2:baseXY[i][1],stroke:'var(--red)','stroke-width':3}));
+      });
+      const baseMidX=apex.x, baseMidY=XY;
+      leftElev.appendChild(el('line',{x1:baseMidX,y1:baseMidY,x2:apex.x,y2:apex.y,stroke:'var(--red)','stroke-width':3}));
+
+      const axisLen=90,dashLen=16,gapLen=18;
+      let yStart=apex.y, used=0;
+      while(used+dashLen<=axisLen){
+        const yEnd=yStart-dashLen;
+        leftElev.appendChild(el('line',{x1:apex.x,y1:yStart,x2:apex.x,y2:yEnd,stroke:'var(--red)','stroke-width':2}));
+        used+=dashLen;
+        if(used+gapLen>axisLen)break;
+        const yGapMid=yEnd-gapLen/2;
+        leftElev.appendChild(el('circle',{cx:apex.x,cy:yGapMid,r:3,fill:'var(--red)'}));
+        yStart=yEnd-gapLen; used+=gapLen;
+      }
+    };
+    if(!animate){drawEdgesAndAxis();return;}
+    const acts=[];
+    [0,1,4].forEach(i=>acts.push(()=>leftElev.appendChild(el('line',{x1:apex.x,y1:apex.y,x2:baseXY[i][0],y2:baseXY[i][1],stroke:'var(--red)','stroke-width':3}))));
+    acts.push(drawEdgesAndAxis);
+    let idx=0,delay=300;
+    function run(){if(idx>=acts.length)return;acts[idx++]();if(idx<acts.length)setTimeout(run,delay);}
+    run();
+  }
+
+  function s6(animate=false){
+    stepText.textContent='Step 6: Draw hidden edges to (3′) and (4′).';
+    const hidden=[2,3];
+    if(!animate){
+      hidden.forEach(i=>{
+        leftElev.appendChild(el('line',{x1:apex.x,y1:apex.y,x2:baseXY[i][0],y2:baseXY[i][1],stroke:'var(--red)','stroke-width':3,'stroke-dasharray':'6,4'}));
+      });
+      return;
+    }
+    let idx=0,delay=300;
+    function drawNext(){
+      if(idx>=hidden.length)return;
+      const i=hidden[idx];
+      leftElev.appendChild(el('line',{x1:apex.x,y1:apex.y,x2:baseXY[i][0],y2:baseXY[i][1],stroke:'var(--red)','stroke-width':3,'stroke-dasharray':'6,4'}));
+      idx++; if(idx<hidden.length)setTimeout(drawNext,delay);
+    }
+    drawNext();
+  }
+
+  // ---------- STEP 7: slight extension + outward arc from 5 to 5" ----------
+  function s7(){
+    stepText.textContent='Step 7: With length O–5, draw a horizontal line from O to 5″ and show the compass arc from point 5.';
+
+    // Main horizontal projection O–5"
+    leftPlanG.appendChild(el('line',{
+      x1:cx,y1:cy,x2:O5pp.x,y2:O5pp.y,
+      stroke:'var(--yellow)','stroke-width':2.0
+    }));
+
+    // Single outward arc: from point 5 to 5"
+    const x5 = planP5[0], y5 = planP5[1];
+    const Rarc = O5Len; // compass radius from O
+
+    const dArc = [
+      'M', x5, y5,
+      'A', Rarc, Rarc, 0, 0, 0, O5pp.x, O5pp.y
+    ].join(' ');
+
+    leftPlanG.appendChild(el('path',{
+      d: dArc,
+      fill: 'none',
+      stroke: '#0088ff',
+      'stroke-width': 2.5
+    }));
+
+    // Label 5"
+    leftLabels.appendChild(el('text',{
+      x:O5pp.x+4,y:O5pp.y-6,class:'yel'
+    })).textContent='5″';
+  }
+
+  function s8(){
+    stepText.textContent='Step 8: From 5″ draw a vertical projector to meet the XY line and name it as 6′.';
+    leftProj.appendChild(el('line',{
+      x1:O5pp.x,y1:O5pp.y,x2:pt6p.x,y2:pt6p.y,
+      stroke:'var(--yellow)','stroke-width':2.0,'stroke-linecap':'round'
+    }));
+    leftLabels.appendChild(el('text',{x:pt6p.x-10,y:pt6p.y-6,class:'yel'})).textContent='6′';
+  }
+
+  function s9(){
+    stepText.textContent='Step 9: From 6′ draw the true slant edge joining apex O′.';
+    leftElev.appendChild(el('line',{
+      x1:pt6p.x,y1:pt6p.y,x2:apex.x,y2:apex.y,
+      stroke:'var(--yellow)','stroke-width':2.0
+    }));
+  }
+
+  function s10(){
+    stepText.textContent='Step 10: Draw slanting line O–1 of same angle/length of slant edge of pyramid.';
+    const Ox=Oloc.x, Oy=Oloc.y;
+    const O1x=Ox+slantLen*Math.cos(slantAng);
+    const O1y=Oy+slantLen*Math.sin(slantAng);
+    dev._O={x:Ox,y:Oy}; dev._aStart=Math.atan2(O1y-Oy,O1x-Ox); dev._R=slantLen;
+    dev.appendChild(el('line',{
+      x1:Ox,y1:Oy,x2:O1x,y2:O1y,
+      stroke:'var(--yellow)','stroke-width':2.0,'stroke-linecap':'round'
+    }));
+    dev.appendChild(el('text',{x:Ox-12,y:Oy-10,class:'yel'})).textContent='O';
+    dev.appendChild(el('text',{x:O1x-8,y:O1y+18,class:'yel'})).textContent='1';
+  }
+
+  function s11(){
+    stepText.textContent='Step 11: With O as center, draw an arc from 1 with the distance of O–1.';
+    const O=dev._O,R=dev._R,a0=dev._aStart;
+    const delta=2*Math.asin(Math.min(1,chordLen/(2*R))); dev._delta=delta;
+    const aEnd=a0-5*delta;
+    const steps=160; let d='';
+    for(let i=0;i<=steps;i++){
+      const a=a0+(aEnd-a0)*(i/steps);
+      d+=(i?' L ':' M ')+(O.x+R*Math.cos(a))+' '+(O.y+R*Math.sin(a));
+    }
+    dev._aEnd=aEnd; dev._R=R;
+    dev.appendChild(el('path',{
+      d,fill:'none',
+      stroke:'var(--yellow)','stroke-width':2.0,
+      'data-role':'arc'
+    }));
+  }
+
+  function s12(animate=false){
+    stepText.textContent='Step 12: Divide the arc into 5 equal parts with the dimension of each edge of pentagon.';
+    const O=dev._O,R=dev._R,a0=dev._aStart,dlt=dev._delta;
+    dev._pts=[];
+    const makeTick=i=>{
+      const a=a0-i*dlt;
+      const x=O.x+R*Math.cos(a), y=O.y+R*Math.sin(a);
+      dev._pts[i]={x,y,a};
+      const ix=O.x+(R-TICK_LEN)*Math.cos(a), iy=O.y+(R-TICK_LEN)*Math.sin(a);
+      dev.appendChild(el('line',{
+        x1:ix,y1:iy,x2:x,y2:y,
+        stroke:'var(--yellow)','stroke-width':2.0,'stroke-linecap':'round'
+      }));
+    };
+    if(!animate){for(let i=0;i<=5;i++)makeTick(i);return;}
+    let idx=0,delay=300;
+    function drawNext(){if(idx>5)return;makeTick(idx);idx++;if(idx<=5)setTimeout(drawNext,delay);}
+    drawNext();
+  }
+
+  function s13(animate=false){
+    stepText.textContent='Step 13: Join O to each division point.';
+    const O=dev._O;
+    if(!animate){
+      dev._pts.forEach(p=>dev.appendChild(el('line',{
+        x1:O.x,y1:O.y,x2:p.x,y2:p.y,
+        stroke:'var(--yellow)','stroke-width':2.0
+      })));
+      return;
+    }
+    let idx=0,delay=300;
+    function drawNext(){
+      if(idx>=dev._pts.length)return;
+      const p=dev._pts[idx];
+      dev.appendChild(el('line',{
+        x1:O.x,y1:O.y,x2:p.x,y2:p.y,
+        stroke:'var(--yellow)','stroke-width':2.0
+      }));
+      idx++; if(idx<dev._pts.length)setTimeout(drawNext,delay);
+    }
+    drawNext();
+  }
+
+  function s14(animate=false){
+    stepText.textContent='Step 14: Label 1,2,3,4,5,1 on the arc and darken the surface.';
+    const labels=['1','2','3','4','5','1'];
+    dev._pts.forEach((p,i)=>{
+      const t=el('text',{x:p.x-8,y:p.y+18,class:'yel'});
+      t.textContent=labels[i]; dev.appendChild(t);
+    });
+
+    const nodesToChange = Array.from(dev.childNodes).filter(n=>{
+      if(!n.getAttribute)return false;
+      if(n.getAttribute('data-role')==='arc')return false;
+      const stroke=n.getAttribute('stroke');
+      const cls=n.getAttribute('class');
+      const isYellowStroke=stroke==='var(--yellow)'||stroke==='#f7d23b';
+      const isYellowText=cls==='yel';
+      return isYellowStroke||isYellowText;
+    });
+
+    const applyRed=n=>{
+      const stroke=n.getAttribute('stroke');
+      const cls=n.getAttribute('class');
+      if(stroke==='var(--yellow)'||stroke==='#f7d23b')n.setAttribute('stroke','var(--red)');
+      if(n.tagName==='circle'){
+        const st=n.getAttribute('stroke');
+        if(st==='var(--yellow)'||st==='#f7d23b')n.setAttribute('stroke','var(--red)');
+      }
+      if(cls==='yel')n.setAttribute('class','red');
+    };
+
+    if(!animate){nodesToChange.forEach(applyRed);return;}
+
+    let idx=0,delay=80;
+    function convertNext(){
+      if(idx>=nodesToChange.length)return;
+      applyRed(nodesToChange[idx]); idx++;
+      if(idx<nodesToChange.length)setTimeout(convertNext,delay);
+    }
+    convertNext();
+  }
+
+  function s15(animate=false){
+    stepText.textContent='Step 15: Draw sharp straight lines on segments 1-2, 2-3, 3-4, 4-5 and 5-1.';
+    const segPairs=[[0,1],[1,2],[2,3],[3,4],[4,5]];
+    const drawSeg=i=>{
+      const [a,b]=segPairs[i]; const p1=dev._pts[a], p2=dev._pts[b];
+      if(!p1||!p2)return;
+      dev.appendChild(el('line',{x1:p1.x,y1:p1.y,x2:p2.x,y2:p2.y,stroke:'var(--red)','stroke-width':3.5}));
+    };
+    if(!animate){segPairs.forEach((_,i)=>drawSeg(i));return;}
+    let idx=0,delay=300;
+    function drawNext(){if(idx>=segPairs.length)return;drawSeg(idx);idx++;if(idx<segPairs.length)setTimeout(drawNext,delay);}
+    drawNext();
+  }
+
+  function s16(animate=false){
+    stepText.textContent =
+      'Step 16: Add dimensions 40, 30 and 50 and note that all dimensions are in mm.';
+
+    const arrowSize = 7;
+
+    const drawDim40 = () => {
+      const offsetX40 = 80;
+      const baseFootX = apex.x;
+      const baseFootY = XY;
+      const HtopExtEndX = apex.x - offsetX40;
+      const HtopExtEndY = apex.y;
+      const HbotExtEndX = baseFootX - offsetX40;
+      const HbotExtEndY = baseFootY;
+
+      dimsG.appendChild(el('line',{
+        x1:apex.x,y1:apex.y,x2:HtopExtEndX,y2:HtopExtEndY,
+        stroke:'var(--yellow)','stroke-width':1.0
+      }));
+      dimsG.appendChild(el('line',{
+        x1:baseFootX,y1:baseFootY,x2:HbotExtEndX,y2:HbotExtEndY,
+        stroke:'var(--yellow)','stroke-width':1.0
+      }));
+      dimsG.appendChild(el('line',{
+        x1:HtopExtEndX,y1:HtopExtEndY,
+        x2:HbotExtEndX,y2:HbotExtEndY,
+        stroke:'var(--red)','stroke-width':1.6
+      }));
+      addArrowHead(dimsG, HtopExtEndX, HtopExtEndY, 0,-1, arrowSize);
+      addArrowHead(dimsG, HbotExtEndX, HbotExtEndY, 0, 1, arrowSize);
+      dimsG.appendChild(el('text',{
+        x:HtopExtEndX-24,
+        y:(HtopExtEndY+HbotExtEndY)/2+4,
+        class:'red'
+      })).textContent='40';
+    };
+
+    const drawDim30 = () => {
+      const p1 = planLbl[0];
+      const p2 = planLbl[1];
+      const dx12 = p2[0]-p1[0], dy12 = p2[1]-p1[1];
+      const len12 = Math.hypot(dx12,dy12) || 1;
+      const ux12 = dx12/len12, uy12 = dy12/len12;
+      let nx12 = -uy12, ny12 = ux12;
+      if(ny12 < 0){ nx12 = -nx12; ny12 = -ny12; }
+
+      const extLen12 = 30;
+      const P1extX = p1[0] + nx12*extLen12;
+      const P1extY = p1[1] + ny12*extLen12;
+      const P2extX = p2[0] + nx12*extLen12;
+      const P2extY = p2[1] + ny12*extLen12;
+
+      dimsG.appendChild(el('line',{
+        x1:p1[0],y1:p1[1],x2:P1extX,y2:P1extY,
+        stroke:'var(--yellow)','stroke-width':1.0
+      }));
+      dimsG.appendChild(el('line',{
+        x1:p2[0],y1:p2[1],x2:P2extX,y2:P2extY,
+        stroke:'var(--yellow)','stroke-width':1.0
+      }));
+      dimsG.appendChild(el('line',{
+        x1:P1extX,y1:P1extY,
+        x2:P2extX,y2:P2extY,
+        stroke:'var(--red)','stroke-width':1.6
+      }));
+      addArrowHead(dimsG, P1extX, P1extY, -ux12, -uy12, arrowSize);
+      addArrowHead(dimsG, P2extX, P2extY,  ux12,  uy12, arrowSize);
+
+      const mid12x = (P1extX + P2extX)/2 - nx12*10;
+      const mid12y = (P1extY + P2extY)/2 - ny12*10;
+      dimsG.appendChild(el('text',{
+        x:mid12x-10,
+        y:mid12y+4,
+        class:'red'
+      })).textContent='30';
+    };
+
+    const drawDim50 = () => {
+      const sx = pt6p.x, sy = pt6p.y;
+      const ex = apex.x, ey = apex.y;
+      const dx = ex-sx, dy = ey-sy;
+      const L  = Math.hypot(dx,dy) || 1;
+      const ux = dx/L,  uy = dy/L;
+      let nx = -uy, ny = ux;
+      if(nx < 0){ nx = -nx; ny = -ny; }
+
+      const extLenS = 40;
+      const SextX = sx + nx*extLenS;
+      const SextY = sy + ny*extLenS;
+      const OextX = ex + nx*extLenS;
+      const OextY = ey + ny*extLenS;
+
+      dimsG.appendChild(el('line',{
+        x1:sx,y1:sy,x2:SextX,y2:SextY,
+        stroke:'var(--yellow)','stroke-width':1.0
+      }));
+      dimsG.appendChild(el('line',{
+        x1:ex,y1:ey,x2:OextX,y2:OextY,
+        stroke:'var(--yellow)','stroke-width':1.0
+      }));
+      dimsG.appendChild(el('line',{
+        x1:SextX,y1:SextY,
+        x2:OextX,y2:OextY,
+        stroke:'var(--red)','stroke-width':1.6
+      }));
+      addArrowHead(dimsG, SextX, SextY, -ux, -uy, arrowSize);
+      addArrowHead(dimsG, OextX, OextY,  ux,  uy, arrowSize);
+      const midSx = (SextX + OextX)/2 + nx*10;
+      const midSy = (SextY + OextY)/2 + ny*10;
+      dimsG.appendChild(el('text',{
+        x:midSx-10,
+        y:midSy+4,
+        class:'red'
+      })).textContent='50';
+    };
+
+    const drawNote = () => {
+      dimsG.appendChild(el('text',{
+        x:540,
+        y:548,
+        class:'red'
+      })).textContent = 'All dimensions are in mm';
+    };
+
+    if (!animate) {
+      drawDim40();
+      drawDim30();
+      drawDim50();
+      drawNote();
+      return;
+    }
+
+    let idx = 0;
+    const acts = [drawDim40, drawDim30, drawDim50, drawNote];
+    const delay = 350;
+
+    function doNext() {
+      if (idx >= acts.length) return;
+      acts[idx++]();
+      if (idx < acts.length) setTimeout(doNext, delay);
+    }
+    doNext();
+  }
+
+  function callStep(n,animate){
+    switch(n){
+      case 1:s1();break;
+      case 2:s2();break;
+      case 3:s3(animate);break;
+      case 4:s4();break;
+      case 5:s5(animate);break;
+      case 6:s6(animate);break;
+      case 7:s7();break;
+      case 8:s8();break;
+      case 9:s9();break;
+      case 10:s10();break;
+      case 11:s11();break;
+      case 12:s12(animate);break;
+      case 13:s13(animate);break;
+      case 14:s14(animate);break;
+      case 15:s15(animate);break;
+      case 16:s16(animate);break;
+    }
+  }
+
+  function rebuildUpTo(currentStep){
+    clearDrawing();
+    if(currentStep===0){
+      stepText.textContent='Click Next Step to start.';
+      if (q1) q1.style.display = '';
+      if (q2) q2.style.display = '';
+      return;
+    }
+    //if (q1) q1.style.display = 'none';
+    //if (q2) q2.style.display = 'none';
+    //for(let k=1;k<=currentStep;k++) callStep(k,false);
+  }
+
+  function next(){
+    if(step>=MAX_STEP){
+      stepText.textContent='All steps completed.';
+      step=MAX_STEP;
+      return;
+    }
+    step++;
+    if (step === 1) {
+      //if (q1) q1.style.display = 'none';
+      //if (q2) q2.style.display = 'none';
+    }
+    const animate = (
+      step===3 || step===5 || step===6 ||
+      step===12 || step===13 || step===14 || step===15 || step===16
+    );
+    callStep(step,animate);
+  }
+
+  function prev(){
+    if(step<=0)return;
+    step--;
+    rebuildUpTo(step);
+  }
+
+  document.getElementById('nextBtn').addEventListener('click', next);
+  document.getElementById('prevBtn').addEventListener('click', prev);
+  document.getElementById('resetBtn').addEventListener('click', reset);
+  reset();
+})();
+</script>
+</body>
+</html>

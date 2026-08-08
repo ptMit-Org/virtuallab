@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Conic Sections: Hyperbola</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="./favicon.ico" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      margin: 20px;
+      text-align: center;
+      background: #ffffff;
+      color: #111;
+    }
+
+    #procedure {
+      margin: 15px 0;
+      font-size: 16px;
+      font-weight: bold;
+      min-height: 24px;
+    }
+
+    #canvasWrap {
+      border: 1px solid #ccc;
+      display: inline-block;
+      padding: 8px;
+      background: #fff;
+    }
+
+    canvas {
+      background: #fff;
+      display: block;
+    }
+
+    .navButtons {
+      margin: 15px 0;
+    }
+
+    button {
+      padding: 8px 18px;
+      margin: 0 6px;
+      font-size: 15px;
+      border: 1px solid #444;
+      background: #f8f8f8;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #e6e6e6;
+    }
+
+    h2 {
+      margin-bottom: 6px;
+    }
+
+    .ecc {
+      font-size: 16px;
+      margin-bottom: 12px;
+    }
+
+    .label {
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>Conic Sections: Hyperbola
+  </h2>
+  <p>Question: Construct an parabola given the distance of the focus from the directrix as 60 mm and Hyperbola as 3/2.
+  </p>
+
+  <div class="ecc">Eccentricity: <span class="label">e = 3/2</span></div>
+
+  <div class="navButtons">
+    <button id="prevBtn">Previous Step</button>
+    <button id="startBtn">Start</button>
+    <button id="nextBtn">Next Step</button>
+    <button onclick="window.location.href='./index.html'">Home</button>
+  </div>
+
+  <div id="procedure"></div>
+
+  <div id="canvasWrap">
+    <canvas id="c" width="1200" height="760"></canvas>
+  </div>
+
+  <script>
+    (function () {
+
+      const mm2px = mm => mm * (96 / 25.4);
+      const canvas = document.getElementById('c');
+      const ctx = canvas.getContext('2d');
+
+      const FD_MM = 60;
+      const INCLEN_MM = 120;
+      const INTERVAL_MM = 5;
+      const OFFSET_STEP_MM = 5;
+      const OFFSET_COUNT = 7;
+      const EXTEND_DIST_MM = 200;
+      const ANGLE_DEG = 25;
+      const POINT_COUNT = 5;  // changed from 6 → 5 points
+
+      const leftA_x = 120;
+      const rightA_x = canvas.width - 120;
+      const axisY = 380;
+      const topMargin = 40;
+      const bottomMargin = canvas.height - 40;
+
+      let step = 0;
+
+      const procedureTexts = [
+        "Draw axis AA horizontally.",
+        "Draw directrix DD vertically.",
+        "Mark focus F at 60MM from directrix.",
+        "From left A draw inclined line at 25°.",
+        "Mark points 1–5 along inclined line.",
+        "Join point 5 to F.",
+        "From points 1–5 draw parallels to axis. Vertex V is where the 2nd parallel line intersects the axis.",
+        "Draw vertical from V and arc to find G.",
+        "Join A to G and extend.",
+        "Draw vertical lines at 5 mm offset.",
+        "Mark 1',2',… where verticals meet AG.",
+        "Mark 1'',2'',… where verticals meet axis.",
+        "Measure pair distances & draw arcs.",
+        "Connect arcs smoothly to sketch hyperbola.",
+        "Draw 60MM dimension line."
+      ];
+
+      const maxStep = procedureTexts.length;
+
+      function clear() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+      // Smooth curve using Catmull-Rom to Bezier conversion
+      function drawSmooth(points) {
+        if (points.length < 2) return;
+
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+
+        const t = 0.5;
+
+        for (let i = 0; i < points.length - 1; i++) {
+          const p0 = points[i - 1] || points[i];
+          const p1 = points[i];
+          const p2 = points[i + 1];
+          const p3 = points[i + 2] || p2;
+
+          const cp1x = p1.x + (p2.x - p0.x) * t / 6;
+          const cp1y = p1.y + (p2.y - p0.y) * t / 6;
+          const cp2x = p2.x - (p3.x - p1.x) * t / 6;
+          const cp2y = p2.y - (p3.y - p1.y) * t / 6;
+
+          ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+        }
+
+        ctx.stroke();
+      }
+
+      function draw(step) {
+        clear();
+
+        const procElem = document.getElementById("procedure");
+        procElem.textContent = step === 0 ? "" : `Step ${step}: ${procedureTexts[step - 1]}`;
+
+        // Prepare labels array
+        let labels = [];
+        function addLabel(text, x, y) {
+          labels.push({ text, x, y });
+        }
+
+        // Compute key geometry first (without drawing)
+        const A = { x: leftA_x, y: axisY };
+        const F = { x: leftA_x + mm2px(FD_MM), y: axisY };
+
+        const ang = (360 - ANGLE_DEG) * Math.PI / 180;
+        const L = mm2px(INCLEN_MM);
+        const Iend = { x: leftA_x + Math.cos(ang) * L, y: axisY + Math.sin(ang) * L };
+
+        // compute incline points (needed for yellow elements & for main pass)
+        const inclinePts = [];
+        if (step >= 5) {
+          for (let i = 1; i <= POINT_COUNT; i++) {
+            const d = mm2px(INTERVAL_MM * i);
+            const t = Math.min(1, d / L);
+            const x = leftA_x + (Iend.x - leftA_x) * t;
+            const y = axisY + (Iend.y - axisY) * t;
+            inclinePts.push({ x, y });
+          }
+        }
+
+        // p5 for step 6
+        let p5 = null;
+        if (step >= 6 && inclinePts.length >= 5) {
+          p5 = inclinePts[4];
+        }
+
+        // axisIntersects and V (used later)
+        let axisIntersects = [];
+        let V = null;
+        if (step >= 7 && p5) {
+          const v = { x: F.x - p5.x, y: F.y - p5.y };
+          const m = Math.hypot(v.x, v.y);
+          const dir = { x: v.x / m, y: v.y / m };
+
+          for (let i = 0; i < 5; i++) {
+            const P = inclinePts[i];
+            const tA = (axisY - P.y) / dir.y;
+            if (tA > 0) {
+              const ix = P.x + dir.x * tA;
+              axisIntersects.push({ x: ix, y: axisY });
+            }
+          }
+
+          const vpt = axisIntersects[1];  // changed from [2] to [1]
+          if (vpt) {
+            V = vpt;
+          }
+        }
+
+        // G (intersection of vertical through V and circle radius VF)
+        let G = null;
+        if (step >= 8 && V) {
+          const r = Math.hypot(V.x - F.x, V.y - F.y);
+          G = { x: V.x, y: V.y - r };
+        }
+
+        // AG_end for extension
+        let AG_end = null;
+        if (step >= 9 && G) {
+          const dx = G.x - A.x, dy = G.y - A.y;
+          const len = Math.hypot(dx, dy);
+          const ux = dx / len, uy = dy / len;
+          AG_end = { x: G.x + ux * mm2px(EXTEND_DIST_MM), y: G.y + uy * mm2px(EXTEND_DIST_MM) };
+        }
+
+        // verticals for steps 10-13
+        const verticals = [];
+        if (step >= 10 && V && AG_end) {
+          for (let n = 1; n <= OFFSET_COUNT; n++) {
+            const ox = V.x + mm2px(OFFSET_STEP_MM * n);
+            let interAG = null;
+            const denom = AG_end.x - A.x;
+            if (Math.abs(denom) > 1e-6) {
+              const t = (ox - A.x) / denom;
+              if (t >= 0 && t <= 1) {
+                const yAG = A.y + (AG_end.y - A.y) * t;
+                interAG = { x: ox, y: yAG };
+              }
+            }
+            const interAxis = { x: ox, y: axisY };
+            verticals.push({ ox, interAG, interAxis });
+          }
+        }
+
+        // upperPts / lowerPts (computed for step 13, but not drawn yet)
+        const upperPts = [], lowerPts = [];
+        if (step >= 13) {
+          for (const v of verticals) {
+            if (!v.interAG) continue;
+
+            const pP = v.interAG;
+            const pD = v.interAxis;
+            const r = Math.hypot(pP.x - pD.x, pP.y - pD.y);
+
+            const dx = v.ox - F.x;
+            const inside = r * r - dx * dx;
+            if (inside < 0) continue;
+            const s = Math.sqrt(inside);
+
+            const yU = F.y - s;
+            const yD = F.y + s;
+
+            upperPts.push({ x: v.ox, y: yU });
+            lowerPts.push({ x: v.ox, y: yD });
+          }
+        }
+
+        // -----------------------------
+        // PASS 1 — DRAW ALL YELLOW LINES FIRST (TRUE BACK)
+        // -----------------------------
+        // IMPORTANT: draw all yellow construction elements here FIRST (normal drawing mode),
+        // and do NOT draw any filled black/red points in this pass. This ensures yellow
+        // is painted to the canvas before any points/labels/curve are drawn.
+        //
+        // Step 4: inclined line (yellow)
+        if (step >= 4) {
+          ctx.strokeStyle = "yellow";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(leftA_x, axisY);
+          ctx.lineTo(Iend.x, Iend.y);
+          ctx.stroke();
+        }
+
+        // Step 6: join point 5 to F (yellow)
+        if (step >= 6 && p5) {
+          ctx.strokeStyle = "yellow";
+          ctx.beginPath(); ctx.moveTo(p5.x, p5.y); ctx.lineTo(F.x, F.y); ctx.stroke();
+        }
+
+        // Step 7: parallels from points 1–5 to axis (yellow)
+        if (step >= 7 && p5) {
+          const v = { x: F.x - p5.x, y: F.y - p5.y };
+          const m = Math.hypot(v.x, v.y);
+          const dir = { x: v.x / m, y: v.y / m };
+
+          for (let i = 0; i < 5; i++) {
+            const P = inclinePts[i];
+            const tA = (axisY - P.y) / dir.y;
+            if (tA > 0) {
+              const ix = P.x + dir.x * tA;
+              ctx.strokeStyle = "yellow";
+              ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.lineTo(ix, axisY); ctx.stroke();
+            }
+          }
+        }
+
+        // Step 8: vertical from V and arc from direction of F to vertical (yellow)
+        if (step >= 8 && V) {
+          // vertical
+          ctx.strokeStyle = "yellow";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(V.x, V.y);
+          ctx.lineTo(V.x, topMargin);
+          ctx.stroke();
+
+          // radius = VF, arc from V->F direction up to straight up
+          const r = Math.hypot(V.x - F.x, V.y - F.y);
+          const startAngle = Math.atan2(F.y - V.y, F.x - V.x);
+          const endAngle = -Math.PI / 2;
+
+          ctx.strokeStyle = "yellow";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(V.x, V.y, r, startAngle, endAngle, true);
+          ctx.stroke();
+        }
+
+        // Step 9: AG line (yellow) and extension (yellow)
+        if (step >= 9 && G) {
+          ctx.strokeStyle = "yellow";
+          ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(G.x, G.y); ctx.stroke();
+
+          const dx = G.x - A.x, dy = G.y - A.y;
+          const len = Math.hypot(dx, dy);
+          const ux = dx / len, uy = dy / len;
+
+          const end = { x: G.x + ux * mm2px(EXTEND_DIST_MM), y: G.y + uy * mm2px(EXTEND_DIST_MM) };
+          ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(end.x, end.y); ctx.stroke();
+        }
+
+        // Step 10: vertical offset lines (yellow)
+        if (step >= 10 && V && AG_end) {
+          for (const v of verticals) {
+            ctx.strokeStyle = "yellow";
+            ctx.beginPath(); ctx.moveTo(v.ox, topMargin); ctx.lineTo(v.ox, bottomMargin); ctx.stroke();
+          }
+        }
+
+        // (end of yellow pass)
+        // -----------------------------
+        // PASS 2 — DRAW MAIN GEOMETRY (above yellow)
+        // -----------------------------
+
+        // Step 1: axis AA (blue)
+        if (step >= 1) {
+          ctx.strokeStyle = "blue";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(30, axisY);
+          ctx.lineTo(canvas.width - 30, axisY);
+          ctx.stroke();
+
+          addLabel("A", A.x - 10, axisY - 8);
+          addLabel("A", rightA_x - 10, axisY - 8);
+        }
+
+        // Step 2: directrix DD (blue)
+        if (step >= 2) {
+          ctx.strokeStyle = "blue";
+          ctx.beginPath();
+          ctx.moveTo(leftA_x, topMargin);
+          ctx.lineTo(leftA_x, bottomMargin);
+          ctx.stroke();
+
+          addLabel("D", leftA_x - 18, topMargin + 12);
+          addLabel("D", leftA_x - 18, bottomMargin - 6);
+        }
+
+        // Step 3: Focus F (red dot)
+        if (step >= 3) {
+          ctx.fillStyle = "black";
+          ctx.beginPath();
+          ctx.arc(F.x, F.y, 5, 0, 2 * Math.PI);
+          ctx.fill();
+          addLabel("F", F.x + 6, F.y - 8);
+        }
+
+        // Step 5: draw incline points and labels (black)
+        if (step >= 5) {
+          for (let i = 0; i < inclinePts.length; i++) {
+            const p = inclinePts[i];
+            ctx.fillStyle = "black";
+            ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, 2 * Math.PI); ctx.fill();
+            // shifted labels slightly left to avoid overlap
+            addLabel(i + 1, p.x - 10, p.y - 10);
+          }
+        }
+
+        // Step 6: mark p5 (black)
+        if (step >= 6 && p5) {
+          ctx.fillStyle = "black";
+          ctx.beginPath(); ctx.arc(p5.x, p5.y, 3, 0, 2 * Math.PI); ctx.fill();
+        }
+
+        // Step 7: mark V (vertex) black dot and label
+        if (step >= 7 && V) {
+          ctx.fillStyle = "black";
+          ctx.beginPath(); ctx.arc(V.x, V.y, 5, 0, 2 * Math.PI); ctx.fill();
+          addLabel("V", V.x + 6, V.y + 15);
+        }
+
+        // Step 8: mark G point (black) and label (yellow arc already drawn behind)
+        if (step >= 8 && G) {
+          ctx.fillStyle = "black";
+          ctx.beginPath();
+          ctx.arc(G.x, G.y, 4, 0, 2 * Math.PI);
+          ctx.fill();
+          addLabel("G", G.x - 15, G.y - 6);
+        }
+
+        // Step 9: draw AG extension endpoints and mark as needed (non-yellow AG already drawn earlier)
+        if (step >= 9 && G) {
+          if (AG_end) {
+            ctx.beginPath(); ctx.arc(AG_end.x, AG_end.y, 1.5, 0, 2 * Math.PI); ctx.fillStyle = "black"; ctx.fill();
+          }
+        }
+
+        // Step 10-12: draw labels for verticals and axis intersections and small black markers for interAG
+        if (step >= 10 && V && AG_end) {
+          for (let n = 1; n <= verticals.length; n++) {
+            const v = verticals[n - 1];
+            if (v.interAG) {
+              // small black dot where vertical meets AG
+              ctx.fillStyle = "black";
+              ctx.beginPath(); ctx.arc(v.interAG.x, v.interAG.y, 3, 0, 2 * Math.PI); ctx.fill();
+              if (step >= 11) {
+                addLabel(n + "'", v.interAG.x - 6, v.interAG.y - 12);
+              }
+            }
+            if (step >= 12) {
+              addLabel(n + "″", v.interAxis.x + 6, v.interAxis.y + 18);
+            }
+          }
+        }
+
+        // Step 13: draw computed upper/lower points (red)
+        if (step >= 13) {
+          for (const p of upperPts) {
+            ctx.fillStyle = "red";
+            ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, 2 * Math.PI); ctx.fill();
+          }
+          for (const p of lowerPts) {
+            ctx.fillStyle = "red";
+            ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, 2 * Math.PI); ctx.fill();
+          }
+        }
+
+
+        /* --------------------
+        STEP 14 — Draw smooth hyperbola (FULLY smooth from V)
+        -------------------- */
+
+        /* --------------------
+         STEP 14 — Smooth curved hyperbola, emphasis near V
+        -------------------- */
+
+        if (step >= 14) {
+          if (!V || upperPts.length === 0 || lowerPts.length === 0) return;
+
+          ctx.strokeStyle = "red";
+          ctx.lineWidth = 3;
+          ctx.lineJoin = 'round';
+          ctx.lineCap = 'round';
+
+          // --- Combine points for a single continuous curve ---
+          // Upper points descending to vertex
+          const combinedPoints = [...upperPts.reverse(), V, ...lowerPts];
+
+          // --- Smooth quadratic curve ---
+          function drawSmoothCurve(pts) {
+            if (pts.length < 2) return;
+            ctx.beginPath();
+            ctx.moveTo(pts[0].x, pts[0].y);
+            for (let i = 1; i < pts.length - 1; i++) {
+              const midX = (pts[i].x + pts[i + 1].x) / 2;
+              const midY = (pts[i].y + pts[i + 1].y) / 2;
+              ctx.quadraticCurveTo(pts[i].x, pts[i].y, midX, midY);
+            }
+            ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+            ctx.stroke();
+          }
+
+          drawSmoothCurve(combinedPoints);
+
+          // --- Vertex marker ---
+          ctx.fillStyle = "red";
+          ctx.beginPath();
+          ctx.arc(V.x, V.y, 6, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+
+
+        if (step === 15) {
+          const dimLineY = bottomMargin - 5;
+          const startX = leftA_x; // directrix x
+          const endX = F.x;       // vertical line through focus
+
+          ctx.strokeStyle = "red";
+          ctx.beginPath();
+          ctx.moveTo(startX, dimLineY);
+          ctx.lineTo(endX, dimLineY);
+          ctx.stroke();
+
+          const arrow = 6;
+
+          // Left arrow head
+          ctx.beginPath();
+          ctx.moveTo(startX, dimLineY);
+          ctx.lineTo(startX + arrow, dimLineY - arrow);
+          ctx.lineTo(startX + arrow, dimLineY + arrow);
+          ctx.fill();
+
+          // Right arrow head
+          ctx.beginPath();
+          ctx.moveTo(endX, dimLineY);
+          ctx.lineTo(endX - arrow, dimLineY - arrow);
+          ctx.lineTo(endX - arrow, dimLineY + arrow);
+          ctx.fill();
+
+          // Dimension text
+          addLabel("60", (startX + endX) / 2 - 10, dimLineY - 10);
+        }
+
+        // finally draw labels
+        ctx.fillStyle = "black";
+        ctx.font = "14px sans-serif";
+        labels.forEach(l => ctx.fillText(l.text, l.x, l.y));
+      }
+
+      // hook up controls
+      document.getElementById('startBtn').onclick = () => { step = 0; draw(step); };
+      document.getElementById('prevBtn').onclick = () => { step = Math.max(0, step - 1); draw(step); };
+      document.getElementById('nextBtn').onclick = () => { step = Math.min(maxStep, step + 1); draw(step); };
+
+      // initial draw
+      draw(step);
+
+    })();
+  </script>
+</body>
+
+</html>

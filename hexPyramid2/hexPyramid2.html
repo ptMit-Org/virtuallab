@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Hexagonal Pyramid Projection – Step by Step</title>
+<link rel="icon" href="./favicon.ico" />
+
+<style>
+body{margin:0;background:#fff;font-family:Arial;}
+svg{width:100%;height:100vh;}
+.red{stroke:red;stroke-width:2;fill:none;}
+.yellow{stroke:gold;stroke-width:2;fill:none;}
+.blue{stroke:blue;stroke-width:1;fill:none;}
+text{fill:red;font-size:14px;}
+#questionBox {width:100%;text-align:center;font-size:15px;font-weight:bold;margin:6px 0 10px 0;}
+#stepText {width:100%;text-align:center;font-size:14px;color:blue;margin-bottom:10px;min-height:16px;}
+</style>
+</head>
+
+<body>
+
+  <h1 style="text-align: center;">Projection Of Solids: Inclined to HP</h1>
+
+  
+  <div id="questionBox">
+    The hexagonal pyramid of base 30 mm and axis height 60 mm lies on one of its side edges.
+    It is inclined to 60° to the HP. Draw its projections.
+  </div>
+
+  <div style="text-align:center;padding:8px;">
+  <button onclick="prev()">Previous</button>
+  <button onclick="next()">Next</button>
+  <button onclick="window.location.href='./index.html'">Home</button>
+
+</div>
+
+
+
+<div id="stepText"></div>
+
+<svg viewBox="0 0 2200 1000">
+<defs>
+  <marker id="arrowUp" markerWidth="10" markerHeight="10" refX="5" refY="0" markerUnits="strokeWidth">
+    <path d="M0,10 L5,0 L10,10 Z" fill="red"/>
+  </marker>
+  <marker id="arrowDown" markerWidth="10" markerHeight="10" refX="5" refY="10" markerUnits="strokeWidth">
+    <path d="M0,0 L5,10 L10,0 Z" fill="red"/>
+  </marker>
+</defs>
+
+<g id="s1">
+  <line class="red" x1="200" y1="500" x2="2000" y2="500"/>
+  <text x="2010" y="505">XY</text>
+</g>
+
+<g id="s2" visibility="hidden">
+  <polygon class="red" points="500,600 552,630 552,690 500,720 448,690 448,630"/>
+  <text x="492" y="595">e</text>
+  <text x="560" y="635">f</text>
+  <text x="560" y="705">a</text>
+  <text x="492" y="740">b</text>
+  <text x="430" y="705">c</text>
+  <text x="430" y="635">d</text>
+</g>
+
+<g id="s3" visibility="hidden">
+  <line class="red" x1="500" y1="600" x2="500" y2="720"/>
+  <line class="red" x1="448" y1="630" x2="552" y2="690"/>
+  <line class="red" x1="552" y1="630" x2="448" y2="690"/>
+  <line class="red" x1="495" y1="660" x2="505" y2="660"/>
+  <line class="red" x1="500" y1="655" x2="500" y2="665"/>
+  <text x="510" y="680">o</text>
+</g>
+
+<g id="s4" visibility="hidden">
+  <line class="yellow" x1="448" y1="630" x2="448" y2="500"/>
+  <line class="yellow" x1="500" y1="600" x2="500" y2="500"/>
+  <line class="yellow" x1="552" y1="630" x2="552" y2="500"/>
+</g>
+
+<g id="s5" visibility="hidden">
+  <line class="red" x1="500" y1="500" x2="500" y2="180"/>
+  <text x="510" y="180">o'</text>
+</g>
+
+<g id="s6" visibility="hidden">
+  <line class="red" x1="500" y1="180" x2="448" y2="500"/>
+  <line class="red" x1="500" y1="180" x2="552" y2="500"/>
+  <line class="red" x1="448" y1="500" x2="552" y2="500"/>
+  <line class="red" x1="500" y1="180" x2="500" y2="500"/>
+  <text x="420" y="490">c'(d')</text>
+  <text x="492" y="490">b'(e')</text>
+  <text x="570" y="490">a'(f')</text>
+</g>
+
+<g id="s7" visibility="hidden">
+  <line class="red" x1="410" y1="630" x2="410" y2="690" marker-start="url(#arrowUp)" marker-end="url(#arrowDown)"/>
+  <text x="385" y="665" transform="rotate(-90 385 665)">30</text>
+
+  <line class="red" x1="350" y1="500" x2="350" y2="180" marker-start="url(#arrowDown)" marker-end="url(#arrowUp)"/>
+  <text x="330" y="340" transform="rotate(-90 330 340)">60</text>
+</g>
+
+<g id="s8" visibility="hidden" transform="translate(350,0) rotate(30 552 500)">
+  <line class="red" x1="500" y1="180" x2="448" y2="500"/>
+  <line class="red" x1="500" y1="180" x2="552" y2="500"/>
+  <line class="red" x1="448" y1="500" x2="552" y2="500"/>
+  <line class="red" x1="500" y1="180" x2="500" y2="500"/>
+  <text x="435" y="515">c'(d')</text>
+  <text x="510" y="495">b'(e')</text>
+  <text x="560" y="515">a'(f')</text>
+  <text x="515" y="195">o'</text>
+  <line class="yellow" x1="500" y1="500" x2="500" y2="530"/>
+  <text x="440" y="500" transform="rotate(-30 520 470)" class="blue">θ = 60°</text>
+</g>
+
+<g id="s9" visibility="hidden">
+  <g transform="translate(350,0) rotate(30 552 500)">
+    <line class="yellow" x1="500" y1="180" x2="500" y2="720" transform="rotate(-30 500 180)"/>
+    <line class="yellow" x1="448" y1="500" x2="448" y2="780" transform="rotate(-30 448 500)"/>
+    <line class="yellow" x1="552" y1="500" x2="552" y2="740" transform="rotate(-30 552 500)"/>
+    <line class="yellow" x1="500" y1="500" x2="500" y2="760" transform="rotate(-30 500 500)"/>
+  </g>
+  <line class="yellow" x1="448" y1="630" x2="1030" y2="630"/>
+  <line class="yellow" x1="500" y1="600" x2="1030" y2="600"/>
+  <line class="yellow" x1="552" y1="630" x2="1030" y2="630"/>
+  <line class="yellow" x1="552" y1="690" x2="1030" y2="690"/>
+  <line class="yellow" x1="500" y1="720" x2="1030" y2="720"/>
+  <line class="yellow" x1="448" y1="690" x2="1030" y2="690"/>
+  <line class="yellow" x1="500" y1="660" x2="1030" y2="660"/>
+</g>
+
+<g id="s10" visibility="hidden">
+  <circle cx="855" cy="600" r="3" fill="red"/>
+  <circle cx="810" cy="630" r="3" fill="red"/>
+  <circle cx="900" cy="630" r="3" fill="red"/>
+  <circle cx="1020" cy="660" r="3" fill="red"/>
+  <circle cx="810" cy="690" r="3" fill="red"/>
+  <circle cx="900" cy="690" r="3" fill="red"/>
+  <circle cx="855" cy="720" r="3" fill="red"/>
+</g>
+
+<g id="s11" visibility="hidden">
+  <line class="red" x1="855" y1="720" x2="810" y2="690"/>
+  <line class="red" x1="812" y1="690" x2="812" y2="630"/>
+  <line class="red" x1="810" y1="630" x2="855" y2="600"/>
+  <line class="red" x1="810" y1="690" x2="1020" y2="660"/>
+  <line class="red" x1="810" y1="630" x2="1020" y2="660"/>
+  <line class="red" x1="855" y1="720" x2="1020" y2="660"/>
+  <line class="red" x1="855" y1="600" x2="1020" y2="660"/>
+  <text x="860" y="660">o</text>
+  <line class="red" x1="860" y1="660" x2="1020" y2="660" stroke-dasharray="8 4 2 4"/>
+</g>
+
+</svg>
+
+<script>
+let step=1;
+const maxStep=11;
+
+// Added step descriptions array
+const stepDescriptions = [
+  "", // Index 0 is unused
+  "Step 1: Draw the reference line XY.",
+  "Step 2: Draw the initial top view of the hexagonal pyramid.",
+  "Step 3: Mark the center 'o' and draw the slant edges in the top view.",
+  "Step 4: Draw vertical projectors upward from the top view to the XY line.",
+  "Step 5: Draw the axis line upward to locate the apex o'.",
+  "Step 6: Complete the initial front view triangle by joining base points to the apex.",
+  "Step 7: Mark the given dimensions (Base: 30 mm, Axis: 60 mm).",
+  "Step 8: Tilt the front view so that the axis is inclined at 60° to the HP.",
+  "Step 9: Draw downward vertical projectors from the tilted front view and horizontal projectors from the initial top view.",
+  "Step 10: Locate the new intersection points for the final top view.",
+  "Step 11: Join the points with visible and chain lines to complete the final projections."
+];
+
+function show(){
+  for(let i=1;i<=maxStep;i++){
+    const g=document.getElementById("s"+i);
+    if(g) g.setAttribute("visibility", i<=step ? "visible":"hidden");
+  }
+  // Added logic to update text based on the current step
+  const stepTextDiv = document.getElementById("stepText");
+  if(stepTextDiv) stepTextDiv.innerText = stepDescriptions[step];
+}
+
+function next(){ if(step<maxStep){step++;show();} }
+function prev(){ if(step>1){step--;show();} }
+
+show();
+</script>
+</body>
+</html>

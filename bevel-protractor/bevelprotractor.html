@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="icon" href="./favicon.ico" />
+  <title>Bevel Protractor</title>
+  <style>
+    :root {
+      --canvas-w: 1500px;
+      --canvas-h: 700px;
+      --bg: #ffffff;
+    }
+
+    .back-link {
+      position: absolute;
+      top: 50px;
+      left: 20px;
+      font-size: 16px;
+      font-weight: 500;
+      color: #0b5cff;
+      text-decoration: none;
+      z-index: 100;
+      /* Ensure it's above the stage */
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: #111;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      height: 100vh;
+    }
+
+    .container {
+      display: flex;
+      width: 95%;
+      height: var(--canvas-h);
+    }
+
+    .left-panel {
+      flex: 4;
+      position: relative;
+    }
+
+    .right-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: start;
+      padding-top: 40px;
+      gap: 30px;
+    }
+
+    .stage {
+      width: 100%;
+      height: 100%;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+      background: linear-gradient(#fff, #f7f7f7);
+      position: relative;
+      overflow: visible;
+    }
+
+    .part {
+      position: absolute;
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: auto;
+      transition: box-shadow 160ms;
+    }
+
+    #disc {
+      left: 230.5px;
+      top: 165px;
+      width: 165px;
+      height: 100px;
+      z-index: 5;
+    }
+
+    #scale {
+      left: 150px;
+      top: 100px;
+      width: 600px;
+      z-index: 3;
+    }
+
+    #blade {
+      left: 160px;
+      top: 250px;
+      width: 820px;
+      height: 350px;
+      z-index: 2;
+      transition: transform 0.25s ease;
+    }
+
+    #triangle {
+      position: absolute;
+      left: 750px;
+      top: 300px;
+      width: 200px;
+      height: 200px;
+      cursor: grab;
+      z-index: 6;
+      transition: transform 0.5s ease, filter 0.15s, left 0.5s, top 0.5s;
+    }
+
+    #triangle:active {
+      cursor: grabbing;
+      filter: drop-shadow(0 0 6px rgba(255, 60, 0, 0.5));
+    }
+
+    .rotate-btn {
+      position: absolute;
+      left: 50%;
+      top: 90%;
+      transform: translate(-50%, -50%);
+      padding: 14px 28px;
+      background: #0b5cff;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(11, 92, 255, 0.25);
+      transition: background 0.25s, transform 0.2s;
+    }
+
+    .rotate-btn:hover {
+      background: #0044cc;
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+
+    .rotate-btn:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .data-table {
+      border-collapse: collapse;
+      background: #fff;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+      border-radius: 8px;
+      overflow: hidden;
+      font-size: 14px;
+      width: 80%;
+    }
+
+    .data-table th,
+    .data-table td {
+      border: 1px solid #ddd;
+      padding: 8px 12px;
+      text-align: center;
+    }
+
+    .data-table th {
+      background: #0b5cff;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    .data-table td[contenteditable="true"] {
+      background: #f9f9f9;
+      cursor: text;
+    }
+
+    .data-table td[contenteditable="true"]:focus {
+      outline: 2px solid #0b5cff;
+      background: #fff;
+    }
+
+    .calc-btn {
+      padding: 10px 24px;
+      background: #0b5cff;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(255, 102, 0, 0.25);
+      transition: background 0.25s, transform 0.2s;
+    }
+
+    .calc-btn:hover {
+      background: #cc5200;
+      transform: scale(1.05);
+    }
+
+    .title {
+      position: absolute;
+      left: 16px;
+      top: 12px;
+      font-weight: 700;
+      font-size: 25px;
+    }
+
+    .instructions {
+      background: #eef3ff;
+      border-left: 4px solid #0b5cff;
+      border-radius: 6px;
+      padding: 12px 18px;
+      font-size: 14px;
+      width: 80%;
+      text-align: left;
+    }
+
+    .highlighted {
+      box-shadow: 0 20px 40px rgba(11, 92, 255, 0.18) !important;
+      filter: drop-shadow(0 6px 12px rgba(11, 92, 255, 0.12));
+    }
+
+    .result-box {
+      width: 85%;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      font-size: 14px;
+      text-align: left;
+      display: none;
+    }
+
+    .result-box h2 {
+      color: #0b5cff;
+      margin-bottom: 10px;
+    }
+
+    .info {
+      background: #eef3ff;
+      padding: 12px 18px;
+      border-left: 4px solid #0b5cff;
+      border-radius: 6px;
+      margin-bottom: 18px;
+    }
+
+    .angle strong {
+      color: #0b5cff;
+    }
+
+    .total {
+      margin-top: 18px;
+      font-weight: bold;
+      font-size: 20px;
+      border-top: 2px solid #0b5cff;
+      padding-top: 10px;
+      color: #0b5cff;
+    }
+
+    /* 🔻 Arrow styles */
+    /* 🔻 Realistic downward arrow with shaft and arrowhead */
+    .arrow {
+      position: absolute;
+      width: 3px;
+      height: 40px;
+      background-color: red;
+      display: none;
+      z-index: 10;
+      border-radius: 2px;
+      filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.25));
+    }
+
+    .arrow::after {
+      content: "";
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 12px solid red;
+    }
+
+    .arrow.vsd {
+      background-color: blue;
+    }
+
+    .arrow.vsd::after {
+      border-top-color: blue;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <a href="./index.html" class="back-link">← Go back to introduction</a>
+    <div class="left-panel">
+      <div class="stage" id="stage">
+        <div class="title">Bevel Protractor — Virtual Lab</div>
+
+        <img id="disc" class="part" src="./verniarscale.png" alt="disc">
+        <img id="scale" class="part" src="./mainscale.png" alt="scale (rotatable)">
+        <img id="blade" class="part" src="./line.png" alt="blade">
+
+        <svg id="triangle" width="300" height="160">
+          <polygon points="50,200 200,200 155,0" fill="#ff3d00" stroke="#222" stroke-width="1.5" />
+          <text x="87" y="180" font-size="14" font-weight="bold" fill="#000">A3</text>
+          <text x="155" y="180" font-size="14" font-weight="bold" fill="#000">A1</text>
+          <text x="145" y="50" font-size="14" font-weight="bold" fill="#000">A2</text>
+          <path d="M161.5 30 A10 5 0 0 1 140 30" stroke="black" stroke-width="1" fill="none" />
+          <path d="M185 200 A10 10 0 0 1 192 170" stroke="black" stroke-width="1" fill="none" />
+          <path d="M66 170 A10 10 0 0 1 70 200" stroke="black" stroke-width="1" fill="none" />
+        </svg>
+
+        <!-- 🔻 Arrows -->
+        <div id="msdArrow" class="arrow"></div>
+        <div id="vsdArrow" class="arrow vsd"></div>
+
+        <button class="rotate-btn" id="rotateBtn">Rotate</button>
+        <button class="rotate-btn" id="alignBtn" style="left:65%; top:90%;">Align</button>
+        <button class="rotate-btn" id="measureBtn" style="left:80%; top:90%;">Measure</button>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="instructions">
+        <strong>Instructions:</strong><br>
+        1️⃣ Click <b>Rotate</b> to select the workpiece angle.<br>
+        2️⃣ Click <b>Align</b> to set the reference edge.<br>
+        3️⃣ Click <b>Measure</b> to record the MSD and VSD values.<br>
+        4️⃣ Click <b>Calculate</b> to display the final readings.
+      </div>
+
+      <table class="data-table" id="angleTable">
+        <tr>
+          <th>Angle</th>
+          <th>MSD</th>
+          <th>VSC</th>
+        </tr>
+        <tr>
+          <td><strong>A1</strong></td>
+          <td contenteditable="true"></td>
+          <td contenteditable="true"></td>
+        </tr>
+        <tr>
+          <td><strong>A2</strong></td>
+          <td contenteditable="true"></td>
+          <td contenteditable="true"></td>
+        </tr>
+        <tr>
+          <td><strong>A3</strong></td>
+          <td contenteditable="true"></td>
+          <td contenteditable="true"></td>
+        </tr>
+      </table>
+      <button class="calc-btn" id="calcBtn">Calculate</button>
+
+      <div class="result-box" id="resultBox">
+        <h2>Bevel Protractor — Angle Determination</h2>
+        <div class="info">
+          <p><strong>Formula:</strong> Angle = MSD + (VSC × LC)</p>
+          <p><strong>Least Count (LC):</strong> 1/12 or 0.0833</p>
+        </div>
+        <div id="output"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const scaleEl = document.getElementById('scale');
+    const discEl = document.getElementById('disc');
+    const bladeEl = document.getElementById('blade');
+    const triangleEl = document.getElementById('triangle');
+    const rotateBtn = document.getElementById('rotateBtn');
+    const alignBtn = document.getElementById('alignBtn');
+    const measureBtn = document.getElementById('measureBtn');
+    const calcBtn = document.getElementById('calcBtn');
+
+    const msdArrow = document.getElementById("msdArrow");
+    const vsdArrow = document.getElementById("vsdArrow");
+
+    let angle = 0, bladeOffset = 0, triangleRotationIndex = 0;
+    const trianglePositions = [{ x: 368, y: 215 }, { x: 456, y: 239 }, { x: 419, y: 317 }];
+    const scaleAngles = [-62.55, -77, -40.4];
+
+    function applyScaleTransform() { scaleEl.style.transformOrigin = "26.5% 47.5%"; scaleEl.style.transform = `rotate(${angle}deg)`; }
+    function applyBladeTransform() { bladeEl.style.transform = `translateX(${bladeOffset}px)`; }
+
+    [scaleEl, discEl, bladeEl].forEach(el => { el.addEventListener('click', () => { el.classList.add('highlighted'); setTimeout(() => el.classList.remove('highlighted'), 420); }); el.ondragstart = () => false; });
+
+    applyScaleTransform(); applyBladeTransform();
+
+    const tableValues = [{ MSD: "80", VSD: "6" }, { MSD: "39", VSD: "3" }, { MSD: "60", VSD: "3" }];
+    let currentStep = 0;
+    alignBtn.disabled = true; measureBtn.disabled = true;
+    function updateButtonStates() { rotateBtn.disabled = currentStep !== 0; alignBtn.disabled = currentStep !== 1; measureBtn.disabled = currentStep !== 2; }
+    updateButtonStates();
+
+    const triangleAngles = [0, 102.7, 242.5];
+
+    rotateBtn.addEventListener('click', () => {
+      triangleRotationIndex = (triangleRotationIndex + 1) % trianglePositions.length;
+      const rotation = triangleAngles[triangleRotationIndex];
+      triangleEl.style.transform = `rotate(${rotation}deg)`;
+      triangleEl.classList.add("highlighted");
+      setTimeout(() => triangleEl.classList.remove("highlighted"), 500);
+      currentStep = 1;
+      updateButtonStates();
+
+      // 🔹 Hide arrows when rotating
+      msdArrow.style.display = "none";
+      vsdArrow.style.display = "none";
+    });
+
+    alignBtn.addEventListener('click', () => { const pos = trianglePositions[triangleRotationIndex]; const scaleAngle = scaleAngles[triangleRotationIndex]; triangleEl.style.left = pos.x + 'px'; triangleEl.style.top = pos.y + 'px'; angle = scaleAngle; applyScaleTransform(); currentStep = 2; updateButtonStates(); });
+
+    // 🔹 Arrow positions for each angle
+    const arrowPositions = [
+      { msd: { left: 307, top: 144 }, vsd: { left: 328, top: 146 } }, // A1
+      { msd: { left: 306.5, top: 136 }, vsd: { left: 318, top: 144 } }, // A2
+      { msd: { left: 306.5, top: 144 }, vsd: { left: 318, top: 144 } }  // A3
+    ];
+
+    let measureStep = 0;
+    measureBtn.addEventListener('click', () => {
+      const table = document.querySelector("#angleTable");
+      const rowIndex = measureStep + 1;
+      const row = table.rows[rowIndex];
+      const valueIndex = measureStep % tableValues.length;
+      row.cells[1].innerText = tableValues[valueIndex].MSD;
+      row.cells[2].innerText = tableValues[valueIndex].VSD;
+
+      // 🔹 Show arrows
+      const arrowPos = arrowPositions[measureStep];
+      msdArrow.style.left = arrowPos.msd.left + "px";
+      msdArrow.style.top = arrowPos.msd.top + "px";
+      vsdArrow.style.left = arrowPos.vsd.left + "px";
+      vsdArrow.style.top = arrowPos.vsd.top + "px";
+      msdArrow.style.display = "block";
+      vsdArrow.style.display = "block";
+
+      measureStep = (measureStep + 1) % 3;
+      currentStep = 0;
+      updateButtonStates();
+    });
+
+    calcBtn.addEventListener("click", () => { const table = document.querySelector(".data-table"); const rows = table.querySelectorAll("tr"); const data = []; for (let i = 1; i < rows.length; i++) { const cells = rows[i].querySelectorAll("td"); data.push({ Angle: cells[0].innerText.trim(), MSD: cells[1].innerText.trim(), VSD: cells[2].innerText.trim() }); } const LC = 0.083; const resultBox = document.getElementById("resultBox"); const output = document.getElementById("output"); let html = "", total = 0; if (data.length === 0) { html = "<em>No data entered.</em>"; } else { data.forEach((row, i) => { const angle = row.Angle || `A${i + 1}`; const msd = parseFloat(row.MSD || 0); const vsd = parseFloat(row.VSD || 0); const result = msd + (vsd * LC); total += result; html += `<div class='angle'><strong>${angle}</strong>: ${msd} + (${vsd} × ${LC}) = <strong>${result.toFixed(2)}°</strong></div>`; }); html += `<div class='total'>Total = ${total.toFixed(2)}°</div>`; } output.innerHTML = html; resultBox.style.display = "block"; });
+  </script>
+</body>
+
+</html>

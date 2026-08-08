@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projection of Planes Simulation</title>
+    <link rel="icon" href="./favicon.ico" />
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .controls {
+            margin-bottom: 15px;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        select {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            cursor: pointer;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        #canvas-container {
+            position: relative;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background: white;
+            border-radius: 4px;
+        }
+
+        canvas {
+            background-color: #ffffff;
+            display: block;
+        }
+
+        #step-description {
+            margin-top: 15px;
+            font-size: 18px;
+            color: #444;
+            font-weight: 500;
+            height: 30px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Projections of Planes (25mm side)</h2>
+    <p style="margin-top:0; color:#666;">Conditions: Side in HP | Surface &theta;=45° HP | Side &phi;=60° VP</p>
+
+    <div class="controls">
+        <label for="shape-select"><strong>Select Shape:</strong></label>
+        <select id="shape-select" onchange="changeShape()">
+            <option value="hexagon">Regular Hexagon</option>
+            <option value="pentagon">Regular Pentagon</option>
+            <option value="square">Square</option>
+        </select>
+        <div style="width: 20px;"></div> <button id="btn-prev" onclick="prevStep()">Previous</button>
+        <button id="btn-next" onclick="nextStep()">Next Step</button>
+        <button id="btn-reset" onclick="resetAnimation()">Reset</button>
+        <button id="btn-auto" onclick="toggleAuto()">Play Animation</button>
+        <button onclick="window.location.href='./index.html'">Home</button>
+
+    </div>
+
+    <div id="step-description">Step 0: Setup Axes</div>
+
+    <div id="canvas-container">
+        <canvas id="mainCanvas" width="1000" height="650"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // --- CONFIGURATION ---
+        const SCALE = 3.5; // Scale factor for pixels
+        const S = 25 * SCALE; // Side length
+        const Y_AXIS = 300; // Y position of the XY line
+        const START_X = 150;
+        const START_Y_TV = Y_AXIS + 50;
+
+        // COLORS
+        const COLOR_XY = "black";
+        const COLOR_OBJECT = "red";
+        const COLOR_PROJECTOR = "#FFC300"; // Gold/Yellow
+        const COLOR_CONSTRUCTION = "red"; // Solid Red
+
+        // State
+        let currentStep = 0;
+        let autoPlayInterval = null;
+        const TOTAL_STEPS = 10;
+
+        // Geometry Storage
+        let geometry = {
+            tv1: {}, // Initial Top View
+            fv1: {}, // Initial Front View (Line)
+            fv2: {}, // Inclined Front View
+            tv2: {}, // Inclined Top View
+            tv3: {}, // Rotated Top View (Final inclination)
+            fv3: {}, // Final Front View
+            labels: [], // Labels list based on shape ['a','b'...]
+            constructionLine: {} // For the 60 degree line
+        };
+
+        // --- GEOMETRY GENERATION ---
+
+        function calculateGeometry(shapeType) {
+            let points = {};
+            let labels = [];
+
+            const cx = START_X + 50;
+            const cy = START_Y_TV + S;
+
+            // 1. Generate Basic Shape (Side AB vertical on left)
+            if (shapeType === 'hexagon') {
+                labels = ['a', 'b', 'c', 'd', 'e', 'f'];
+                const dx = (S * Math.sqrt(3)) / 2;
+                points = {
+                    a: { x: cx - dx, y: cy - S / 2 },
+                    b: { x: cx - dx, y: cy + S / 2 },
+                    c: { x: cx, y: cy + S },
+                    d: { x: cx + dx, y: cy + S / 2 },
+                    e: { x: cx + dx, y: cy - S / 2 },
+                    f: { x: cx, y: cy - S }
+                };
+            }
+            else if (shapeType === 'square') {
+                labels = ['a', 'b', 'c', 'd'];
+                // Square with vertical side on left
+                const half = S / 2;
+                points = {
+                    a: { x: cx - half, y: cy - half },
+                    b: { x: cx - half, y: cy + half },
+                    c: { x: cx + half, y: cy + half },
+                    d: { x: cx + half, y: cy - half }
+                };
+            }
+            else if (shapeType === 'pentagon') {
+                labels = ['a', 'b', 'c', 'd', 'e'];
+                // Pentagon side AB vertical on left. 
+                // We construct relative to AB, then shift to cx, cy
+                // A is top-left, B is bot-left
+                // Using trig to find C, D, E
+                const rad72 = 72 * Math.PI / 180;
+                const rad36 = 36 * Math.PI / 180;
+
+                // Local coords where midpoint of AB is (0,0)
+                const Ax = 0, Ay = -S / 2;
+                const Bx = 0, By = S / 2;
+
+                // C is from B, angle -18 deg from vertical (72 deg internal)
+                const Cx = S * Math.sin(rad72);
+                const Cy = S / 2 + S * Math.cos(rad72);
+
+                // D is the apex tip
+                const Dx = S * Math.sin(rad72) + S * Math.sin(rad36);
+                const Dy = 0; // centered Y
+
+                // E is mirror of C
+                const Ex = Cx;
+                const Ey = -Cy;
+
+                // Shift to global position (Center based on width)
+                const width = Dx; // max width
+                const startX = cx - width / 2;
+
+                points = {
+                    a: { x: startX + Ax, y: cy + Ay },
+                    b: { x: startX + Bx, y: cy + By },
+                    c: { x: startX + Cx, y: cy + Cy },
+                    d: { x: startX + Dx, y: cy + Dy },
+                    e: { x: startX + Ex, y: cy + Ey }
+                };
+            }
+
+            geometry.tv1 = points;
+            geometry.labels = labels;
+
+            // 2. Initial Front View (Points projected to XY Line)
+            geometry.fv1 = {};
+            labels.forEach(k => {
+                geometry.fv1[k] = { x: geometry.tv1[k].x, y: Y_AXIS };
+            });
+
+            // 3. Stage 2 FV: Surface Inclination (45 deg)
+            // Pivot is the side on HP. For all our shapes, side 'ab' is the leftmost vertical side.
+            // So Pivot is fv1.a (or fv1.b).
+            geometry.fv2 = {};
+            const pivot = geometry.fv1.a;
+            const angleSurf = 45 * (Math.PI / 180);
+            const shiftX = 200; // Move drawing to right
+
+            labels.forEach(k => {
+                const dist = geometry.fv1[k].x - pivot.x; // Distance from pivot along line
+                // Rotate this distance by 45 deg
+                // New position relative to new pivot start
+                const newPivotX = pivot.x + shiftX;
+                geometry.fv2[k] = {
+                    x: newPivotX + dist * Math.cos(angleSurf),
+                    y: Y_AXIS - dist * Math.sin(angleSurf)
+                };
+            });
+
+            // 4. Stage 2 TV: Projection
+            geometry.tv2 = {};
+            labels.forEach(k => {
+                geometry.tv2[k] = {
+                    x: geometry.fv2[k].x, // X from inclined FV
+                    y: geometry.tv1[k].y  // Y from original TV
+                };
+            });
+
+            // 5. Stage 3 TV: Side Inclination (60 deg to VP)
+            // The side 'ab' is vertical in TV2. We want it 60 deg to XY.
+            // We will define a construction line at 60 degrees and place the shape on it.
+            geometry.tv3 = {};
+
+            // Define the 60-degree construction line
+            const angleSide = 60 * (Math.PI / 180);
+            const lineStartX = 650;
+            const lineStartY = Y_AXIS;
+            const lineLen = 300;
+            geometry.constructionLine = {
+                start: { x: lineStartX, y: lineStartY },
+                end: {
+                    x: lineStartX + lineLen * Math.cos(angleSide),
+                    y: lineStartY + lineLen * Math.sin(angleSide)
+                }
+            };
+
+            // Place point 'a' on this line, some distance from XY
+            const distFromXY = 100;
+            const a3 = {
+                x: lineStartX + distFromXY * Math.cos(angleSide),
+                y: lineStartY + distFromXY * Math.sin(angleSide)
+            };
+            geometry.tv3.a = a3;
+
+            // Place point 'b' on the same line, distance S from 'a'
+            geometry.tv3.b = {
+                x: a3.x + S * Math.cos(angleSide),
+                y: a3.y + S * Math.sin(angleSide)
+            };
+
+            // Now, place the rest of the points relative to the line ab.
+            // We need to rotate the points from tv2 based on the new orientation of ab.
+            // In tv2, vector ab is (0, S). In tv3, it's at 60 deg.
+            // The rotation angle is from 90 deg (vertical) to 60 deg.
+            // This is a -30 degree rotation.
+            const rotAngle = -30 * (Math.PI / 180);
+
+            // We can use point 'a' as the pivot for rotation from the tv2 configuration
+            labels.forEach(k => {
+                if (k === 'a' || k === 'b') return; // already placed
+
+                // Vector from a to k in tv2
+                const dx = geometry.tv2[k].x - geometry.tv2.a.x;
+                const dy = geometry.tv2[k].y - geometry.tv2.a.y;
+
+                // Rotate this vector
+                const dx_rot = dx * Math.cos(rotAngle) - dy * Math.sin(rotAngle);
+                const dy_rot = dx * Math.sin(rotAngle) + dy * Math.cos(rotAngle);
+
+                // Add rotated vector to new 'a' position
+                geometry.tv3[k] = {
+                    x: geometry.tv3.a.x + dx_rot,
+                    y: geometry.tv3.a.y + dy_rot
+                };
+            });
+
+            // 6. Final FV
+            geometry.fv3 = {};
+            labels.forEach(k => {
+                geometry.fv3[k] = {
+                    x: geometry.tv3[k].x, // X from final TV
+                    y: geometry.fv2[k].y  // Height from inclined FV
+                };
+            });
+        }
+
+        function drawDimension(p1, p2, offset = 25, text = "30") {
+            // Direction vector
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+            const len = Math.hypot(dx, dy);
+
+            // Unit normal (downwards)
+            const nx = -dy / len;
+            const ny = dx / len;
+
+            // Offset points (dimension line)
+            const d1 = { x: p1.x + nx * offset, y: p1.y + ny * offset };
+            const d2 = { x: p2.x + nx * offset, y: p2.y + ny * offset };
+
+            // Projection lines
+            drawLine(p1, d1, "yellow", 1);
+            drawLine(p2, d2, "yellow", 1);
+
+            // Dimension line
+            drawLine(d1, d2, "red", 2);
+
+            // Closed arrowheads
+            const arrowSize = 6;
+            function arrow(at, dir) {
+                ctx.beginPath();
+                ctx.moveTo(at.x, at.y);
+
+                ctx.lineTo(
+                    at.x + arrowSize * (dir.x + dir.y),
+                    at.y + arrowSize * (dir.y - dir.x)
+                );
+                ctx.lineTo(
+                    at.x + arrowSize * (dir.x - dir.y),
+                    at.y + arrowSize * (dir.y + dir.x)
+                );
+
+                ctx.closePath();
+                ctx.fillStyle = "red";
+                ctx.fill();
+            }
+
+
+            const ux = dx / len, uy = dy / len;
+            arrow(d1, { x: ux, y: uy });
+            arrow(d2, { x: -ux, y: -uy });
+
+            // Text (centered, above dimension line)
+            const midX = (d1.x + d2.x) / 2;
+            const midY = (d1.y + d2.y) / 2;
+
+            ctx.save();
+            ctx.translate(midX, midY);
+            ctx.rotate(1.5 * (Math.PI)); // vertical text
+            ctx.fillStyle = "red";
+            ctx.font = "16px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            // move text to LEFT of dimension line
+            ctx.fillText(text, -5, -15);
+
+            ctx.restore();
+
+
+        }
+
+        // --- DRAWING HELPERS ---
+
+        function drawLine(p1, p2, color = "black", width = 1, dashed = false) {
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            if (dashed) ctx.setLineDash([5, 5]);
+            else ctx.setLineDash([]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        function drawPoly(pointsObj, labelsList, color = "red", width = 2) {
+            ctx.beginPath();
+            const first = pointsObj[labelsList[0]];
+            ctx.moveTo(first.x, first.y);
+            for (let i = 1; i < labelsList.length; i++) {
+                const p = pointsObj[labelsList[i]];
+                ctx.lineTo(p.x, p.y);
+            }
+            ctx.closePath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.stroke();
+        }
+
+        function drawLabel(p, text, offsetX = -10, offsetY = -10, color = "black") {
+            // Dot stays at exact point
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 3, 0, 2 * Math.PI);
+            ctx.fillStyle = "orange";
+            ctx.fill();
+            ctx.stroke();
+
+            // Text is offset
+            ctx.fillStyle = color;
+            ctx.font = "14px Arial";
+            ctx.fillText(text, p.x + offsetX, p.y + offsetY);
+        }
+
+        function isOverlapping(r1, r2) {
+            return !(r2.x > r1.x + r1.w ||
+                r2.x + r2.w < r1.x ||
+                r2.y > r1.y + r1.h ||
+                r2.y + r2.h < r1.y);
+        }
+
+        function formatLabel(k) {
+            if (k === 'a' || k === 'f' || k === 'e') {
+                return `(${k}')`;
+            }
+            return `${k}'`;
+        }
+
+        function placeLabelHorizontal(p, text, existingBoxes) {
+            // Force labels to go horizontally
+            const offsets = [
+                { x: 2, y: -25 },
+                { x: 2, y: -25 },
+                { x: 2, y: -25 },
+                { x: 2, y: -25 },
+                { x: 2, y: -25 },
+                { x: 2, y: -25 }
+            ];
+
+            for (let i = 0; i < offsets.length; i++) {
+                const off = offsets[i];
+                const box = {
+                    x: p.x + off.x - 10,
+                    y: p.y + off.y - 10,
+                    w: ctx.measureText(text).width + 15,
+                    h: 18
+                };
+
+                let overlap = false;
+                for (const b of existingBoxes) {
+                    if (isOverlapping(box, b)) {
+                        overlap = true;
+                        break;
+                    }
+                }
+
+                if (!overlap) {
+                    existingBoxes.push(box);
+                    drawLabel(p, text, off.x, off.y);
+                    return;
+                }
+            }
+
+            // fallback
+            drawLabel(p, text, -10, -10);
+        }
+
+        function drawProjector(p1, p2) {
+            drawLine(p1, p2, COLOR_PROJECTOR, 1);
+        }
+
+        // --- MAIN RENDER ---
+
+        function drawScene() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // XY Line
+            drawLine({ x: 20, y: Y_AXIS }, { x: 980, y: Y_AXIS }, COLOR_XY, 1);
+            ctx.fillStyle = "black";
+            ctx.fillText("X", 20, Y_AXIS - 10);
+            ctx.fillText("Y", 980, Y_AXIS - 10);
+
+            const keys = geometry.labels;
+
+            /* ===============================
+               BACKGROUND – YELLOW LINES FIRST
+               =============================== */
+
+            // Step 2: Projectors Up
+            if (currentStep >= 2) {
+                keys.forEach(k => drawProjector(geometry.tv1[k], geometry.fv1[k]));
+            }
+
+            // Step 5: Projectors Down/Right
+            if (currentStep >= 5) {
+                keys.forEach(k => {
+                    drawProjector(geometry.fv2[k], { x: geometry.tv2[k].x, y: geometry.tv2[k].y });
+                    drawLine(
+                        geometry.tv1[k],
+                        { x: geometry.tv2[k].x, y: geometry.tv1[k].y },
+                        COLOR_PROJECTOR,
+                        1
+                    );
+                });
+            }
+
+            // Step 8: Projectors Up/Right
+            if (currentStep >= 8) {
+                keys.forEach(k => {
+                    drawProjector(
+                        geometry.tv3[k],
+                        { x: geometry.tv3[k].x, y: geometry.fv3[k].y }
+                    );
+                    drawLine(
+                        geometry.fv2[k],
+                        { x: geometry.fv3[k].x, y: geometry.fv2[k].y },
+                        COLOR_PROJECTOR,
+                        1
+                    );
+                });
+            }
+
+            /* ===============================
+               FOREGROUND – RED OBJECT LINES
+               =============================== */
+
+            // Step 1: Initial TV
+            if (currentStep >= 1) {
+                drawPoly(geometry.tv1, keys, COLOR_OBJECT, 2);
+                keys.forEach(k => drawLabel(geometry.tv1[k], k));
+            }
+
+            // Step 3: Initial FV
+            if (currentStep >= 3) {
+                let minX = 10000, maxX = 0;
+                keys.forEach(k => {
+                    minX = Math.min(minX, geometry.fv1[k].x);
+                    maxX = Math.max(maxX, geometry.fv1[k].x);
+                });
+                drawLine({ x: minX, y: Y_AXIS }, { x: maxX, y: Y_AXIS }, COLOR_OBJECT, 3);
+                let boxes = [];
+                keys.forEach(k => placeLabelHorizontal(geometry.fv1[k], formatLabel(k), boxes));
+
+
+            }
+
+            // Step 4: FV Tilted 45°
+            if (currentStep >= 4) {
+                let p1 = geometry.fv2[keys[0]];
+                let pLast = p1;
+                let maxDist = 0;
+
+                keys.forEach(k => {
+                    const d = Math.hypot(
+                        geometry.fv2[k].x - p1.x,
+                        geometry.fv2[k].y - p1.y
+                    );
+                    if (d > maxDist) {
+                        maxDist = d;
+                        pLast = geometry.fv2[k];
+                    }
+                });
+
+                drawLine(p1, pLast, COLOR_OBJECT, 3);
+                let boxes = [];
+                keys.forEach(k => placeLabelHorizontal(geometry.fv2[k], formatLabel(k), boxes));
+
+
+                // 45° arc
+                const angleRad = 45 * Math.PI / 180;
+                ctx.beginPath();
+                ctx.arc(p1.x, Y_AXIS, 40, 0, -angleRad, true);
+                ctx.strokeStyle = "blue";
+                ctx.stroke();
+                ctx.fillText("45°", p1.x + 35, Y_AXIS - 15);
+            }
+
+            // Step 6: TV2
+            if (currentStep >= 6) {
+                drawPoly(geometry.tv2, keys, COLOR_OBJECT, 2);
+                keys.forEach(k => drawLabel(geometry.tv2[k], k));
+            }
+
+            // Step 7: TV3 + 60° line
+            if (currentStep >= 7) {
+                drawLine(
+                    geometry.constructionLine.start,
+                    geometry.constructionLine.end,
+                    COLOR_CONSTRUCTION,
+                    1
+                );
+
+                drawPoly(geometry.tv3, keys, COLOR_OBJECT, 2);
+                keys.forEach(k => drawLabel(geometry.tv3[k], k));
+
+                ctx.beginPath();
+                ctx.arc(
+                    geometry.constructionLine.start.x,
+                    geometry.constructionLine.start.y,
+                    50,
+                    0,
+                    60 * Math.PI / 180
+                );
+                ctx.strokeStyle = "blue";
+                ctx.stroke();
+                ctx.fillText("60°",
+                    geometry.constructionLine.start.x + 40,
+                    geometry.constructionLine.start.y + 35
+                );
+                // ---- redraw XY axis LAST so it stays on top of step-8 horizontal projector ----
+                drawLine(
+                    { x: 20, y: Y_AXIS },
+                    { x: 980, y: Y_AXIS },
+                    COLOR_XY,
+                    1
+                );
+            }
+
+            // Step 9: Final FV
+            if (currentStep >= 9) {
+                drawPoly(geometry.fv3, keys, COLOR_OBJECT, 3);
+                keys.forEach(k => drawLabel(geometry.fv3[k], k + "'"));
+            }
+
+            // Step 10: Dimension for hexagon side (30 mm)
+            if (currentStep >= 10 && geometry.labels.length === 6) {
+                // Base side of hexagon in initial TV: a–b
+                const a = geometry.tv1.a;
+                const b = geometry.tv1.b;
+
+                drawDimension(a, b, 30, "30");
+            }
+
+
+
+        }
+
+        // --- CONTROLLER LOGIC ---
+
+        function changeShape() {
+            const shape = document.getElementById('shape-select').value;
+            resetAnimation();
+            calculateGeometry(shape);
+            drawScene();
+        }
+
+        const descriptions = [
+            "Step 0: Draw XY Line.",
+            "Step 1: Draw Initial Top View. (Side perpendicular to XY)",
+            "Step 2: Project points up to XY.",
+            "Step 3: Draw Initial Front View on XY line.",
+            "Step 4: Incline Front View at 45° to HP.",
+            "Step 5: Project points down and right.",
+            "Step 6: Draw apparent Top View.",
+            "Step 7: Draw 60° construction line (SOLID RED) and place Top View on it.",
+            "Step 8: Project points up and right.",
+            "Step 9: Connect points for Final Front View.",
+            "Step 10: Add dimension (side length = 30 mm)."
+
+        ];
+
+        function updateUI() {
+            document.getElementById('step-description').innerText = descriptions[currentStep];
+            document.getElementById('btn-prev').disabled = currentStep === 0;
+            document.getElementById('btn-next').disabled = currentStep === TOTAL_STEPS;
+        }
+
+        function nextStep() {
+            if (currentStep < TOTAL_STEPS) {
+                currentStep++;
+                drawScene();
+                updateUI();
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 0) {
+                currentStep--;
+                drawScene();
+                updateUI();
+            }
+        }
+
+        function resetAnimation() {
+            stopAuto();
+            currentStep = 0;
+            drawScene();
+            updateUI();
+        }
+
+        function toggleAuto() {
+            if (autoPlayInterval) {
+                stopAuto();
+            } else {
+                document.getElementById('btn-auto').innerText = "Pause";
+                if (currentStep === TOTAL_STEPS) currentStep = 0;
+                autoPlayInterval = setInterval(() => {
+                    if (currentStep < TOTAL_STEPS) {
+                        nextStep();
+                    } else {
+                        stopAuto();
+                    }
+                }, 1200);
+            }
+        }
+
+        function stopAuto() {
+            clearInterval(autoPlayInterval);
+            autoPlayInterval = null;
+            document.getElementById('btn-auto').innerText = "Play Animation";
+        }
+
+        // Init
+        changeShape(); // Calculates default hexagon and draws step 0
+
+    </script>
+</body>
+
+</html>

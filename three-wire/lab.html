@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Three-Wire Method</title>
+  <link rel="icon" href="./img/favicon.ico" />
+
+  <style>
+    :root {
+      --accent: #004d40;
+      --accent-2: #00796b;
+      --bg-soft: #e0f7f6;
+      --panel: #f3fdfc;
+    }
+
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      background: #f4fbfa;
+      color: #123;
+    }
+
+    header {
+      background: var(--accent);
+      color: #fff;
+      padding: 16px 22px;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 22px;
+      display: inline-block;
+    }
+
+    header nav {
+      float: right;
+      margin-top: 4px;
+    }
+
+    header nav a {
+      color: #fff;
+      margin-left: 18px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color .2s;
+    }
+
+    header nav a:hover {
+      color: #b2dfdb;
+    }
+
+    main {
+      padding: 18px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .lab-container {
+      display: flex;
+      gap: 25px;
+      min-height: 700px;
+      margin-top: 18px;
+      align-items: flex-start;
+    }
+
+    .inventory-pane {
+      flex: 1;
+      background: var(--panel);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      border: 1px solid #b2dfdb;
+    }
+
+    .inventory-pane h3 {
+      text-align: center;
+      color: var(--accent);
+      margin-bottom: 14px;
+    }
+
+    .component-drag {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      margin-bottom: 12px;
+      background: #fff;
+      border: 1px solid var(--accent-2);
+      border-radius: 8px;
+      cursor: grab;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .component-drag img {
+      width: 56px;
+      height: 56px;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .component-drag.placed {
+      opacity: 0.32;
+      pointer-events: none;
+      cursor: default;
+    }
+
+    .activity-area {
+      flex: 2;
+      background: var(--bg-soft);
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.06);
+      min-height: 580px;
+      padding: 18px;
+    }
+
+    .instructions-banner {
+      background: linear-gradient(135deg, #00796b 0%, #004d40 100%);
+      color: #fff;
+      padding: 16px 18px;
+      border-radius: 10px;
+      margin-bottom: 18px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 500;
+      text-align: center;
+      line-height: 1.5;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .instructions-banner.hidden {
+      display: none;
+    }
+
+    .progress-indicator {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .progress-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.4);
+      transition: background 0.3s;
+    }
+
+    .progress-dot.active {
+      background: #fff;
+    }
+
+    .drop-zone {
+      position: absolute;
+      border: 2px dashed var(--accent-2);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-2);
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.4);
+      z-index: 100;
+      transition: background-color .18s, border-color .18s;
+    }
+
+    .drop-zone.drag-over {
+      background: rgba(0, 150, 136, 0.12);
+      border-color: var(--accent);
+    }
+
+    .drop-zone.completed {
+      display: none;
+    }
+
+    .zone-label {
+      background: #fff;
+      padding: 6px 10px;
+      border-radius: 6px;
+      color: var(--accent-2);
+      font-weight: 700;
+    }
+
+    #stand-drop-zone {
+      bottom: 3%;
+      left: 8%;
+      width: 180px;
+      height: 340px;
+    }
+
+    #specimen-drop-zone {
+      bottom: 40%;
+      left: 45%;
+      width: 260px;
+      height: 130px;
+    }
+
+    #wire-top1-drop-zone {
+      top: 30%;
+      left: 50%;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+    }
+
+    #wire-top2-drop-zone {
+      top: 30%;
+      left: 40%;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+    }
+
+    #wire-bottom-drop-zone {
+      top: 70%;
+      left: 45%;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+    }
+
+    #micrometer-drop-zone {
+      top: 48%;
+      right: 8%;
+      width: 140px;
+      height: 120px;
+    }
+
+    .placed-item {
+      position: absolute;
+      display: none;
+      z-index: 30;
+      transition: all .35s ease;
+    }
+
+    .placed-item.active {
+      display: block !important;
+      opacity: 1 !important;
+    }
+
+    .tall-stand {
+      width: 120px;
+      height: 370px;
+      left: 30px;
+      bottom: 45px;
+      position: absolute;
+      z-index: 20;
+    }
+
+    .stand-base {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 60px;
+      background: #495057;
+      border-radius: 12px;
+    }
+
+    .support-column {
+      position: absolute;
+      left: 50px;
+      top: 35px;
+      width: 20px;
+      height: 280px;
+      background: #6c757d;
+      border-radius: 8px;
+    }
+
+    .mounting-clamp {
+      position: absolute;
+      left: -8px;
+      top: 85px;
+      width: 130px;
+      height: 40px;
+      background: #343a40;
+      border-radius: 10px;
+      z-index: 25;
+    }
+
+    #placed-specimen {
+      display: none;
+      position: absolute;
+      z-index: 25;
+      width: 400px;
+      height: 250px;
+      left: 115px;
+      top: 180px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: left center;
+      opacity: 0;
+      transition: all .5s ease;
+      transform-origin: left center;
+    }
+
+    #placed-specimen.active {
+      display: block;
+      opacity: 1;
+    }
+
+    .placed-wire {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #0b6623;
+      box-shadow: 0 3px 8px rgba(11, 102, 35, 0.6);
+      display: none;
+      position: absolute;
+      z-index: 40;
+      transform-origin: center center;
+      transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .placed-wire.active {
+      display: block !important;
+    }
+
+    #placed-wire1 {
+      top: calc(30% + 12px);
+      left: calc(50% + 12px);
+    }
+
+    #placed-wire2 {
+      top: calc(30% + 12px);
+      left: calc(40% + 12px);
+    }
+
+    #placed-wire3 {
+      top: calc(70% + 12px);
+      left: calc(45% + 12px);
+    }
+
+    /* ==================== MICROMETER BODY (Reverted) ==================== */
+    .mitutoyo-micrometer {
+      display: none;
+      position: absolute;
+      width: 120px;
+      /* Reverted to original compact size */
+      z-index: 35;
+      filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.3));
+      transition: top 0.5s ease, height 0.5s ease, left 0.5s ease;
+      overflow: visible;
+    }
+
+    .micrometer-frame {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 4px;
+    }
+
+    /* TOP JAW (Reverted) */
+    .micrometer-anvil {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      top: 0;
+      width: 50px;
+      /* Reverted */
+      height: 12px;
+      /* Reverted */
+      background: linear-gradient(180deg, #5a6a7a 0%, #7a8a9a 50%, #5a6a7a 100%);
+      border-radius: 3px 3px 0 0;
+      box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.3),
+        inset 0 -1px 1px rgba(0, 0, 0, 0.5),
+        0 3px 8px rgba(0, 0, 0, 0.4);
+      border: 1px solid #3a4a5a;
+    }
+
+    .micrometer-anvil::before {
+      content: '';
+      position: absolute;
+      left: 2px;
+      top: 1px;
+      right: 2px;
+      height: 50%;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.4), transparent);
+      border-radius: 2px;
+    }
+
+    .micrometer-anvil::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      bottom: -5px;
+      /* Reverted */
+      transform: translateX(-50%);
+      width: 30px;
+      /* Reverted */
+      height: 7px;
+      /* Reverted */
+      background: linear-gradient(180deg, #7a8a9a, #9aaabc);
+      border-radius: 0 0 2px 2px;
+      box-shadow: inset 0 -1px 1px rgba(0, 0, 0, 0.4);
+    }
+
+    /* BOTTOM JAW (Reverted) */
+    .micrometer-spindle {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 0;
+      width: 50px;
+      /* Reverted */
+      height: 12px;
+      /* Reverted */
+      background: linear-gradient(180deg, #5a6a7a 0%, #7a8a9a 50%, #5a6a7a 100%);
+      border-radius: 0 0 3px 3px;
+      box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.3),
+        inset 0 -1px 1px rgba(0, 0, 0, 0.5),
+        0 3px 8px rgba(0, 0, 0, 0.4);
+      border: 1px solid #3a4a5a;
+      overflow: visible;
+    }
+
+    .micrometer-spindle::before {
+      content: '';
+      position: absolute;
+      left: 2px;
+      bottom: 1px;
+      right: 2px;
+      height: 50%;
+      background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.4));
+      border-radius: 2px;
+    }
+
+    .micrometer-spindle::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: -5px;
+      /* Reverted */
+      transform: translateX(-50%);
+      width: 30px;
+      /* Reverted */
+      height: 7px;
+      /* Reverted */
+      background: linear-gradient(180deg, #9aaabc, #7a8a9a);
+      border-radius: 2px 2px 0 0;
+      box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.4);
+    }
+
+    /* ==================== NEW DIGITAL READING ==================== */
+    .micrometer-reading {
+      position: absolute;
+      right: -60px;
+      /* push outside to the right */
+      bottom: -20px;
+      /* lower position */
+      transform: none;
+      background: linear-gradient(180deg, #0a1a2a 0%, #000);
+      color: #00ff88;
+      font-weight: 900;
+      font-size: 13px;
+      font-family: 'Courier New', 'Digital-7', monospace;
+      letter-spacing: 1px;
+      padding: 3px 8px;
+      border-radius: 3px;
+      border: 1px solid #00aa55;
+      box-shadow:
+        0 0 10px rgba(0, 255, 136, 0.4),
+        inset 0 1px 2px rgba(0, 0, 0, 0.8);
+      white-space: nowrap;
+      text-shadow: 0 0 5px rgba(0, 255, 136, 0.6);
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    /* ================================================================ */
+
+    .info-pane {
+      flex: 1;
+      background: #f9fffd;
+      border-radius: 12px;
+      padding: 18px;
+      border: 1px solid #dfe;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .info-pane h3 {
+      text-align: center;
+      color: var(--accent);
+      margin-bottom: 18px;
+    }
+
+    .info-box {
+      background: #fff;
+      border: 1px solid #cfd;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    }
+
+    .info-box label {
+      display: block;
+      margin-bottom: 4px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .info-box input,
+    .info-box select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #dfe;
+    }
+
+    .magnify-btn {
+      display: block;
+      margin: 10px auto 0;
+      background: linear-gradient(135deg, #00bfa5, #00695c);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transition: transform 0.2s, background 0.3s;
+    }
+
+    .magnify-btn:hover {
+      background: linear-gradient(135deg, #26a69a, #004d40);
+      transform: scale(1.05);
+    }
+
+    #proceedBtn {
+      display: none;
+      margin: 40px auto 20px;
+      background: var(--accent-2);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 26px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transition: transform 0.2s, background 0.3s;
+    }
+
+    #proceedBtn:hover {
+      background: var(--accent);
+      transform: scale(1.05);
+    }
+
+    /* ================== MODIFICATION START: NEW MICROMETER BODY ================== */
+    .micrometer-body-assembly {
+      position: absolute;
+      /* This starts the body right at the bottom edge of the 12px jaw */
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 24px;
+      height: 90px;
+      /* Total length of the handle */
+      display: flex;
+      flex-direction: column;
+      /* Sits 'behind' the jaw tip for a 3D effect */
+      z-index: -1;
+      filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3));
+      border-radius: 0 0 5px 5px;
+      overflow: hidden;
+      /* Ensures the border-radius clips the children */
+    }
+
+    .micrometer-sleeve {
+      width: 100%;
+      height: 50px;
+      /* The fixed barrel part */
+      background: linear-gradient(90deg, #b0bec5, #eceff1, #b0bec5);
+      border: 1px solid #546e7a;
+      border-top: none;
+      box-shadow: inset 1px 0 2px rgba(0, 0, 0, 0.2);
+    }
+
+    .micrometer-thimble {
+      width: 100%;
+      flex-grow: 1;
+      /* Fills the remaining 40px */
+      background-color: #b0bec5;
+      /* Knurled (cross-hatch) pattern */
+      background-image:
+        linear-gradient(45deg, #78909c 25%, transparent 25%, transparent 75%, #78909c 75%, #78909c),
+        linear-gradient(-45deg, #78909c 25%, transparent 25%, transparent 75%, #78909c 75%, #78909c);
+      background-size: 6px 6px;
+      border: 1px solid #546e7a;
+      /* A dark line to separate it from the sleeve */
+      border-top: 2px solid #37474f;
+    }
+
+    /* ================== MODIFICATION END ================== */
+
+
+    /* ===================== MAGNIFY MODAL STYLES ===================== */
+    #magnifyOverlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.75);
+      z-index: 999;
+      justify-content: center;
+      align-items: center;
+      animation: overlayFadeIn 0.3s ease-in-out;
+    }
+
+    #magnifyOverlay.active {
+      display: flex;
+    }
+
+    @keyframes overlayFadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .magnify-modal {
+      position: relative;
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+      max-width: 85%;
+      max-height: 85vh;
+      animation: modalSlideUp 0.4s ease-out;
+      overflow: auto;
+    }
+
+    @keyframes modalSlideUp {
+      from {
+        transform: translateY(50px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .magnify-close-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 44px;
+      height: 44px;
+      background: #004d40;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      font-size: 32px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      z-index: 1001;
+      line-height: 1;
+    }
+
+    .magnify-close-btn:hover {
+      background: #00796b;
+      transform: scale(1.15) rotate(90deg);
+    }
+
+    .magnify-close-btn:active {
+      transform: scale(0.9);
+    }
+
+    .magnify-image-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .magnify-image-container img {
+      max-width: 100%;
+      max-height: 75vh;
+      width: auto;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Virtual Metrology Lab: Three-Wire Method</h1>
+    <nav>
+      <a href="index.html" onclick="activateLink(event, 'index.html')">Introduction</a>
+    </nav>
+  </header>
+
+  <main>
+    <section id="lab-area">
+      <h2>Virtual Laboratory</h2>
+      <p>Follow the step-by-step instructions below to set up your experiment. Drag components from the inventory into
+        the designated zones.</p>
+
+      <div class="lab-container">
+        <aside class="inventory-pane">
+          <h3>Component Inventory</h3>
+          <div class="component-drag" draggable="true" data-component="stand"><img
+              src="./img/holding_stand.jpg"><span>Holding Stand</span></div>
+          <div class="component-drag" draggable="true" data-component="specimen"><img
+              src="./img/threaded_specimen.jpg"><span>Threaded Specimen</span></div>
+          <div class="component-drag" draggable="true" data-component="wire1"><img
+              src="./img/precision_wire.png"><span>Wire 1</span></div>
+          <div class="component-drag" draggable="true" data-component="wire2"><img
+              src="./img/precision_wire.png"><span>Wire 2</span></div>
+          <div class="component-drag" draggable="true" data-component="wire3"><img
+              src="./img/precision_wire.png"><span>Wire 3</span></div>
+          <div class="component-drag" draggable="true" data-component="micrometer"><img
+              src="./img/micrometer_diagram.png"><span>Micrometer</span></div>
+        </aside>
+
+        <section class="activity-area" id="activityArea">
+          <div class="instructions-banner" id="instructionsBanner">
+            <div>
+              <div id="instructionText">Welcome! Let's set up the three-wire method. Begin by placing the holding stand
+                in the designated zone on the lower left.</div>
+              <div class="progress-indicator" id="progressIndicator"></div>
+            </div>
+          </div>
+
+          <div id="stand-drop-zone" class="drop-zone" data-accepts="stand">
+            <div class="zone-label">Place Stand</div>
+          </div>
+          <div id="specimen-drop-zone" class="drop-zone" data-accepts="specimen">
+            <div class="zone-label">Place Specimen</div>
+          </div>
+          <div id="wire-top1-drop-zone" class="drop-zone" data-accepts="wire1">
+            <div class="zone-label">W1</div>
+          </div>
+          <div id="wire-top2-drop-zone" class="drop-zone" data-accepts="wire2">
+            <div class="zone-label">W2</div>
+          </div>
+          <div id="wire-bottom-drop-zone" class="drop-zone" data-accepts="wire3">
+            <div class="zone-label">W3</div>
+          </div>
+          <div id="micrometer-drop-zone" class="drop-zone" data-accepts="micrometer">
+            <div class="zone-label">Place Micrometer</div>
+          </div>
+
+          <div id="tallStand" class="tall-stand placed-item">
+            <div class="stand-base"></div>
+            <div class="support-column"></div>
+            <div class="mounting-clamp"></div>
+          </div>
+
+          <div id="placed-specimen" class="placed-item"></div>
+          <div id="placed-wire1" class="placed-wire"></div>
+          <div id="placed-wire2" class="placed-wire"></div>
+          <div id="placed-wire3" class="placed-wire"></div>
+
+          <div id="mitutoyo" class="mitutoyo-micrometer placed-item">
+            <div class="micrometer-frame">
+              <div class="micrometer-anvil"></div>
+
+              <div class="micrometer-reading" id="micrometerReading">8.269 mm</div>
+
+              <div class="micrometer-spindle">
+
+                <div class="micrometer-body-assembly">
+                  <div class="micrometer-sleeve"></div>
+                  <div class="micrometer-thimble"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="info-pane">
+          <h3>Experiment Data</h3>
+          <div class="info-box">
+            <label>Thread Type</label>
+            <select id="metricThreadSelect">
+              <option value="M8x1.25" selected>M8 x 1.25</option>
+            </select>
+          </div>
+
+
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <div style="text-align:center;">
+    <button id="proceedBtn">Proceed to Calculations ➜</button>
+  </div>
+
+
+
+  <footer style="text-align:center;padding:14px;margin-top:18px;color:#666;">© 2025 Virtual Metrology Lab</footer>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const items = document.querySelectorAll(".component-drag");
+      const zones = document.querySelectorAll(".drop-zone");
+      const placed = { stand: false, specimen: false, wire1: false, wire2: false, wire3: false, micrometer: false };
+      const instructionText = document.getElementById("instructionText");
+      const progressIndicator = document.getElementById("progressIndicator");
+      const instructionsBanner = document.getElementById("instructionsBanner");
+
+      const stand = document.getElementById("tallStand");
+      const specimen = document.getElementById("placed-specimen");
+      const mic = document.getElementById("mitutoyo");
+      const wires = [
+        document.getElementById("placed-wire1"),
+        document.getElementById("placed-wire2"),
+        document.getElementById("placed-wire3")
+      ];
+      const proceedBtn = document.getElementById("proceedBtn");
+
+      let wiresAnimated = false;
+
+      // ===================== MAGNIFY MODAL FUNCTIONALITY =====================
+
+
+      // Step-by-step instructions
+      const instructions = [
+        "Step 1: Place the holding stand to secure your setup. Drag it to the lower left zone.",
+        "Step 2: Mount the threaded specimen onto the stand. This is your test piece for measurement.",
+        "Step 3: Position Wire 1 in the upper zone. This is your first reference wire.",
+        "Step 4: Position Wire 2 in the upper zone. This provides the second measurement point.",
+        "Step 5: Position Wire 3 in the lower zone. This completes the three-wire configuration.",
+        "Step 6: Place the micrometer to measure the distance between the three wires accurately.",
+        "Perfect! Your setup is complete. Click 'Proceed to Calculations' to analyze your measurements."
+      ];
+
+      const threadSpecs = {
+        "M8x1.25": {
+          diameter: 8,
+          pitch: 1.25,
+          scale: 1.05,
+          svg: "img/specimen_M8_125.svg",
+          wireScale: 0.7,
+          valleyDepth: { top: 0.420, bottom: 0.620 }
+        }
+      };
+
+      function initializeProgressDots() {
+        progressIndicator.innerHTML = "";
+        for (let i = 0; i < instructions.length; i++) {
+          const dot = document.createElement("div");
+          dot.className = "progress-dot";
+          if (i === 0) dot.classList.add("active");
+          progressIndicator.appendChild(dot);
+        }
+      }
+
+      function updateInstructions() {
+        const stepIndex = Object.values(placed).filter(Boolean).length;
+
+        if (stepIndex < instructions.length) {
+          instructionText.textContent = instructions[stepIndex];
+          instructionsBanner.classList.remove("hidden");
+
+          const dots = document.querySelectorAll(".progress-dot");
+          dots.forEach((dot, idx) => {
+            dot.classList.toggle("active", idx === stepIndex);
+          });
+        } else {
+          instructionsBanner.classList.add("hidden");
+        }
+      }
+
+      function alignMicrometer() {
+        if (!wiresAnimated || !placed.micrometer) return;
+
+        const specs = threadSpecs["M8x1.25"];
+        const baseLeft = specimen.offsetLeft;
+        const baseTop = specimen.offsetTop;
+        const width = specimen.offsetWidth;
+        const height = specimen.offsetHeight;
+        const valleyY_top = baseTop + height * specs.valleyDepth.top;
+        const valleyY_bottom = baseTop + height * specs.valleyDepth.bottom;
+        const x3 = baseLeft + width * 0.30; // Center wire X-coord
+        const r = 6; // Half of wire height (12px)
+
+        const top_wire_y = valleyY_top - r;
+        const bottom_wire_y = valleyY_bottom - r - 15;
+        const bottom_wire_bottom_edge = bottom_wire_y + 12; // wire top + 12px wire height
+
+        // Reverted JS constants to match original CSS
+        const anvil_height = 12;
+        const spindle_height = 12;
+        const mic_width = 120;
+
+        // 1. Position Micrometer Body (Top)
+        const mic_top = top_wire_y - anvil_height;
+        mic.style.top = `${mic_top}px`;
+
+        // 2. Position Micrometer Body (Left)
+        const mic_left = x3 - (mic_width / 2);
+        mic.style.left = `${mic_left}px`;
+
+        // 3. Set Micrometer Body (Height)
+        const mic_height = (bottom_wire_bottom_edge + spindle_height) - mic_top;
+        mic.style.height = `${mic_height}px`;
+      }
+
+      function animateWiresToThreadValleys() {
+        const specs = threadSpecs["M8x1.25"];
+        const baseLeft = specimen.offsetLeft;
+        const baseTop = specimen.offsetTop;
+        const width = specimen.offsetWidth;
+        const height = specimen.offsetHeight;
+        const valleyY_top = baseTop + height * specs.valleyDepth.top;
+        const valleyY_bottom = baseTop + height * specs.valleyDepth.bottom;
+        const x1 = baseLeft + width * 0.26;
+        const x2 = baseLeft + width * 0.34;
+        const x3 = baseLeft + width * 0.30;
+        const r = 6;
+        wires[0].style.left = `${x1 - r}px`;
+        wires[0].style.top = `${valleyY_top - r}px`;
+        wires[1].style.left = `${x2 - r}px`;
+        wires[1].style.top = `${valleyY_top - r}px`;
+        wires[2].style.left = `${x3 - r}px`;
+        wires[2].style.top = `${valleyY_bottom - r - 15}px`;
+
+        wiresAnimated = true;
+        alignMicrometer(); // Align mic to new wire positions
+      }
+
+      initializeProgressDots();
+
+      items.forEach(el => {
+        el.addEventListener("dragstart", e => {
+          e.dataTransfer.setData("text/plain", el.dataset.component);
+        });
+      });
+
+      zones.forEach(zone => {
+        zone.addEventListener("dragover", e => { e.preventDefault(); zone.classList.add("drag-over"); });
+        zone.addEventListener("dragleave", () => zone.classList.remove("drag-over"));
+        zone.addEventListener("drop", e => {
+          e.preventDefault();
+          zone.classList.remove("drag-over");
+          const comp = e.dataTransfer.getData("text/plain");
+          if (zone.dataset.accepts === comp) {
+            placed[comp] = true;
+            zone.classList.add("completed");
+            const inv = document.querySelector(`[data-component='${comp}']`);
+            inv.classList.add("placed");
+            if (comp === "stand") stand.classList.add("active");
+            if (comp === "specimen") {
+              specimen.classList.add("active");
+              specimen.style.backgroundImage = `url(${threadSpecs["M8x1.25"].svg})`;
+              specimen.style.transform = `scale(${threadSpecs["M8x1.25"].scale})`;
+            }
+            if (comp.startsWith("wire")) document.getElementById(`placed-${comp}`).classList.add("active");
+
+            if (comp === "micrometer") {
+              mic.classList.add("active");
+              if (wiresAnimated) {
+                alignMicrometer();
+              }
+            }
+
+            if (placed.wire1 && placed.wire2 && placed.wire3 && placed.specimen) {
+              if (!wiresAnimated) {
+                setTimeout(animateWiresToThreadValleys, 600);
+              }
+            }
+
+            updateInstructions();
+
+            if (Object.values(placed).every(Boolean)) {
+              proceedBtn.style.display = "block";
+              proceedBtn.scrollIntoView({ behavior: "smooth" });
+            }
+          }
+        });
+      });
+
+      proceedBtn.addEventListener("click", () => window.location.href = "calculations.html");
+
+      const currentPage = window.location.pathname.split("/").pop();
+      document.querySelectorAll("header nav a").forEach(link => {
+        if (link.getAttribute("href") && link.getAttribute("href").includes(currentPage)) {
+          link.style.textDecoration = "underline";
+          link.style.fontWeight = "700";
+          link.style.color = "var(--bg-soft)";
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>

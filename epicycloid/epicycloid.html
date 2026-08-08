@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Epicycloid Construction</title>
+  <link rel="icon" href="./favicon.ico" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* Basic styling for a clean, professional look */
+    body {
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: #f7f7f7;
+    }
+
+    #drawingCanvas {
+      background: #fff;
+      border-radius: 0.75rem;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+      max-width: 95%;
+    }
+
+    .step-button {
+      transition: all .15s;
+      cursor: pointer;
+    }
+
+    .step-button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+
+<body class="p-4 flex flex-col items-center min-h-screen">
+  <div class="max-w-4xl w-full text-center">
+    <h1 class="text-2xl font-bold text-gray-800 mb-2">Epicycloid Construction (R = 4r)</h1>
+    <p id="step-description" class="text-sm text-gray-700 h-10 mb-4 font-semibold">Click Next to start (Setup step
+      skipped).</p>
+  </div>
+
+  <div class="w-full max-w-4xl flex justify-center">
+    <canvas id="drawingCanvas" width="850" height="450"></canvas>
+  </div>
+
+  <div class="mt-6 flex justify-center space-x-4 w-full max-w-4xl">
+    <button id="prev-btn" class="step-button bg-gray-300 text-gray-800 p-3 rounded-lg font-medium" disabled>Previous
+      Step</button>
+    <button id="next-btn" class="step-button bg-blue-500 text-white p-3 rounded-lg font-medium">Next Step</button>
+      <button onclick="window.location.href='./index.html'" class="bg-blue-500 text-white p-3 rounded-lg font-medium">Home</button>
+
+      
+  </div>
+
+
+  <div class="mt-6 p-4 w-full max-w-4xl bg-white border border-gray-200 rounded-lg shadow-md">
+    <h2 class="text-lg font-semibold text-gray-800 mb-2">Construction Steps List for Epicycloid</h2>
+    <ol id="step-list" class="list-decimal pl-5 text-sm space-y-1">
+      <li>**Draw the directing circle (Radius R) as a dotted line** and the locus of centers (arc at radius R+r).</li>
+      <li>Draw the initial generating circle (radius r) tangent to the directing circle.</li>
+      <li>Divide the generating circle and the corresponding arc length of the directing circle (360/4 = 90°) into 12
+        equal parts.</li>
+      <li>Locate centers $C_1, C_2, \ldots, C_{12}$ along the locus of centers arc.</li>
+      <li>Draw concentric arcs (locus of points P', 1', 2', etc.) from the divisions of the generating circle.</li>
+      <li>For each $C_k$, mark $P_k$ where the rolling circle at $C_k$ intersects the corresponding locus arc.</li>
+      <li>Draw the smooth Epicycloid curve through P, $P_1, \ldots, P_{12}$.</li>
+      <li>Mark M on the curve, locate instantaneous center N, and draw Normal (MN) and Tangent (MT) at M.</li>
+    </ol>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const canvas = document.getElementById('drawingCanvas');
+      const ctx = canvas.getContext('2d', { alpha: false });
+      const prevBtn = document.getElementById('prev-btn');
+      const nextBtn = document.getElementById('next-btn');
+      const stepDescription = document.getElementById('step-description');
+      const stepListItems = document.querySelectorAll('#step-list li');
+
+      // **PARAMETERS FOR EPICYCLOID**
+      const R_DIRECTING = 120; // Radius of the directing circle (R)
+      const R_ROLLING = 30; // Radius of the rolling circle (r)
+      const MAIN_DIVISIONS = 12; // Number of divisions
+      const ARC_DEG = 360 * R_ROLLING / R_DIRECTING; // Angle of arc for one arch (90 degrees for R=4r)
+      const CENTER_O = { x: 0, y: R_DIRECTING }; // Center of the directing circle (shifted down for space)
+
+      // Points for construction
+      let epicycloidPoints = [];
+      let centers_Ck = [];
+      let P_start = {};
+      let M_epicycloid = {};
+      let N_inst_center = {};
+      let T_tangent_end = {};
+      let T_tangent_start = {};
+
+      // Transform parameters
+      let scale = 1, tx = 0, ty = 0, margin = 20;
+
+      const toRad = d => d * Math.PI / 180;
+
+      function calculateVirtualPoints() {
+        // 1. Locus of centers Ck (Radius R + r)
+        const R_LOCUS = R_DIRECTING + R_ROLLING;
+        const angleStepArc = ARC_DEG / MAIN_DIVISIONS;
+
+        centers_Ck = [];
+        for (let i = 0; i <= MAIN_DIVISIONS; i++) {
+          const angle = toRad(i * angleStepArc - 90); // Start at -90 (bottom center) and roll right
+          centers_Ck.push({
+            x: CENTER_O.x + R_LOCUS * Math.cos(angle),
+            y: CENTER_O.y + R_LOCUS * Math.sin(angle)
+          });
+        }
+
+        // 2. Epicycloid points Pk
+        epicycloidPoints = [];
+        const angleStepGen = 360 / MAIN_DIVISIONS;
+
+        for (let i = 0; i <= MAIN_DIVISIONS; i++) {
+          const phi_rad = toRad(i * angleStepArc); // Angle phi for the directing circle
+
+          // Epicycloid parametric equations (R=120, r=30):
+          const x = (R_DIRECTING + R_ROLLING) * Math.cos(phi_rad - Math.PI / 2) - R_ROLLING * Math.cos((R_DIRECTING / R_ROLLING + 1) * phi_rad - Math.PI / 2);
+          const y = (R_DIRECTING + R_ROLLING) * Math.sin(phi_rad - Math.PI / 2) - R_ROLLING * Math.sin((R_DIRECTING / R_ROLLING + 1) * phi_rad - Math.PI / 2);
+
+          // Adjust for the center of the directing circle
+          epicycloidPoints.push({ x: CENTER_O.x + x, y: CENTER_O.y + y });
+        }
+
+        P_start = epicycloidPoints[0];
+
+        // N and T for M (using P8)
+        const M_index = 8;
+        M_epicycloid = epicycloidPoints[M_index];
+
+        // N is the contact point on the directing circle (Center O to M_index contact point)
+        const N_angle = toRad(M_index * angleStepArc - 90);
+        N_inst_center = {
+          x: CENTER_O.x + R_DIRECTING * Math.cos(N_angle),
+          y: CENTER_O.y + R_DIRECTING * Math.sin(N_angle)
+        };
+
+        // Normal passes through M and N
+        const normalAngle = Math.atan2(N_inst_center.y - M_epicycloid.y, N_inst_center.x - M_epicycloid.x);
+        const tangentAngle = normalAngle - Math.PI / 2;
+
+        const lineLength = 70;
+
+        // Normal Line: Extends from N, through M
+        T_tangent_end = {
+          x: M_epicycloid.x - lineLength * Math.cos(normalAngle),
+          y: M_epicycloid.y - lineLength * Math.sin(normalAngle)
+        };
+
+        // Tangent Line: Passes through M, perpendicular to Normal
+        T_tangent_start = {
+          x: M_epicycloid.x - lineLength * Math.cos(tangentAngle),
+          y: M_epicycloid.y - lineLength * Math.sin(tangentAngle)
+        };
+        N_normal_end = {
+          x: M_epicycloid.x + lineLength * Math.cos(tangentAngle),
+          y: M_epicycloid.y + lineLength * Math.sin(tangentAngle)
+        };
+      }
+
+      function computeBoundingBox() {
+        let minX = -R_DIRECTING, maxX = R_DIRECTING;
+        let minY = CENTER_O.y - (R_DIRECTING + 2 * R_ROLLING);
+        let maxY = CENTER_O.y + R_DIRECTING;
+
+        epicycloidPoints.forEach(p => {
+          minX = Math.min(minX, p.x);
+          maxX = Math.max(maxX, p.x);
+          minY = Math.min(minY, p.y);
+          maxY = Math.max(maxY, p.y);
+        });
+
+        if (Object.keys(T_tangent_end).length > 0) {
+          minY = Math.min(minY, T_tangent_end.y, T_tangent_start.y, N_normal_end.y);
+          maxY = Math.max(maxY, T_tangent_end.y, T_tangent_start.y, N_normal_end.y);
+          minX = Math.min(minX, T_tangent_start.x, T_tangent_end.x, N_normal_end.x);
+          maxX = Math.max(maxX, T_tangent_start.x, T_tangent_end.x, N_normal_end.x);
+        }
+
+        // Add margin space
+        minX -= R_ROLLING;
+        maxX += R_ROLLING;
+
+        return { minX, maxX, minY, maxY, width: maxX - minX, height: maxY - minY };
+      }
+
+      function computeTransform() {
+        const bbox = computeBoundingBox();
+        const availW = canvas.width - margin * 2;
+        const availH = canvas.height - margin * 2;
+        scale = Math.min(availW / bbox.width, availH / bbox.height);
+        if (scale > 3) scale = 3;
+
+        // Translate to center the drawing
+        const centerX = (bbox.minX + bbox.maxX) / 2;
+        const centerY = (bbox.minY + bbox.maxY) / 2;
+        tx = -centerX * scale + canvas.width / 2;
+        ty = -centerY * scale + canvas.height / 2;
+      }
+
+      function setFontSizeAfterTransform(basePx) {
+        ctx.font = `${Math.max(8, basePx / Math.max(0.0001, scale))}px Inter, Arial`;
+      }
+
+      function drawLabel(txt, vx, vy, ox = 5, oy = 5, color = '#000', basePx = 12) {
+        setFontSizeAfterTransform(basePx);
+        ctx.fillStyle = color;
+        ctx.fillText(txt, vx + ox, vy + oy);
+      }
+
+      // --- DRAWING FUNCTIONS ---
+
+      function drawDirectingCircle() {
+        // Directing Circle (now dotted)
+        ctx.beginPath();
+        ctx.arc(CENTER_O.x, CENTER_O.y, R_DIRECTING, 0, Math.PI * 2);
+        ctx.lineWidth = 2 / scale;
+        ctx.setLineDash([6 / scale, 6 / scale]); // Dotted line
+        ctx.strokeStyle = '#3b82f6'; // Blue
+        ctx.stroke();
+        ctx.setLineDash([]); // Reset line dash for other drawings
+
+        // Center O
+        ctx.beginPath(); ctx.arc(CENTER_O.x, CENTER_O.y, 2.5 / scale, 0, Math.PI * 2); ctx.fillStyle = '#3b82f6'; ctx.fill();
+        drawLabel("O (Center)", CENTER_O.x, CENTER_O.y, 5, 5, '#3b82f6', 13);
+
+        // Locus of centers (R + r)
+        const R_LOCUS = R_DIRECTING + R_ROLLING;
+        ctx.beginPath();
+        ctx.arc(CENTER_O.x, CENTER_O.y, R_LOCUS, -Math.PI / 2, toRad(ARC_DEG - 90));
+        ctx.lineWidth = 1 / scale;
+        ctx.setLineDash([4 / scale, 4 / scale]);
+        ctx.strokeStyle = '#a855f7'; // Purple (Locus of Centers)
+        ctx.stroke();
+        ctx.setLineDash([]);
+        drawLabel('Locus of Centers', centers_Ck[6].x, centers_Ck[6].y, 10, -5, '#a855f7', 10);
+      }
+
+      function drawInitialGeneratingCircle() {
+        const C0 = centers_Ck[0];
+        const angleStepGen = 360 / MAIN_DIVISIONS;
+
+        // Initial generating circle at C0
+        ctx.beginPath();
+        ctx.arc(C0.x, C0.y, R_ROLLING, 0, Math.PI * 2);
+        ctx.lineWidth = 1.5 / scale;
+        ctx.strokeStyle = '#ef4444'; // Red
+        ctx.stroke();
+
+        // Draw the 12 radial division lines on the generating circle
+        for (let i = 0; i < MAIN_DIVISIONS; i++) {
+          // Points on the circle circumference
+          const angle = toRad(270 + i * angleStepGen); // Start at P (bottom)
+          const x_div = C0.x + R_ROLLING * Math.cos(angle);
+          const y_div = C0.y + R_ROLLING * Math.sin(angle);
+
+          ctx.beginPath();
+          ctx.moveTo(C0.x, C0.y);
+          ctx.lineTo(x_div, y_div);
+          ctx.lineWidth = 0.5 / scale;
+          ctx.strokeStyle = 'rgba(239,68,68,0.5)';
+          ctx.stroke();
+
+          // Label the divisions (1', 2', etc.)
+          // This labeling is slightly off-center to avoid cluttering the circle center.
+          if (i > 0 && i < MAIN_DIVISIONS) {
+            // Calculate label position slightly outside the circle
+            const label_x = C0.x + (R_ROLLING + 8 / scale) * Math.cos(angle);
+            const label_y = C0.y + (R_ROLLING + 8 / scale) * Math.sin(angle);
+            drawLabel(i + "'", label_x, label_y, -5, 5, 'rgba(239,68,68,0.8)', 11);
+          }
+        }
+
+        // Mark C0
+        ctx.beginPath(); ctx.arc(C0.x, C0.y, 2.5 / scale, 0, Math.PI * 2); ctx.fillStyle = '#ef4444'; ctx.fill();
+        drawLabel("C₀", C0.x, C0.y, 6, 6, '#ef4444', 13);
+
+        // Draw line from C0 to P (Radius line)
+        ctx.beginPath();
+        ctx.moveTo(C0.x, C0.y);
+        ctx.lineTo(P_start.x, P_start.y);
+        ctx.lineWidth = 0.8 / scale;
+        ctx.strokeStyle = 'rgba(239,68,68,0.7)';
+        ctx.stroke();
+        drawLabel('P (0, 12)', P_start.x, P_start.y, -25, 6, '#3b82f6', 13);
+      }
+
+      function drawDividingLinesAndLoci() {
+        const angleStepArc = ARC_DEG / MAIN_DIVISIONS;
+        const angleStepGen = 360 / MAIN_DIVISIONS;
+
+        // Directing circle divisions (1, 2, ... 12)
+        for (let i = 1; i <= MAIN_DIVISIONS; i++) {
+          const angle = toRad(i * angleStepArc - 90);
+          const x_div = CENTER_O.x + R_DIRECTING * Math.cos(angle);
+          const y_div = CENTER_O.y + R_DIRECTING * Math.sin(angle);
+
+          // Dividing line from O
+          ctx.beginPath();
+          ctx.moveTo(CENTER_O.x, CENTER_O.y);
+          ctx.lineTo(x_div, y_div);
+          ctx.lineWidth = 0.6 / scale;
+          ctx.strokeStyle = 'rgba(59,130,246,0.5)';
+          ctx.stroke();
+
+          // Label division point (1, 2, ...)
+          drawLabel(String(i), x_div, y_div, Math.cos(angle) * 10 / scale, Math.sin(angle) * 10 / scale, 'rgba(59,130,246,0.8)', 11);
+        }
+
+        // Concentric Locus Arcs (1', 2', etc.)
+        for (let i = 1; i < MAIN_DIVISIONS; i++) {
+          // Calculate the radius of the locus arc for the division point 'i'
+          const C0 = centers_Ck[0];
+          // Find point 'i' on the initial circle (angle 270 + i*angleStepGen, relative to C0)
+          const p_gen_x = C0.x + R_ROLLING * Math.cos(toRad(270 + i * angleStepGen));
+          const p_gen_y = C0.y + R_ROLLING * Math.sin(toRad(270 + i * angleStepGen));
+
+          // Distance from O to this point (this is the radius of the locus arc)
+          const R_LOCUS_POINT = Math.sqrt(
+            (p_gen_x - CENTER_O.x) ** 2 +
+            (p_gen_y - CENTER_O.y) ** 2
+          );
+
+          ctx.beginPath();
+          ctx.arc(CENTER_O.x, CENTER_O.y, R_LOCUS_POINT, -Math.PI / 2, toRad(ARC_DEG - 90));
+          ctx.lineWidth = 0.7 / scale;
+          ctx.setLineDash([2 / scale, 4 / scale]);
+          ctx.strokeStyle = 'rgba(239,68,68,0.4)';
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      }
+
+      function drawCentersCk() {
+        for (let i = 1; i <= MAIN_DIVISIONS; i++) {
+          const Ck = centers_Ck[i];
+          ctx.beginPath(); ctx.arc(Ck.x, Ck.y, 2 / scale, 0, Math.PI * 2); ctx.fillStyle = '#a855f7'; ctx.fill();
+          drawLabel(`C${i}`, Ck.x, Ck.y, 6, 6, '#a855f7', 10);
+
+          // Line from O to Ck (construction line)
+          ctx.beginPath();
+          ctx.moveTo(CENTER_O.x, CENTER_O.y);
+          ctx.lineTo(Ck.x, Ck.y);
+          ctx.lineWidth = 0.6 / scale;
+          ctx.strokeStyle = 'rgba(168,85,247,0.5)';
+          ctx.stroke();
+        }
+      }
+
+      function drawRollingCirclesAtCk() {
+        for (let i = 1; i <= MAIN_DIVISIONS; i++) {
+          const Ck = centers_Ck[i];
+          ctx.beginPath();
+          ctx.arc(Ck.x, Ck.y, R_ROLLING, 0, Math.PI * 2);
+          ctx.lineWidth = 0.8 / scale;
+          ctx.strokeStyle = 'rgba(239,68,68,0.3)';
+          ctx.stroke();
+        }
+      }
+
+      function drawEpicycloidPointsPk(upToK) {
+        for (let i = 0; i <= upToK; i++) {
+          const Pk = epicycloidPoints[i];
+          ctx.beginPath(); ctx.arc(Pk.x, Pk.y, 2.8 / scale, 0, Math.PI * 2); ctx.fillStyle = '#ef4444'; ctx.fill();
+          drawLabel(`P${i === 0 ? '' : i}`, Pk.x, Pk.y, 6, 6, '#ef4444', 12);
+        }
+      }
+
+      function drawEpicycloidCurve(upTo = MAIN_DIVISIONS) {
+        if (epicycloidPoints.length === 0) return;
+        ctx.beginPath();
+        ctx.moveTo(epicycloidPoints[0].x, epicycloidPoints[0].y);
+
+        // Draw the curve
+        for (let i = 1; i <= upTo; i++) {
+          ctx.lineTo(epicycloidPoints[i].x, epicycloidPoints[i].y);
+        }
+        ctx.lineWidth = 2.4 / scale;
+        ctx.strokeStyle = '#ef4444'; // Solid red for the epicycloid curve
+        ctx.stroke();
+      }
+
+      function drawNormalTangentM() {
+
+        // M point on curve
+        ctx.beginPath(); ctx.arc(M_epicycloid.x, M_epicycloid.y, 3.5 / scale, 0, Math.PI * 2); ctx.fillStyle = '#16a34a'; ctx.fill();
+        drawLabel('M', M_epicycloid.x, M_epicycloid.y, 6, 6, '#16a34a', 14);
+
+        // Instantaneous center N (on directing circle)
+        ctx.beginPath(); ctx.arc(N_inst_center.x, N_inst_center.y, 3 / scale, 0, Math.PI * 2); ctx.fillStyle = '#16a34a'; ctx.fill();
+        drawLabel('N', N_inst_center.x, N_inst_center.y, -15, 0, '#16a34a', 12);
+
+        // Draw Normal line (T_tangent_end to N_inst_center)
+        ctx.beginPath(); ctx.moveTo(T_tangent_end.x, T_tangent_end.y); ctx.lineTo(N_inst_center.x, N_inst_center.y);
+        ctx.lineWidth = 2.0 / scale; ctx.strokeStyle = '#16a34a'; ctx.stroke();
+        drawLabel('Normal', N_inst_center.x, N_inst_center.y, 5, -15, '#16a34a', 12);
+
+        // Draw Tangent line (T_tangent_start to N_normal_end)
+        ctx.beginPath(); ctx.moveTo(T_tangent_start.x, T_tangent_start.y); ctx.lineTo(N_normal_end.x, N_normal_end.y);
+        ctx.lineWidth = 2.0 / scale; ctx.strokeStyle = '#9d174d'; ctx.stroke();
+        drawLabel('Tangent (T)', N_normal_end.x, N_normal_end.y, 5, -15, '#9d174d', 12);
+
+        // Mark the center C8 of the rolling circle
+        const C_M = centers_Ck[8];
+        ctx.beginPath(); ctx.arc(C_M.x, C_M.y, 2.5 / scale, 0, Math.PI * 2); ctx.fillStyle = '#a855f7'; ctx.fill();
+        drawLabel('C₈', C_M.x, C_M.y, 6, 6, '#a855f7', 12);
+      }
+
+      function clearCanvas() {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      function applyTransform() {
+        ctx.setTransform(scale, 0, 0, scale, tx, ty);
+      }
+
+      let currentStep = 1;
+
+      function renderStep() {
+        clearCanvas();
+        stepListItems.forEach(li => li.classList.remove('font-bold', 'text-blue-600'));
+        prevBtn.disabled = currentStep <= 1;
+        nextBtn.disabled = currentStep >= 8;
+
+        applyTransform();
+
+        // Draw previous construction elements for context
+        if (currentStep >= 1) drawDirectingCircle();
+        if (currentStep >= 2) drawInitialGeneratingCircle();
+        if (currentStep >= 3) drawDividingLinesAndLoci();
+        if (currentStep >= 4) drawCentersCk();
+        if (currentStep >= 5) drawRollingCirclesAtCk();
+        if (currentStep >= 6) drawEpicycloidPointsPk(MAIN_DIVISIONS);
+        if (currentStep >= 7) drawEpicycloidCurve();
+        if (currentStep >= 8) drawNormalTangentM();
+
+        switch (currentStep) {
+          case 1:
+            stepDescription.textContent = `Step 1: Draw the Directing Circle (R=${R_DIRECTING}) as a dotted line, and the Locus of Centers (R+r).`;
+            stepListItems[0].classList.add('font-bold', 'text-blue-600');
+            break;
+          case 2:
+            stepDescription.textContent = `Step 2: Draw the initial Generating Circle (r=${R_ROLLING}) tangent to the directing circle.`;
+            stepListItems[1].classList.add('font-bold', 'text-blue-600');
+            break;
+          case 3:
+            stepDescription.textContent = `Step 3: Divide the arc (90°) and the initial generating circle into ${MAIN_DIVISIONS} parts (labeled 1', 2', etc.).`;
+            stepListItems[2].classList.add('font-bold', 'text-blue-600');
+            break;
+          case 4:
+            stepDescription.textContent = `Step 4: Locate centers C₁, C₂, ... C₁₂ along the Locus of Centers arc.`;
+            stepListItems[3].classList.add('font-bold', 'text-blue-600');
+            break;
+          case 5:
+            stepDescription.textContent = `Step 5: Draw the concentric locus arcs from the divisions (1', 2', etc.) of the initial circle.`;
+            stepListItems[4].classList.add('font-bold', 'text-blue-600');
+            break;
+          case 6:
+            stepDescription.textContent = `Step 6: For each Ck, mark Pk where the rolling circle intersects the corresponding locus arc.`;
+            stepListItems[5].classList.add('font-bold', 'text-blue-600');
+            break;
+          case 7:
+            stepDescription.textContent = `Step 7: Draw the smooth Epicycloid curve through P, P₁, ..., P₁₂.`;
+            stepListItems[6].classList.add('font-bold', 'text-blue-600');
+            break;
+          case 8:
+            stepDescription.textContent = `Step 8: Mark M, locate instantaneous center N, and draw Normal (MN) and Tangent (MT). Construction complete!`;
+            stepListItems[7].classList.add('font-bold', 'text-blue-600');
+            break;
+        }
+      }
+
+      // Interactivity
+      prevBtn.addEventListener('click', () => {
+        if (currentStep > 1) { currentStep--; renderStep(); }
+      });
+      nextBtn.addEventListener('click', () => {
+        if (currentStep < 8) { currentStep++; renderStep(); }
+      });
+
+      // Initial calculation + fit
+      calculateVirtualPoints();
+      computeTransform();
+      renderStep();
+
+      window.addEventListener('resize', () => {
+        computeTransform();
+        renderStep();
+      });
+    });
+  </script>
+</body>
+
+</html>

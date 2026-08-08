@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Hypocycloid Construction (R = 4r)</title>
+    <link rel="icon" href="./favicon.ico" />
+
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+  body { 
+    /* font-family: 'Dancing Script', cursive;  */
+    background:#f7f7f7;
+  }
+  #drawingCanvas { 
+    background:#fff; 
+    border-radius:0.75rem; 
+    border:1px solid #e5e7eb; 
+    box-shadow:0 6px 18px rgba(0,0,0,0.06); 
+    max-width:95%;
+  }
+  .step-button {
+    /* font-family:'Dancing Script', cursive; */
+    font-weight:600;
+  }
+  .step-button:disabled {
+    opacity:.45;
+    cursor:not-allowed;
+  }
+</style>
+</head>
+
+<body class="p-4 flex flex-col items-center min-h-screen">
+
+<div class="max-w-4xl w-full text-center">
+  <h1 class="text-3xl font-bold text-gray-800 mb-2">
+    Hypocycloid Construction (R = 4r)
+  </h1>
+  <p id="step-description"
+     class="text-lg text-gray-700 h-10 mb-4 font-semibold">
+    Click Next to start.
+  </p>
+</div>
+
+<div class="w-full max-w-4xl flex justify-center">
+  <canvas id="drawingCanvas" width="850" height="450"></canvas>
+</div>
+
+<div class="mt-6 flex justify-center space-x-4 w-full max-w-4xl">
+  <button id="prev-btn"
+          class="step-button bg-gray-300 text-gray-800 p-3 rounded-lg text-lg"
+          disabled>
+    Previous Step
+  </button>
+  <button id="next-btn"
+          class="step-button bg-blue-500 text-white p-3 rounded-lg text-lg">
+    Next Step
+  </button>
+    <button onclick="window.location.href='./index.html'" class="bg-blue-500 text-white p-3 rounded-lg text-lg">Home</button>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+
+const canvas = document.getElementById('drawingCanvas');
+const ctx = canvas.getContext('2d',{alpha:false});
+const prevBtn = document.getElementById('prev-btn');
+const nextBtn = document.getElementById('next-btn');
+const stepDescription = document.getElementById('step-description');
+
+const R_DIRECTING=120, R_ROLLING=30, MAIN_DIVISIONS=12, ARC_DEG=90;
+const CENTER_O={x:200,y:200};
+
+let centers_Ck=[], hypocycloidPoints=[], P_start={};
+let scale=1, tx=0, ty=0, margin=30;
+const toRad=d=>d*Math.PI/180;
+
+// -------- CALCULATIONS --------
+function calculateVirtualPoints(){
+  const R_LOCUS=R_DIRECTING-R_ROLLING;
+  const step=ARC_DEG/MAIN_DIVISIONS;
+
+  centers_Ck=[];
+  for(let i=0;i<=MAIN_DIVISIONS;i++){
+    const a=toRad(i*step-90);
+    centers_Ck.push({
+      x:CENTER_O.x+R_LOCUS*Math.cos(a),
+      y:CENTER_O.y+R_LOCUS*Math.sin(a)
+    });
+  }
+
+  hypocycloidPoints=[];
+  for(let i=0;i<=MAIN_DIVISIONS;i++){
+    const t=toRad(i*step-90);
+    hypocycloidPoints.push({
+      x:CENTER_O.x+(3*R_ROLLING*Math.cos(t)+R_ROLLING*Math.cos(3*t)),
+      y:CENTER_O.y+(3*R_ROLLING*Math.sin(t)-R_ROLLING*Math.sin(3*t))
+    });
+  }
+
+  hypocycloidPoints[0]={
+    x:centers_Ck[0].x,
+    y:centers_Ck[0].y-R_ROLLING
+  };
+  P_start=hypocycloidPoints[0];
+}
+
+function computeTransform(){
+  const minX=CENTER_O.x-R_DIRECTING-50;
+  const maxX=CENTER_O.x+R_DIRECTING+50;
+  const minY=CENTER_O.y-R_DIRECTING-50;
+  const maxY=CENTER_O.y+R_DIRECTING+50;
+
+  scale=Math.min(
+    (canvas.width-2*margin)/(maxX-minX),
+    (canvas.height-2*margin)/(maxY-minY)
+  );
+  tx=-(minX+maxX)/2*scale+canvas.width/2;
+  ty=-(minY+maxY)/2*scale+canvas.height/2;
+}
+
+function clearCanvas(){
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.fillStyle="#fff";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+}
+function applyTransform(){ ctx.setTransform(scale,0,0,scale,tx,ty); }
+
+function label(t,x,y,ox=6,oy=6){
+  ctx.font=`${14/scale}px 'Dancing Script'`;
+  ctx.fillStyle="#000";
+  ctx.fillText(t,x+ox,y+oy);
+}
+
+// -------- DRAWING --------
+function drawInitialGeneratingCircle(){
+  const C0=centers_Ck[0];
+  ctx.beginPath();
+  ctx.arc(C0.x,C0.y,R_ROLLING,0,Math.PI*2);
+  ctx.lineWidth=2/scale;
+  ctx.strokeStyle="#ef4444";
+  ctx.stroke();
+
+  // Number every 3rd division plus first
+  for(let i=0;i<MAIN_DIVISIONS;i++){
+    const a=toRad(270+i*(360/MAIN_DIVISIONS));
+    const x_div=C0.x+R_ROLLING*Math.cos(a);
+    const y_div=C0.y+R_ROLLING*Math.sin(a);
+
+    // division lines
+    ctx.beginPath();
+    ctx.moveTo(C0.x,C0.y);
+    ctx.lineTo(x_div,y_div);
+    ctx.lineWidth=0.7/scale;
+    ctx.strokeStyle="rgba(239,68,68,.5)";
+    ctx.stroke();
+
+    if(i%3===0 || i===MAIN_DIVISIONS-1){ // only a few labels
+      label((i+1).toString(), C0.x+(R_ROLLING+12/scale)*Math.cos(a), C0.y+(R_ROLLING+12/scale)*Math.sin(a),0,0);
+    }
+  }
+
+  label("C₀",C0.x,C0.y,-14,0);
+  label("P",P_start.x,P_start.y,-16,6);
+}
+
+function drawPointO(){
+  ctx.beginPath();
+  ctx.arc(CENTER_O.x,CENTER_O.y,4/scale,0,Math.PI*2);
+  ctx.fillStyle="#000";
+  ctx.fill();
+  label("O",CENTER_O.x,CENTER_O.y,8,8);
+}
+
+function drawBaseCircles(){
+  ctx.beginPath();
+  ctx.arc(CENTER_O.x,CENTER_O.y,R_DIRECTING,0,Math.PI*2);
+  ctx.lineWidth=3/scale;
+  ctx.strokeStyle="#FFD700";
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(CENTER_O.x,CENTER_O.y,R_DIRECTING-R_ROLLING,0,Math.PI*2);
+  ctx.lineWidth=1.5/scale;
+  ctx.strokeStyle="#FFA500";
+  ctx.stroke();
+}
+
+function drawDottedRadials(){
+  ctx.setLineDash([6/scale,6/scale]);
+  const step=ARC_DEG/MAIN_DIVISIONS;
+  for(let i=0;i<=MAIN_DIVISIONS;i++){
+    const a=toRad(i*step-90);
+    ctx.beginPath();
+    ctx.moveTo(CENTER_O.x,CENTER_O.y);
+    ctx.lineTo(
+      CENTER_O.x+R_DIRECTING*Math.cos(a),
+      CENTER_O.y+R_DIRECTING*Math.sin(a)
+    );
+    ctx.strokeStyle="rgba(255,165,0,.6)";
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+}
+
+function drawRollingCircles(){
+  for(let i=1;i<=MAIN_DIVISIONS;i++){
+    const C=centers_Ck[i];
+    ctx.beginPath();
+    ctx.arc(C.x,C.y,R_ROLLING,0,Math.PI*2);
+    ctx.strokeStyle="rgba(239,68,68,.2)";
+    ctx.stroke();
+
+    // label every 3rd C plus first/last
+    if(i%3===0 || i===MAIN_DIVISIONS){
+      label("C"+i, C.x,C.y,8,0);
+    }
+
+    // dotted line to curve points
+    ctx.setLineDash([5/scale,5/scale]);
+    ctx.beginPath();
+    ctx.moveTo(C.x,C.y);
+    ctx.lineTo(hypocycloidPoints[i].x,hypocycloidPoints[i].y);
+    ctx.strokeStyle="rgba(239,68,68,.5)";
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+function drawPoints(){
+  hypocycloidPoints.forEach((p,i)=>{
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,3.5/scale,0,Math.PI*2);
+    ctx.fillStyle="#ef4444";
+    ctx.fill();
+
+    if(i===0 || i%3===0 || i===MAIN_DIVISIONS){ // only a few P labels
+      label(i===0?"P":"P"+i, p.x,p.y,5,-10);
+    }
+  });
+}
+
+function drawCurve(){
+  ctx.beginPath();
+  hypocycloidPoints.forEach((p,i)=>{
+    i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);
+  });
+  ctx.lineWidth=3/scale;
+  ctx.strokeStyle="#ef4444";
+  ctx.stroke();
+}
+
+// -------- STEPS --------
+let step=1;
+const totalSteps=8;
+
+function render(){
+  clearCanvas();
+  applyTransform();
+
+  if(step>=1) drawInitialGeneratingCircle();
+  if(step>=2) drawPointO();
+  if(step>=3) drawBaseCircles();
+  if(step>=4) drawDottedRadials();
+  if(step>=6) drawRollingCircles();
+  if(step>=7) drawPoints();
+  if(step>=8) drawCurve();
+
+  const stepsText=[
+    "Draw the generating circle (radius r) and divide it into 12 equal parts.",
+    "Mark the fixed center O of the directing circle.",
+    "Draw the directing circle (R) and the locus circle (R − r).",
+    "Divide the locus circle into equal parts and draw dotted construction lines.",
+    "Mark the successive center positions C₁, C₂, …",
+    "Draw the rolling circles at each center position.",
+    "Mark the corresponding points P₁, P₂, …",
+    "Join the points smoothly to obtain the hypocycloid."
+  ];
+
+  stepDescription.textContent=`Step ${step}: ${stepsText[step-1]}`;
+
+  prevBtn.disabled=step<=1;
+  nextBtn.disabled=step>=totalSteps;
+}
+
+prevBtn.onclick=()=>{ if(step>1){step--;render();}};
+nextBtn.onclick=()=>{ if(step<totalSteps){step++;render();}};
+
+calculateVirtualPoints();
+computeTransform();
+render();
+
+});
+</script>
+
+</body>
+</html>

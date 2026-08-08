@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Virtual Metrology Lab: Calculations</title>
+  <link rel="icon" href="./img/favicon.ico" />
+
+  <style>
+    /* --- Copied Styles from Lab Page --- */
+    :root {
+      --accent: #004d40;
+      --accent-2: #00796b;
+      --bg-soft: #e0f7f6;
+      --panel: #f3fdfc;
+    }
+
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      background: #f4fbfa;
+      color: #123;
+    }
+
+    header {
+      background: var(--accent);
+      color: #fff;
+      padding: 16px 22px;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 22px;
+      display: inline-block;
+    }
+
+    header nav {
+      float: right;
+      margin-top: 4px;
+    }
+
+    header nav a {
+      color: #fff;
+      margin-left: 18px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s;
+    }
+
+    header nav a:hover {
+      color: #a7ffeb;
+    }
+
+    main {
+      padding: 18px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    footer {
+      text-align: center;
+      padding: 14px;
+      margin-top: 18px;
+      color: #666;
+    }
+
+    /* --- Page Styles --- */
+    .calc-pane {
+      max-width: 800px;
+      margin: 20px auto;
+      background: #fff;
+      border: 1px solid #b2dfdb;
+      border-radius: 12px;
+      padding: 24px 36px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
+    }
+
+    .calc-pane h2 {
+      color: var(--accent);
+      border-bottom: 2px solid var(--bg-soft);
+      padding-bottom: 10px;
+    }
+
+    .calc-pane h3 {
+      color: var(--accent-2);
+      margin-top: 28px;
+    }
+
+    .calc-pane ul {
+      list-style-type: disc;
+      background: var(--panel);
+      border: 1px solid var(--bg-soft);
+      padding: 16px 16px 16px 40px;
+      border-radius: 8px;
+    }
+
+    .calc-pane li {
+      margin-bottom: 8px;
+      font-size: 1.1rem;
+    }
+
+    .calc-pane li strong {
+      color: #000;
+      font-weight: 600;
+    }
+
+    /* Table Styles */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th,
+    td {
+      border: 1px solid #b2dfdb;
+      padding: 12px 16px;
+      text-align: center;
+    }
+
+    th {
+      background-color: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+
+    td {
+      background-color: #fff;
+    }
+
+    tr:nth-child(even) td {
+      background-color: var(--panel);
+    }
+
+    tfoot td {
+      background-color: var(--bg-soft);
+      font-weight: 700;
+    }
+
+    /* Formula Styles */
+    .formula {
+      background: #eee;
+      border: 1px solid #ccc;
+      padding: 16px;
+      border-radius: 8px;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 1.3rem;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    .formula i {
+      font-style: italic;
+    }
+
+    .formula-filled {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 1.1rem;
+      font-weight: 600;
+      background: var(--panel);
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid var(--accent-2);
+    }
+
+    .formula-final {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-align: center;
+      background: var(--bg-soft);
+      padding: 16px;
+      border-radius: 8px;
+      border: 2px solid var(--accent);
+    }
+
+    .formula-final i {
+      font-style: italic;
+    }
+
+    /* --- Button Style --- */
+    .button-container {
+      text-align: center;
+    }
+
+    #proceedToQuizBtn {
+      display: inline-block;
+      margin: 20px auto 20px;
+      background: var(--accent-2);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 26px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transition: transform 0.2s, background 0.3s;
+    }
+
+    #proceedToQuizBtn:hover {
+      background: var(--accent);
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Virtual Metrology Lab: Three-Wire Method</h1>
+    <nav>
+      <a href="./index.html" id="nav-index">Introduction</a>
+      <a href="./lab.html" id="nav-lab">Lab</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="calc-pane">
+      <h2>5. Observations and Calculations</h2>
+
+      <h3>Given Data:</h3>
+      <p>Based on the "M8 x 1.25" thread selected in the lab:</p>
+      <ul>
+        <li>Pitch of the thread, <i>P</i> = <strong>1.25</strong> mm</li>
+        <li>Angle of the thread, <i>x</i> = <strong>60</strong> degrees</li>
+        <li>Diameter of the wire, <i>d</i> = <strong>0.722</strong> mm (Best wire size for this pitch)</li>
+      </ul>
+
+      <h3>Measurement Table:</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Trial No.</th>
+            <th>Main Scale (mm)</th>
+            <th>Circular Scale (mm)</th>
+            <th>Measurement over wires, <i>M</i> (mm)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>8.0</td>
+            <td>0.269</td>
+            <td>8.269</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3"><strong>Reading Used</strong></td>
+            <td><strong><i>M</i> = 8.269</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <h3>Calculation:</h3>
+      <p>The effective diameter (<i>E</i>) is calculated using the formula:</p>
+
+      <p class="formula">
+        <i>E</i> = <i>M</i> + <sup><i>P</i></sup>&frasl;<sub>2</sub> cot(<sup><i>x</i></sup>&frasl;<sub>2</sub>) -
+        <i>d</i>(1 + csc(<sup><i>x</i></sup>&frasl;<sub>2</sub>))
+      </p>
+
+      <p>Substituting the values:</p>
+
+      <p class="formula-filled">
+        <i>E</i> = 8.269 + <sup>1.25</sup>&frasl;<sub>2</sub> cot(<sup>60</sup>&frasl;<sub>2</sub>) - 0.722(1 +
+        csc(<sup>60</sup>&frasl;<sub>2</sub>))
+        <br>
+        <i>E</i> = 8.269 + 0.625 × cot(30°) - 0.722(1 + csc(30°))
+        <br>
+        <i>E</i> = 8.269 + (0.625 × 1.732) - (0.722 × (1 + 2.000))
+        <br>
+        <i>E</i> = 8.269 + 1.0825 - (0.722 × 3)
+        <br>
+        <i>E</i> = 8.269 + 1.0825 - 2.166
+        <br>
+        <i>E</i> = 10.825 - 2.166
+      </p>
+
+      <p class="formula-final">
+        <i>E</i> = <strong>7.188</strong> mm
+      </p>
+
+    </section>
+
+  </main>
+
+  <footer>© 2025 Virtual Metrology Lab</footer>
+
+  <script>
+    // Proceed button to Quiz
+    document.getElementById("proceedToQuizBtn").addEventListener("click", () => {
+      window.location.href = "quiz.html";
+    });
+
+    // Highlight current page in navbar
+    const currentPage = window.location.pathname.split("/").pop();
+    const navLinks = {
+      "index.html": document.getElementById("nav-index"),
+      "procedure.html": document.getElementById("nav-procedure"),
+      "index.html": document.getElementById("nav-lab"),
+      "quiz.html": document.getElementById("nav-quiz"),
+      "calculations.html": document.getElementById("nav-calc")
+    };
+    if (navLinks[currentPage]) {
+      navLinks[currentPage].style.textDecoration = "underline";
+      navLinks[currentPage].style.fontWeight = "700";
+    }
+  </script>
+</body>
+
+</html>

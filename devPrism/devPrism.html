@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="titleText">Development of Solids</title>
+        <link rel="icon" href="./favicon.ico" />
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+
+        .controls-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .controls-container label,
+        .controls-container select,
+        .controls-container input,
+        .controls-container button {
+            display: block;
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        .controls-container .translate-button {
+            background-color: #ff9900;
+            margin-top: 10px;
+        }
+
+        .controls-container button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            border: none;
+            font-weight: bold;
+            margin-top: 15px;
+            transition: background-color 0.2s;
+        }
+
+        .controls-container button:hover {
+            background-color: #0056b3;
+        }
+
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .drawing-area {
+            flex: 2;
+            min-width: 400px;
+            background-color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #devCanvas {
+            border: 1px solid #333;
+            display: block;
+            margin: auto;
+            background-color: #fcfcfc;
+        }
+
+        .steps-area {
+            flex: 1;
+            min-width: 300px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #stepText {
+            min-height: 100px;
+            padding: 10px;
+            border: 1px dashed #007bff;
+            margin-bottom: 15px;
+            background-color: #f9f9ff;
+        }
+
+        .message-box {
+            padding: 8px;
+            background-color: #eee;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .step-buttons {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .step-buttons button {
+            width: 48%;
+            padding: 10px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .step-buttons button:hover:not(:disabled) {
+            background-color: #5a6268;
+        }
+
+        .step-buttons button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1 id="headerTitle">Development of Surfaces of Solids</h1> 
+    </header>
+    <div class="controls-container">
+        <button id="translateBtn" class="translate-button" onclick="toggleLanguage()">மொழிபெயர் / Translate</button>
+        <h2 id="inputTitle">Input Dimensions</h2>
+        <select id="solidType" onchange="updateInputs()">
+            <option value="cylinder" id="optCylinder">Cylinder</option>
+            <option value="hexagonalPrism" id="optHexPrism">Hexagonal Prism</option>
+        </select>
+        <div id="cylinderInputs" class="input-group">
+            <label for="diameter" id="labelDiameter">Base Diameter (mm):</label>
+            <input type="number" id="diameter" value="40" min="10">
+        </div>
+        <div id="prismInputs" class="input-group" style="display: none;">
+            <label for="side" id="labelSide">Base Side (mm):</label>
+            <input type="number" id="side" value="30" min="10">
+        </div>
+        <label for="height" id="labelHeight">Height (mm):</label>
+        <input type="number" id="height" value="60" min="10">
+        <button onclick="generateDevelopment()" id="btnGenerate">Generate</button>
+    </div>
+    <hr>
+    <div class="main-content">
+        <div class="drawing-area">
+            <h2 id="drawingTitle">Visualization (VP-HP, FV-TV, Development)</h2>
+            <canvas id="devCanvas" width="900" height="550"></canvas>
+        </div>
+        <div class="steps-area">
+            <h2 id="stepsTitle">Step-by-Step Guide</h2>
+            <div id="messageBox" class="message-box">Click 'Generate' to begin.</div>
+            <div id="stepText">Select a solid, enter dimensions, and click 'Generate' to begin.</div>
+            <div class="step-buttons">
+                <button id="prevBtn" onclick="showPrevStep()" style="margin: auto 2px;" disabled> &lt; Previous </button>
+                <button id="nextBtn" onclick="showNextStep()" style="margin: auto 2px;" disabled> Next Step &gt; </button>
+                <button onclick="window.location.href='./index.html'" style="margin: auto 2px;" >Home</button>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 0, steps = [], canvas, ctx, isTamil = false;
+        const originX = 100, originY = 300, scale = 1.5, TV_Y_OFFSET = 70, LINE_THIN = 1, LINE_THICK = 3;
+        const COLOR_FINAL = 'red', COLOR_SPLIT_LINES = '#ffff99', COLOR_HORIZONTAL_PROJECTION = '#888888', COLOR_VERTICAL_PROJECTION = '#999999';
+
+        const translations = {
+            'titleText': { en: 'Development of Solids', ta: 'திடப்பொருட்களின் மேற்பரப்பு விரிவு' },
+            'headerTitle': { en: 'Development of Surfaces of Solids', ta: 'திடப்பொருட்களின் மேற்பரப்பு விரிவு' },
+            'inputTitle': { en: 'Input Dimensions', ta: 'பரிமாணங்களை உள்ளிடவும்' },
+            'optCylinder': { en: 'Cylinder', ta: 'உருளை' },
+            'optHexPrism': { en: 'Hexagonal Prism', ta: 'அறுகோண பட்டகம்' },
+            'labelDiameter': { en: 'Base Diameter (mm):', ta: 'அடிப்பக்க விட்டம் (மிமீ):' },
+            'labelSide': { en: 'Base Side (mm):', ta: 'அடிப்பக்க நீளம் (மிமீ):' },
+            'labelHeight': { en: 'Height (mm):', ta: 'உயரம் (மிமீ):' },
+            'btnGenerate': { en: 'Generate', ta: 'உருவாக்கு' },
+            'drawingTitle': { en: 'Visualization (VP-HP, FV-TV, Development)', ta: 'காட்சிப்படுத்தல் (VP-HP, FV-TV, விரிவு)' },
+            'stepsTitle': { en: 'Step-by-Step Guide', ta: 'படி-படியான வழிகாட்டி' },
+            'msgInitial': { en: "Click 'Generate' to begin.", ta: "'உருவாக்கு' என்பதை அழுத்தவும்." },
+            'msgInitialStepText': { en: "Select a solid, enter dimensions, and click 'Generate' to begin.", ta: "ஒரு திடப்பொருளைத் தேர்ந்தெடுத்து, பரிமாணங்களை உள்ளிட்டு, 'உருவாக்கு' என்பதை அழுத்தவும்." },
+            'msgInvalid': { en: "Invalid input: Please enter valid positive dimensions.", ta: "தவறான உள்ளீடு: சரியான நேர்மறை பரிமாணங்களை உள்ளிடவும்." },
+            'btnPrev': { en: ' < Previous ', ta: ' < முந்தையது ' },
+            'btnNext': { en: ' Next Step > ', ta: ' அடுத்த படி > ' },
+            'msgStepOf': { en: (current, total) => `Step ${current} of ${total}`, ta: (current, total) => `${total} இல் படி ${current}` },
+        };
+
+        const cylinderStepTranslations = [
+            { en: `**Step 1: Reference Planes (X-Y Line)** - Draw the X-Y line.`, ta: `**படி 1: குறிப்பு தளங்கள் (X-Y கோடு)** - X-Y கோட்டை வரையவும்.` },
+            { en: (D) => `**Step 2: Draw Top View (TV)** - Draw the Top View (Circle, $\\phi ${D}mm$) below the XY line.`, ta: (D) => `**படி 2: மேல் பார்வையை (TV) வரைக** - XY கோட்டிற்கு கீழே மேல் பார்வையை (வட்டம், $\\phi ${D}மிமீ) வரைக.` },
+            { en: (N) => `**Step 3: Divide Top View** - Divide the circular TV into **${N}** equal parts (labeled 1 to 8).`, ta: (N) => `**படி 3: மேல் பார்வையை பிரிக்கவும்** - வட்ட TV-ஐ **${N}** சம பாகங்களாகப் பிரிக்கவும் (1 முதல் 8 வரை பெயரிடப்பட்டது).` },
+            { en: `**Step 4: Draw Projectors** - Draw **thin continuous lines** vertically upwards from each division point on the TV.`, ta: `**படி 4: வீழ்த்துதல் கோடுகளை வரைக** - TV-யின் ஒவ்வொரு பிரிவிலிருந்தும் மெல்லிய கோடுகளை மேலே வரையவும்.` },
+            { en: (H) => `**Step 5: Draw Front View (FV)** - Draw the Front View (Rectangle) with height ${H}mm.`, ta: (H) => `**படி 5: முகப்பு பார்வையை (FV) வரைக** - உயரம் ${H}மிமீ கொண்ட FV (செவ்வகம்) வரைக.` },
+            { en: `**Step 6: Development Start** - Project horizontal lines from the top and base of the FV.`, ta: `**படி 6: விரிவு ஆரம்பம்** - FV-இன் மேற்பகுதி மற்றும் அடிப்பகுதியிலிருந்து கிடைமட்ட கோடுகளை வீழ்த்தவும்.` },
+            { en: (L, H) => `**Step 7: Development Boundary** - Complete the Development rectangle (Length $L = ${L}mm$).`, ta: (L, H) => `**படி 7: விரிவு எல்லை** - விரிவு செவ்வகத்தை (நீளம் $L = ${L}மிமீ) முடிக்கவும்.` },
+            { en: (N) => `**Step 8: Draw Generators** - Divide the development length into **${N}** equal parts.`, ta: (N) => `**படி 8: உருவாக்கும் கோடுகளை வரைக** - விரிவு நீளத்தை **${N}** சம பாகங்களாகப் பிரிக்கவும்.` },
+            { en: `**Step 9: Finalize** - Thicken the required outlines (Red).`, ta: `**படி 9: இறுதி செய்தல்** - தேவையான எல்லைகளை (சிவப்பு) தடிமனாக்கவும்.` },
+        ];
+
+        const prismStepTranslations = [
+            { en: `**Step 1: Reference Planes** - Draw the X-Y line.`, ta: `**படி 1: குறிப்பு தளங்கள்** - X-Y கோடு வரையவும்.` },
+            { en: (S) => `**Step 2: Draw Top View (TV)** - Draw the Hexagon (side ${S}mm) below the XY line.`, ta: (S) => `**படி 2: மேல் பார்வையை (TV) வரைக** - XY கோட்டிற்கு கீழே அறுகோணத்தை (பக்கம் ${S}மிமீ) வரைக.` },
+            { en: `**Step 3: Draw Projectors** - Project all vertices from the Top View vertically upwards.`, ta: `**படி 3: வீழ்த்துதல் கோடுகளை வரைக** - மேல் பார்வையிலிருந்து அனைத்து முனைகளையும் மேலே வீழ்த்தவும்.` },
+            { en: (H) => `**Step 4: Draw Front View (FV)** - Draw the Front View rectangle (Height ${H}mm).`, ta: (H) => `**படி 4: முகப்பு பார்வையை (FV) வரைக** - முகப்பு பார்வை செவ்வகத்தை (உயரம் ${H}மிமீ) வரைக.` },
+            { en: (L) => `**Step 5: Development Boundary** - Project horizontal lines from FV and draw the full development rectangle.`, ta: (L) => `**படி 5: விரிவு எல்லை** - FV இலிருந்து கிடைமட்ட கோடுகளை வீழ்த்தி விரிவு செவ்வகத்தை வரையவும்.` },
+            { en: (S) => `**Step 6: Face 1 & 2** - Mark distances for the first two faces.`, ta: `**படி 6: முகப்பு 1 & 2** - முதல் இரண்டு முகப்புகளுக்கான தூரங்களைக் குறிக்கவும்.` },
+            { en: `**Step 7: Remaining Faces** - Mark the remaining faces to complete the grid.`, ta: `**படி 7: மீதமுள்ள முகப்புகள்** - மீதமுள்ள முகப்புகளைக் குறிக்கவும்.` },
+            { en: `**Step 8: Final Outline** - Complete the outline of the development.`, ta: `**படி 8: இறுதி எல்லை** - விரிவின் எல்லையை முடிக்கவும்.` },
+            { en: `**Step 9: Finalize** - Thicken the outlines and internal edges (Red).`, ta: `**படி 9: இறுதி செய்தல்** - எல்லைகளை மற்றும் விளிம்புகளை (சிவப்பு) தடிமனாக்கவும்.` },
+        ];
+
+        function setElementText(id, key, ...args) {
+            const element = document.getElementById(id);
+            if (element) {
+                let text = translations[key][isTamil ? 'ta' : 'en'];
+                if (typeof text === 'function') text = text(...args);
+                element.textContent = text;
+            }
+        }
+
+        function getStepText(solidType, stepIndex, ...args) {
+            let stepArray = solidType === 'cylinder' ? cylinderStepTranslations : prismStepTranslations;
+            let text = stepArray[stepIndex][isTamil ? 'ta' : 'en'];
+            if (typeof text === 'function') text = text(...args);
+            return text;
+        }
+
+        function toggleLanguage() { isTamil = !isTamil; translateUI(); }
+
+        function translateUI() {
+            setElementText('titleText', 'titleText'); setElementText('headerTitle', 'headerTitle');
+            setElementText('inputTitle', 'inputTitle'); setElementText('optCylinder', 'optCylinder');
+            setElementText('optHexPrism', 'optHexPrism'); setElementText('labelDiameter', 'labelDiameter');
+            setElementText('labelSide', 'labelSide'); setElementText('labelHeight', 'labelHeight');
+            setElementText('btnGenerate', 'btnGenerate'); setElementText('drawingTitle', 'drawingTitle');
+            setElementText('stepsTitle', 'stepsTitle'); setElementText('prevBtn', 'btnPrev');
+            setElementText('nextBtn', 'btnNext');
+            if (steps.length === 0) {
+                document.getElementById('messageBox').textContent = translations['msgInitial'][isTamil ? 'ta' : 'en'];
+                document.getElementById('stepText').textContent = translations['msgInitialStepText'][isTamil ? 'ta' : 'en'];
+            } else { showCurrentStep(); }
+            document.getElementById('translateBtn').textContent = isTamil ? 'Translate to English' : 'மொழிபெயர் / Translate';
+        }
+
+        function showMessage(text, isError = false) {
+            const box = document.getElementById('messageBox');
+            box.textContent = text; box.style.backgroundColor = isError ? '#fdd' : '#eeefff';
+            box.style.color = isError ? '#a00' : '#333'; box.style.borderColor = isError ? '#f00' : '#007bff'; box.style.border = '1px solid';
+        }
+
+        function updateInputs() {
+            const solidType = document.getElementById('solidType')?.value;
+            document.getElementById('cylinderInputs').style.display = solidType === 'cylinder' ? 'block' : 'none';
+            document.getElementById('prismInputs').style.display = solidType === 'hexagonalPrism' ? 'block' : 'none';
+            updateUIInitialState();
+        }
+
+        function updateUIInitialState() {
+            showMessage(translations['msgInitial'][isTamil ? 'ta' : 'en']);
+            document.getElementById('stepText').textContent = translations['msgInitialStepText'][isTamil ? 'ta' : 'en'];
+            document.getElementById('prevBtn').disabled = true; document.getElementById('nextBtn').disabled = true;
+            if (ctx) clearCanvas(); currentStep = 0; steps = [];
+        }
+
+        function drawLine(x1, y1, x2, y2, color = 'black', width = LINE_THIN, pattern = []) {
+            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.setLineDash(pattern); ctx.lineTo(x2, y2);
+            ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke(); ctx.setLineDash([]);
+        }
+
+        function drawText(text, x, y, color = 'black', angle = 0, size = '10px') {
+            ctx.save(); ctx.fillStyle = color; ctx.font = `${size} Arial`; ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle'; ctx.translate(x, y); ctx.rotate(angle); ctx.fillText(text, 0, 0); ctx.restore();
+        }
+
+        function drawClosedArrow(x, y, angle, size = 5, color = 'black') {
+            ctx.save(); ctx.fillStyle = color; ctx.translate(x, y); ctx.rotate(angle);
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-size, size / 2); ctx.lineTo(-size, -size / 2); ctx.closePath(); ctx.fill(); ctx.restore();
+        }
+
+        function drawDimension(x1, y1, x2, y2, offset, text, vertical = false, rotate180 = false) {
+            const arrowSize = 5, endBarLength = 12;
+            let dx1, dy1, dx2, dy2;
+            if (!vertical) { dx1 = x1; dy1 = y1 + offset; dx2 = x2; dy2 = y2 + offset; }
+            else { dx1 = x1 + offset; dy1 = y1; dx2 = x2 + offset; dy2 = y2; }
+            const extensionLength = 10;
+            if (!vertical) {
+                drawLine(x1, y1, x1, dy1 + (offset > 0 ? extensionLength : -extensionLength), '#888', 0.5);
+                drawLine(x2, y2, x2, dy2 + (offset > 0 ? extensionLength : -extensionLength), '#888', 0.5);
+            } else {
+                drawLine(x1, y1, dx1 + (offset > 0 ? extensionLength : -extensionLength), y1, '#888', 0.5);
+                drawLine(x2, y2, dx2 + (offset > 0 ? extensionLength : -extensionLength), y2, '#888', 0.5);
+            }
+            drawLine(dx1, dy1, dx2, dy2, 'black', LINE_THIN);
+            const extraRot = rotate180 ? Math.PI : 0;
+            if (!vertical) {
+                drawLine(dx1, dy1 - endBarLength / 2, dx1, dy1 + endBarLength / 2, 'black', LINE_THIN);
+                drawLine(dx2, dy2 - endBarLength / 2, dx2, dy2 + endBarLength / 2, 'black', LINE_THIN);
+                drawClosedArrow(dx1, dy1, Math.PI, arrowSize); drawClosedArrow(dx2, dy2, 0, arrowSize);
+                drawText(text, (dx1 + dx2) / 2, offset > 0 ? dy1 + 10 : dy1 - 10, 'black', extraRot);
+            } else {
+                drawLine(dx1 - endBarLength / 2, dy1, dx1 + endBarLength / 2, dy1, 'black', LINE_THIN);
+                drawLine(dx2 - endBarLength / 2, dy2, dx2 + endBarLength / 2, dy2, 'black', LINE_THIN);
+                drawClosedArrow(dx1, dy1, -Math.PI / 2, arrowSize); drawClosedArrow(dx2, dy2, Math.PI / 2, arrowSize);
+                drawText(text, offset > 0 ? dx1 + 10 : dx1 - 10, (dy1 + dy2) / 2, 'black', Math.PI / 2 + extraRot);
+            }
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawLine(0, originY, canvas.width, originY, 'yellow', 2);
+            drawText('X', 15, originY - 10, 'yellow', 0, '12px'); drawText('Y', canvas.width - 15, originY - 10, 'yellow', 0, '12px');
+            drawText('VP', 20, originY - 20, 'black', 0, '12px'); drawText('HP', 20, originY + 20, 'black', 0, '12px');
+        }
+
+        function drawCylinderViews(D, H, divisions = 0, step = 1) {
+            const R = D / 2, centerX = originX + R + 30, centerY = originY + TV_Y_OFFSET, fvY = originY - H;
+            if (step >= 1) {
+                ctx.beginPath(); ctx.arc(centerX, centerY, R, 0, 2 * Math.PI);
+                ctx.strokeStyle = step === 8 ? COLOR_FINAL : 'black'; ctx.lineWidth = step === 8 ? LINE_THICK : LINE_THIN; ctx.stroke();
+                drawDimension(centerX, centerY - R, centerX, centerY + R, -(R + 30), `φ${(D / scale).toFixed(0)}`, true, true);
+            }
+            if (step >= 2) {
+                for (let i = 0; i < divisions; i++) {
+                    const angle = 2 * Math.PI * i / divisions, tvX = centerX + R * Math.cos(angle), tvY = centerY + R * Math.sin(angle);
+                    drawText((i + 1).toString(), centerX + (R + 10) * Math.cos(angle), centerY + (R + 10) * Math.sin(angle));
+                    ctx.beginPath(); ctx.arc(tvX, tvY, 1, 0, 2 * Math.PI); ctx.fill();
+                }
+            }
+            if (step >= 3) {
+                for (let i = 0; i < divisions; i++) {
+                    const tvX = centerX + R * Math.cos(2 * Math.PI * i / divisions);
+                    drawLine(tvX, centerY + R * Math.sin(2 * Math.PI * i / divisions), tvX, fvY, COLOR_VERTICAL_PROJECTION, 0.5);
+                }
+            }
+            if (step >= 4) {
+                const color = step === 8 ? COLOR_FINAL : 'black', width = step === 8 ? LINE_THICK : LINE_THIN;
+                drawLine(centerX - R, originY, centerX + R, originY, color, width); drawLine(centerX - R, fvY, centerX + R, fvY, color, width);
+                drawLine(centerX - R, originY, centerX - R, fvY, color, width); drawLine(centerX + R, originY, centerX + R, fvY, color, width);
+                drawDimension(centerX - R, fvY, centerX - R, originY, -50, `${(H / scale).toFixed(0)}`, true, true);
+            }
+        }
+
+        function drawCylinderDevelopment(L, H, D, step) {
+            const devXStart = originX + D * 2 + 150, devYTop = originY - H, devYBottom = originY, numDivisions = 8;
+            if (step >= 5) {
+                drawLine(originX + 20, devYTop, devXStart + L + 10, devYTop, COLOR_HORIZONTAL_PROJECTION, 0.5);
+                drawLine(originX + 20, devYBottom, devXStart + L + 10, devYBottom, COLOR_HORIZONTAL_PROJECTION, 0.5);
+            }
+            if (step >= 6) {
+                const color = step === 8 ? COLOR_FINAL : 'black', width = step === 8 ? LINE_THICK : LINE_THIN;
+                drawLine(devXStart, devYTop, devXStart + L, devYTop, color, width); drawLine(devXStart, devYBottom, devXStart + L, devYBottom, color, width);
+                drawLine(devXStart, devYTop, devXStart, devYBottom, color, width); drawLine(devXStart + L, devYTop, devXStart + L, devYBottom, color, width);
+                drawDimension(devXStart, devYTop, devXStart + L, devYTop, -30, `L = ${(L / scale).toFixed(1)}`, false, false);
+                drawDimension(devXStart, devYTop, devXStart, devYBottom, -30, `H = ${(H / scale).toFixed(0)}`, true, true);
+            }
+            if (step >= 7) {
+                const labels = ['1', '2', '3', '4', '5', '6', '7', '8', '1'];
+                for (let i = 0; i <= numDivisions; i++) {
+                    const x = devXStart + i * (L / numDivisions), isBound = (i === 0 || i === numDivisions);
+                    drawLine(x, devYTop, x, devYBottom, (step === 8 && isBound ? COLOR_FINAL : COLOR_SPLIT_LINES), (step === 8 && isBound ? LINE_THICK : 0.5));
+                    drawText(labels[i], x, devYBottom + 12); drawText(labels[i] + "'", x, devYTop - 10);
+                }
+            }
+        }
+
+        function setupCylinderSteps(L, H, D) {
+            steps = []; const Da = (D / scale).toFixed(0), Ha = (H / scale).toFixed(0), La = (L / scale).toFixed(1);
+            steps.push({ text: getStepText('cylinder', 0), action: () => clearCanvas() });
+            steps.push({ text: getStepText('cylinder', 1, Da), action: () => { clearCanvas(); drawCylinderViews(D, H, 0, 1); } });
+            steps.push({ text: getStepText('cylinder', 2, 8), action: () => { clearCanvas(); drawCylinderViews(D, H, 8, 2); } });
+            steps.push({ text: getStepText('cylinder', 3), action: () => { clearCanvas(); drawCylinderViews(D, H, 8, 3); } });
+            steps.push({ text: getStepText('cylinder', 4, Ha), action: () => { clearCanvas(); drawCylinderViews(D, H, 8, 4); } });
+            steps.push({ text: getStepText('cylinder', 5), action: () => { clearCanvas(); drawCylinderViews(D, H, 8, 4); drawCylinderDevelopment(L, H, D, 5); } });
+            steps.push({ text: getStepText('cylinder', 6, La, Ha), action: () => { clearCanvas(); drawCylinderViews(D, H, 8, 4); drawCylinderDevelopment(L, H, D, 6); } });
+            steps.push({ text: getStepText('cylinder', 7, 8), action: () => { clearCanvas(); drawCylinderViews(D, H, 8, 4); drawCylinderDevelopment(L, H, D, 7); } });
+            steps.push({ text: getStepText('cylinder', 8), action: () => { clearCanvas(); drawCylinderViews(D, H, 8, 8); drawCylinderDevelopment(L, H, D, 8); } });
+        }
+
+        function getHexagonVertices(S, centerX, centerY) {
+            const v = []; for (let i = 0; i < 6; i++) {
+                const a = 2 * Math.PI * i / 6 + Math.PI / 6;
+                v.push({ x: centerX + S * Math.cos(a), y: centerY + S * Math.sin(a), label: String.fromCharCode(65 + i) });
+            }
+            return v;
+        }
+
+        function drawHexagonalPrismViews(S, H, step) {
+            const centerX = originX + S * 1.732 / 2 + 30, centerY = originY + TV_Y_OFFSET + S * 0.5, fvY = originY - H, v = getHexagonVertices(S, centerX, centerY);
+            if (step >= 1) {
+                ctx.beginPath(); ctx.moveTo(v[0].x, v[0].y); v.forEach(pt => ctx.lineTo(pt.x, pt.y)); ctx.closePath();
+                ctx.strokeStyle = step === 8 ? COLOR_FINAL : 'black'; ctx.lineWidth = step === 8 ? LINE_THICK : LINE_THIN; ctx.stroke();
+                v.forEach((pt, i) => drawText(pt.label, pt.x + (i < 3 ? 10 : -10), pt.y + (i < 3 ? 10 : -10)));
+                drawDimension(v[2].x, v[2].y, v[3].x, v[3].y, -80, `${(S / scale).toFixed(0)}`, true, true);
+            }
+            if (step >= 2) v.forEach(pt => drawLine(pt.x, pt.y, pt.x, fvY, COLOR_VERTICAL_PROJECTION, 0.5));
+            if (step >= 3) {
+                const color = step === 8 ? COLOR_FINAL : 'black', width = step === 8 ? LINE_THICK : LINE_THIN;
+                drawLine(v[5].x, originY, v[2].x, originY, color, width); drawLine(v[5].x, fvY, v[2].x, fvY, color, width);
+                drawLine(v[5].x, originY, v[5].x, fvY, color, width); drawLine(v[2].x, originY, v[2].x, fvY, color, width);
+                drawLine(v[0].x, originY, v[0].x, fvY, color, width); drawLine(v[1].x, originY, v[1].x, fvY, color, width);
+                drawDimension(v[5].x, fvY, v[5].x, originY, -110, `${(H / scale).toFixed(0)}`, true, true);
+            }
+        }
+
+        function drawPrismDevelopmentStep(L, H, S, step) {
+            const devXStart = originX + S * 4 + 150, devYTop = originY - H, devYBottom = originY, numDivisions = 6, labels = ['A', 'B', 'C', 'D', 'E', 'F', 'A'];
+            if (step >= 4) {
+                drawLine(originX + 20, devYTop, devXStart + L + 10, devYTop, COLOR_HORIZONTAL_PROJECTION, 0.5);
+                drawLine(originX + 20, devYBottom, devXStart + L + 10, devYBottom, COLOR_HORIZONTAL_PROJECTION, 0.5);
+                const c = step === 8 ? COLOR_FINAL : 'black', w = step === 8 ? LINE_THICK : 1;
+                drawLine(devXStart, devYTop, devXStart + L, devYTop, c, w); drawLine(devXStart, devYBottom, devXStart + L, devYBottom, c, w);
+                drawLine(devXStart, devYTop, devXStart, devYBottom, c, w); drawLine(devXStart + L, devYTop, devXStart + L, devYBottom, c, w);
+                drawDimension(devXStart, devYTop, devXStart, devYBottom, -30, `H = ${(H / scale).toFixed(0)}`, true, true);
+                drawDimension(devXStart, devYTop, devXStart + L, devYTop, -40, `L = 6 x ${(S / scale).toFixed(0)}`, false, false);
+            }
+            let max = step === 5 ? 1 : (step === 6 ? 5 : (step >= 7 ? 6 : 0));
+            for (let i = 0; i <= numDivisions; i++) {
+                const x = devXStart + i * (L / numDivisions);
+                if (i <= max) {
+                    drawLine(x, devYTop, x, devYBottom, (step === 8 ? COLOR_FINAL : COLOR_SPLIT_LINES), (step === 8 ? LINE_THICK : LINE_THIN));
+                    drawText(labels[i], x, devYBottom + 12); drawText(labels[i] + "'", x, devYTop - 10);
+                }
+            }
+        }
+
+        function setupPrismSteps(L, H, S) {
+            const Sa = (S / scale).toFixed(0), Ha = (H / scale).toFixed(0), La = (L / scale).toFixed(0); steps = [];
+            steps.push({ text: getStepText('hexagonalPrism', 0), action: () => clearCanvas() });
+            steps.push({ text: getStepText('hexagonalPrism', 1, Sa), action: () => { clearCanvas(); drawHexagonalPrismViews(S, H, 1); } });
+            steps.push({ text: getStepText('hexagonalPrism', 2), action: () => { clearCanvas(); drawHexagonalPrismViews(S, H, 2); } });
+            steps.push({ text: getStepText('hexagonalPrism', 3, Ha), action: () => { clearCanvas(); drawHexagonalPrismViews(S, H, 3); } });
+            steps.push({ text: getStepText('hexagonalPrism', 4, La), action: () => { clearCanvas(); drawHexagonalPrismViews(S, H, 3); drawPrismDevelopmentStep(L, H, S, 4); } });
+            steps.push({ text: getStepText('hexagonalPrism', 5), action: () => { clearCanvas(); drawHexagonalPrismViews(S, H, 3); drawPrismDevelopmentStep(L, H, S, 5); } });
+            steps.push({ text: getStepText('hexagonalPrism', 6), action: () => { clearCanvas(); drawHexagonalPrismViews(S, H, 3); drawPrismDevelopmentStep(L, H, S, 6); } });
+            steps.push({ text: getStepText('hexagonalPrism', 7), action: () => { clearCanvas(); drawHexagonalPrismViews(S, H, 3); drawPrismDevelopmentStep(L, H, S, 7); } });
+            steps.push({ text: getStepText('hexagonalPrism', 8), action: () => { clearCanvas(); drawHexagonalPrismViews(S, H, 8); drawPrismDevelopmentStep(L, H, S, 8); } });
+        }
+
+        function generateDevelopment() {
+            const type = document.getElementById('solidType').value, H = parseFloat(document.getElementById('height').value) * scale;
+            if (type === 'cylinder') {
+                const D = parseFloat(document.getElementById('diameter').value) * scale;
+                if (D > 0 && H > 0) setupCylinderSteps(Math.PI * D, H, D);
+            } else {
+                const S = parseFloat(document.getElementById('side').value) * scale;
+                if (S > 0 && H > 0) setupPrismSteps(6 * S, H, S);
+            }
+            currentStep = 0; showCurrentStep(); document.getElementById('nextBtn').disabled = false;
+        }
+
+        function showCurrentStep() {
+            if (steps.length === 0) return; steps[currentStep].action();
+            const type = document.getElementById('solidType').value, H = document.getElementById('height').value, D = document.getElementById('diameter').value, S = document.getElementById('side').value, L = (type === 'cylinder' ? Math.PI * D : 6 * S).toFixed(1);
+            let txt = type === 'cylinder' ? getStepText('cylinder', currentStep, D, 8, H, L) : getStepText('hexagonalPrism', currentStep, S, H, L);
+            document.getElementById('stepText').innerHTML = txt.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+            showMessage(translations['msgStepOf'][isTamil ? 'ta' : 'en'](currentStep + 1, steps.length));
+            document.getElementById('prevBtn').disabled = currentStep === 0; document.getElementById('nextBtn').disabled = currentStep === steps.length - 1;
+        }
+
+        function showNextStep() { if (currentStep < steps.length - 1) { currentStep++; showCurrentStep(); } }
+        function showPrevStep() { if (currentStep > 0) { currentStep--; showCurrentStep(); } }
+        window.onload = () => { canvas = document.getElementById('devCanvas'); ctx = canvas.getContext('2d'); updateInputs(); translateUI(); };
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,418 @@
+/* --- Global Variables --- */
+:root {
+    --bg-grey: #f8f9fa;
+    --nav-white: #ffffff;
+    --primary-blue: #0d6efd;
+    --text-dark: #212529;
+    --text-light: #495057;
+    --border-color: #dee2e6;
+}
+ 
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* 1. Make the Body the full height of the screen */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background-color: var(--bg-grey);
+    color: var(--text-dark);
+    
+    /* FLEXBOX MAGIC FOR FIXED HEADER/FOOTER */
+    display: flex;
+    flex-direction: column;
+    height: 100vh; /* 100% Viewport Height */
+    overflow: hidden; /* Prevents the whole page from scrolling */
+}
+
+/* 2. Fixed Header (Stays at top) */
+.navbar {
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background-color: var(--nav-white);
+    height: 80px; /* Fixed height to ensure alignment */
+    display: flex;
+    justify-content: space-between; /* Pushes logos to edges */
+    align-items: center;
+    padding: 0 30px;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+/* 3. SCROLLABLE Middle Content */
+#app-container {
+    flex-grow: 1; /* Takes up all available space between header and footer */
+    overflow-y: auto; /* Enables scrolling ONLY inside this middle part */
+    padding: 40px 20px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto; /* Centers the content */
+} 
+
+/* 4. Fixed Footer (Stays at bottom) */
+.main-footer {
+    flex-shrink: 0; /* Prevents footer from shrinking */
+    background-color: var(--nav-white);
+    padding: 10px;
+    text-align: center;
+    border-top: 1px solid var(--border-color);
+    color: var(--text-light);
+    font-size: 0.85rem;
+    z-index: 10;
+}
+
+.logo-box, .nav-actions {
+    z-index: 2; /* Ensures buttons stay clickable above the title layer */
+    display: flex;
+    align-items: center;
+}
+
+.logo { height: 50px; width: auto; }
+
+/* TRICK: We remove the title from the flex flow 
+   and pin it to the exact center of the screen.
+*/
+.nav-title {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%); /* Moves it back by half its width/height to center perfectly */
+    text-align: center;
+    width: auto;
+    z-index: 1;
+}
+
+.brand-name {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--text-dark);
+    line-height: 1.1;
+}
+
+/* REMOVED 'By MIT' subtitle */
+.brand-sub {
+    display: none; 
+}
+
+.nav-actions { gap: 20px; }
+
+.nav-link {
+    text-decoration: none;
+    color: var(--text-dark);
+    font-weight: 600;
+    font-size: 1rem;
+    transition: color 0.2s;
+}
+.nav-link:hover { color: var(--primary-blue); }
+
+/* --- Footer Paragraphs --- */
+.main-footer p { margin: 5px 0; }
+
+/* --- HERO SECTION --- */
+.hero { 
+    text-align: center; 
+    margin-bottom: 50px; 
+}
+
+.hero h1 { 
+    font-size: 3.5rem;      /* Increased size slightly */
+    font-weight: 800;       /* Extra Bold (Makes it thick) */
+    color: #111;            /* Darker Black */
+    letter-spacing: -2px;   /* The fix: pulls letters closer */
+    margin-bottom: 15px; 
+    line-height: 1.1;       /* Keeps lines tight if title wraps */
+}
+
+.hero p { 
+    font-size: 1.2rem; 
+    color: var(--text-light); 
+    max-width: 800px; 
+    margin: 0 auto; 
+}
+
+/* --- CARD GRID (Home Page) --- */
+.section-heading {
+    font-size: 1.5rem;
+    color: var(--primary-blue);
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 30px;
+}
+
+/* --- SEARCH BAR --- */
+.experiments-title-search {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+.experiments-title-search .section-heading {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+.search-bar {
+    padding: 10px 15px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    width: 100%;
+    max-width: 350px;
+    background-color: #ffffff;
+    color: var(--text-dark);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.search-bar::placeholder {
+    color: var(--text-light); /* grey */
+}
+.search-bar:focus {
+    border-color: var(--primary-blue); /* blue */
+    box-shadow: 0 0 5px rgba(13, 110, 253, 0.3);
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 350px));
+    justify-content: center;
+    gap: 30px;
+}
+
+/* Home Page Cards */
+.card {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+}
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    border-color: var(--primary-blue);
+}
+.card-image {
+    height: 180px;
+    background-size: cover;
+    background-position: center;
+    background-color: #e9ecef;
+}
+.card-content { padding: 25px; flex-grow: 1; display: flex; flex-direction: column; }
+.card-content h3 { color: var(--primary-blue); margin-top: 0; margin-bottom: 10px; }
+.card-content p { color: var(--text-light); font-size: 0.95rem; line-height: 1.5; margin-bottom: 20px; }
+.link-text { margin-top: auto; color: var(--primary-blue); font-weight: bold; }
+
+/* --- ABOUT PAGE --- */
+.about-container { 
+    background: white; 
+    padding: 50px; 
+    border-radius: 12px; 
+    border: 1px solid var(--border-color); 
+    box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+}
+.about-container h3 {
+    color: var(--primary-blue);
+    margin-top: 35px;
+    margin-bottom: 15px;
+    font-size: 1.4rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+}
+.about-container h3:first-child { margin-top: 0; }
+.about-container p { line-height: 1.8; color: #333; margin-bottom: 15px; }
+.about-list { margin-left: 20px; margin-bottom: 20px; }
+.about-list li { margin-bottom: 10px; line-height: 1.6; color: #333; }
+
+/* --- EXPERIMENT LIST (Horizontal Cards) --- */
+/* Updated for larger images and less padding */
+
+.exp-list-item {
+    display: flex;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px; /* REDUCED from 30px */
+    gap: 25px;     /* Slightly reduced gap to keep things tight */
+    align-items: flex-start;
+    margin-bottom: 25px;
+    transition: 0.2s;
+}
+
+.exp-list-item:hover { 
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05); 
+    border-color: var(--primary-blue); 
+} 
+
+.exp-thumb { 
+    width: 250px; /* INCREASED from 220px to make image larger */
+    height: 200px; /* INCREASED height to match width */
+    object-fit: cover; 
+    border-radius: 8px; 
+    background: #f1f3f5; 
+    border: 1px solid #eee;
+    flex-shrink: 0; /* Prevents image from shrinking */
+}
+
+.exp-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 200px; /* Ensures text area is at least as tall as image */
+    padding-top: 5px;
+}
+
+.exp-info h3 { 
+    margin: 0 0 10px 0; 
+    color: var(--text-dark); 
+    font-size: 1.5rem; /* Slightly larger title */
+}
+
+.exp-info .badge { 
+    background: #e9ecef; 
+    color: var(--text-light); 
+    padding: 4px 10px; 
+    border-radius: 20px; 
+    font-size: 0.8rem; 
+    vertical-align: middle;
+    margin-left: 10px;
+    font-weight: normal;
+}
+
+.exp-info p { 
+    margin: 0 0 20px 0; 
+    color: var(--text-light); 
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+/* Button Styling */
+.btn-start {
+    align-self: flex-start;
+    padding: 12px 24px;
+    background-color: var(--primary-blue);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: background-color 0.2s;
+    margin-top: auto; 
+}
+
+.btn-start:hover {
+    background-color: #0b5ed7;
+}
+
+.btn-back { 
+    display: inline-block; 
+    margin-bottom: 25px; 
+    color: var(--text-light); 
+    text-decoration: none; 
+    font-weight: 600;
+}
+.btn-back:hover { color: var(--primary-blue); }
+
+/* =========================================
+   MOBILE RESPONSIVE STYLES (Max Width 768px)
+   ========================================= */
+@media (max-width: 768px) {
+    
+    /* 1. Header Layout */
+    .navbar {
+        height: 60px; 
+        padding: 0 10px; /* Tight padding */
+        
+        /* Keep logos pushed to edges so title has room in center */
+        justify-content: space-between; 
+    }
+
+    .logo { height: 30px; } /* Smaller logos */
+
+    /* 2. TITLE - MAKE VISIBLE & COMPACT */
+   .nav-title {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+
+        /* Position absolutely on the left, next to the logo */
+        position: absolute;
+        left: 55px; /* Adjust this value if it's too close/far from the logo */
+        top: 50%;
+        transform: translateY(-50%); /* Center vertically only */
+        z-index: 1;
+
+        text-align: left; /* Ensure text aligns left */
+        width: auto;
+        max-width: 50%; /* Prevent overlap with right navigation */
+    }
+
+    .brand-name {
+        font-size: 1rem; /* Small font to fit mobile */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis; /* Add "..." if text is too long */
+    }
+
+    /* Hide the subtitle on mobile to save space */
+    .brand-sub { display: none; }
+
+    /* 3. Nav Actions (Links + Right Logo) */
+    .nav-actions {
+        gap: 8px; /* Very tight spacing */
+        z-index: 2; /* Ensure links sit ABOVE the title layer if they overlap */
+        background: rgba(255,255,255,0.8); /* Optional: semi-transparent bg to read text if overlap happens */
+        border-radius: 4px;
+    }
+
+    /* 4. Smaller Nav Links */
+    .nav-link { 
+        font-size: 0.75rem; /* Very small text */
+        font-weight: 600;
+        padding: 2px 5px;   /* Easier to tap */
+    }
+
+    /* 5. General Layout Adjustments */
+    #app-container {
+        padding: 15px; 
+    }
+
+    /* 6. Hero Section */
+    .hero h1 {
+        font-size: 2rem; 
+        letter-spacing: -1px;
+    }
+    .hero p { font-size: 0.95rem; }
+
+    /* 7. Experiment List Item (Stacked) */
+    .exp-list-item {
+        flex-direction: column; 
+        padding: 15px;
+        gap: 15px;
+    }
+
+    .exp-thumb {
+        width: 100%; 
+        height: 180px; 
+        margin-bottom: 5px;
+    }
+
+    .exp-info { width: 100%; }
+    .exp-info h3 { font-size: 1.3rem; }
+    
+    .btn-start {
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    /* 8. About Page */
+    .about-container { padding: 20px; }
+}

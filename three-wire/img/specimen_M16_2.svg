@@ -1,0 +1,94 @@
+<svg width="1000" height="340" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="rectGradientM16" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#e8e8e8;stop-opacity:1" />
+      <stop offset="25%" style="stop-color:#c0c0c0;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#a8a8a8;stop-opacity:1" />
+      <stop offset="75%" style="stop-color:#c0c0c0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#909090;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="threadGradientM16" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#d0d0d0;stop-opacity:1" />
+      <stop offset="25%" style="stop-color:#b8b8b8;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#989898;stop-opacity:1" />
+      <stop offset="75%" style="stop-color:#b0b0b0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#808080;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Rectangular unthreaded part -->
+  <g fill="url(#rectGradientM16)" stroke="#000000" stroke-width="2">
+    <rect x="5" y="45" width="170" height="125" rx="2"/>
+  </g>
+
+  <!-- Threaded part M16x2.0 -->
+  <g fill="url(#threadGradientM16)" stroke="#000000" stroke-width="1.2">
+    <path d="
+      M175,107.5
+      L187.5,45 L200,95
+      L212.5,45 L225,95
+      L237.5,45 L250,95
+      L262.5,45 L275,95
+      L287.5,45 L300,95
+      L312.5,45 L325,95
+      L337.5,45 L350,95
+      L362.5,45 L375,95
+      L387.5,45 L400,95
+      L412.5,45 L425,95
+      L437.5,45 L450,95
+      L462.5,45 L475,95
+      L487.5,45 L500,95
+      L512.5,45 L525,95
+      L537.5,45 L550,95
+      L562.5,45 L575,95
+      L587.5,45 L600,95
+      L612.5,45 L625,95
+      L637.5,45 L650,95
+      L662.5,45 L675,95
+      L687.5,45 L700,95
+      L712.5,45 L725,95
+      L737.5,45 L750,95
+      L762.5,45 L775,95
+      L787.5,45 L800,95
+      L812.5,45 L825,95
+      L837.5,45 L850,95
+      L862.5,45 L875,95
+      L887.5,45 L900,95
+      L912.5,45 L925,95
+      L937.5,45 L950,95
+      L950,107.5
+      L937.5,170 L925,120
+      L912.5,170 L900,120
+      L887.5,170 L875,120
+      L862.5,170 L850,120
+      L837.5,170 L825,120
+      L812.5,170 L800,120
+      L787.5,170 L775,120
+      L762.5,170 L750,120
+      L737.5,170 L725,120
+      L712.5,170 L700,120
+      L687.5,170 L675,120
+      L662.5,170 L650,120
+      L637.5,170 L625,120
+      L612.5,170 L600,120
+      L587.5,170 L575,120
+      L562.5,170 L550,120
+      L537.5,170 L525,120
+      L512.5,170 L500,120
+      L487.5,170 L475,120
+      L462.5,170 L450,120
+      L437.5,170 L425,120
+      L412.5,170 L400,120
+      L387.5,170 L375,120
+      L362.5,170 L350,120
+      L337.5,170 L325,120
+      L312.5,170 L300,120
+      L287.5,170 L275,120
+      L262.5,170 L250,120
+      L237.5,170 L225,120
+      L212.5,170 L200,120
+      L187.5,170 L175,120
+      Z
+    " stroke-linejoin="miter"/>
+  </g>
+</svg>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.5">
+    <title>Mechanical Comparator</title>
+    <link rel="icon" href="./favicon.ico" />
+    <link rel="stylesheet" href="./lab.css">
+</head>
+
+<body class="app-body">
+
+    <header class="main-header">
+        <h1 class="header-title">Mechanical Comparator</h1>
+        <a href="./index.html" class="home-btn">Introduction</a>
+    </header>
+
+    <main id="mainArea">
+
+        <div id="workbench">
+            <p class="panel-title">Workpieces</p>
+
+            <div class="workpiece-wrapper">
+                <span class="workpiece-label">Standard Block</span>
+                <div id="zeroBlock" class="workpiece" data-nominal-height="4" data-type="zero" data-bg="#6EE7B7"
+                    data-border="#047857" data-clip="none">
+                </div>
+            </div>
+
+            <div class="workpiece-wrapper">
+                <span class="workpiece-label">Workpiece One</span>
+                <div id="irregularBlock10" class="workpiece" data-nominal-height="4.1" data-type="irregular10"
+                    data-bg="#FBCFE8" data-border="#831843"
+                    data-clip="polygon(0% 100%, 100% 100%, 100% 20%, 90% 30%, 80% 20%, 70% 35%, 60% 25%, 50% 40%, 40% 25%, 30% 35%, 20% 20%, 10% 30%, 0% 15%)">
+                </div>
+            </div>
+
+            <div class="workpiece-wrapper">
+                <span class="workpiece-label">Workpiece Two</span>
+                <div id="irregularBlock20" class="workpiece" data-nominal-height="4.15" data-type="irregular20"
+                    data-bg="#FDE68A" data-border="#B45309"
+                    data-clip="polygon(0% 100%, 100% 100%, 100% 10%, 95% 20%, 85% 5%, 75% 25%, 60% 10%, 50% 30%, 35% 15%, 25% 35%, 15% 10%, 5% 40%, 0% 20%)">
+                </div>
+            </div>
+        </div>
+
+        <div class="measurement-area">
+
+            <div id="gaugeAssembly">
+                <canvas id="dialCanvas" width="500" height="500"></canvas>
+                <div id="plunger">
+                    <div id="plungerMount"></div>
+                    <div id="plungerShaft"></div>
+                    <div id="plungerTip"></div>
+                </div>
+            </div>
+
+            <div id="activeWorkpieceContainer"></div>
+            <div id="base"></div>
+        </div>
+
+        <div id="infoPanel">
+            <div class="instructions-box">
+                <p class="panel-title">Instructions</p>
+                <ol class="instruction-list">
+                    <li>Double-click a piece on the left to measure it.</li>
+                    <li>Drag the active piece horizontally under the plunger.</li>
+                    <li>Compare dial reading with digital output.</li>
+                </ol>
+            </div>
+
+            <div class="reading-box">
+                <p class="panel-title">Digital Reading</p>
+                <div class="display-container">
+                    <span id="measurementDisplay">0.00</span>
+                    <span class="unit-label">mm</span>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="./lab.js"></script>
+</body>
+
+</html>

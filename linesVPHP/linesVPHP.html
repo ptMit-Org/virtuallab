@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="icon" href="./favicon.ico" />
+
+  <title>HP / VP with XY line - Step by Step</title>
+  <style>
+    :root{--bg:#0f1720;--text:#dbeafe}
+    *{box-sizing:border-box}
+    body{background:var(--bg);color:var(--text);font-family:system-ui,Segoe UI,Roboto,Arial;margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px 0}
+    .card{width:900px;max-width:96vw;background:linear-gradient(180deg,#082032 0%, #0b2430 100%);border-radius:12px;padding:18px;box-shadow:0 8px 30px rgba(2,6,23,.6);margin-bottom:12px}
+    h1{font-size:16px;margin:0 0 12px;text-align:center}
+    .viewer{background:transparent;border-radius:8px;padding:8px}
+    svg{width:100%;height:auto;display:block}
+    .point{fill:#ffdd57;stroke:#ffc107;stroke-width:2}
+    .controls{display:flex;justify-content:center;gap:12px;margin-top:8px;flex-wrap:wrap}
+    button{padding:6px 16px;border:none;border-radius:6px;background:#ff3b3b;color:#fff;font-weight:600;cursor:pointer;transition:0.2s}
+    button:hover{background:#ff5252}
+    button:disabled{background:#555;cursor:not-allowed}
+    .step-info{background:rgba(255,255,255,0.05);border-radius:8px;padding:16px;margin-top:12px;border-left:4px solid #ff3b3b}
+    .step-counter{text-align:center;font-size:14px;color:#9fd3f0;margin-bottom:8px;font-weight:600}
+    .step-title{font-size:16px;font-weight:700;color:#ffdd57;margin-bottom:8px}
+    .step-description{font-size:14px;line-height:1.6;color:#dbeafe}
+    .step-description ul{margin:8px 0;padding-left:20px}
+    .step-description li{margin:4px 0}
+  </style>
+</head>
+<body>
+  <h1 style="font-size: 2rem;">Projection Of Lines: Inclined to Both Planes</h1>
+  <h1 style="font-size: 2rem;">General Method</h1>
+
+  <div class="card">
+    <h1>Step-by-step drawing: XY line with points a / a' / b' / b1' / b1 / b2 / b</h1>
+    <div class="viewer">
+      <svg id="canvas" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+
+        <defs>
+          <marker id="arrowStartInverted" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto-start-reverse" markerUnits="strokeWidth">
+            <path d="M0,0 L6,3 L0,6 Z" fill="red" />
+          </marker>
+          <marker id="arrowEnd" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L6,3 L0,6 Z" fill="red" />
+          </marker>
+          <marker id="midArrowUp" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,6 L3,0 L6,6 Z" fill="red"/>
+          </marker>
+          <marker id="midArrowDown" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto-start-reverse" markerUnits="strokeWidth">
+            <path d="M0,6 L3,0 L6,6 Z" fill="red"/>
+          </marker>
+          <marker id="midArrowRotated180" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="180" markerUnits="strokeWidth">
+            <path d="M0,6 L3,0 L6,6 Z" fill="red"/>
+          </marker>
+          <marker id="greenArrowStart" markerWidth="6" markerHeight="6" refX="1" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,3 L6,6 L6,0 Z" fill="red" />
+          </marker>
+          <marker id="greenArrowEnd" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L6,3 L0,6 Z" fill="red" />
+          </marker>
+        </defs>
+
+        <!-- VP and HP labels -->
+        <text id="VPLabel" x="60" y="235" text-anchor="start" font-weight="700" font-size="14" fill="#9fd3f0" visibility="hidden">VP</text>
+        <text id="HPLabel" x="60" y="265" text-anchor="start" font-weight="700" font-size="14" fill="#9fd3f0" visibility="hidden">HP</text>
+
+        <!-- New text above VP, moved slightly left -->
+        <text id="aboveHPPointB" x="580" y="120" text-anchor="start" font-weight="700" font-size="14" fill="red" visibility="hidden">Above HP point B</text>
+        <text id="aboveHPPointA" x="30" y="215" text-anchor="start" font-weight="700" font-size="14" fill="#f0b173" visibility="hidden">Above HP point A</text>
+
+        <!-- New text below HP, moved further left -->
+        <text id="infrontVPPointA" x="5" y="285" text-anchor="start" font-weight="700" font-size="14" fill="#f0b173" visibility="hidden">In front of VP point A</text>
+        <text id="infrontVPPointB" x="700" y="285" text-anchor="end" font-weight="700" font-size="14" fill="red" visibility="hidden">Infront of VP point B</text>
+
+        <!-- TRUE LENGTH LABEL on line a' to b1' -->
+        <text id="trueLengthLine" x="330" y="135" text-anchor="middle" font-weight="700" font-size="12" fill="#00ff00" visibility="hidden" transform="rotate(-15 330 135)">True Length</text>
+
+        <!-- XY line -->
+        <line id="xy-line" x1="50" y1="250" x2="650" y2="250" stroke="red" stroke-width="3" visibility="hidden" />
+        <text id="xLabel" x="35" y="255" font-weight="700" font-size="16" fill="#ff7b7b" visibility="hidden">X</text>
+        <text id="yLabel" x="650" y="255" font-weight="700" font-size="16" fill="#ff7b7b" visibility="hidden">Y</text>
+
+        <!-- Points a' and a -->
+        <circle id="pointAprime" cx="200" cy="180" r="6" class="point" visibility="hidden" />
+        <text id="labelAprime" x="185" y="168" fill="#ffdd57" font-weight="700" visibility="hidden">a'</text>
+        <circle id="pointA" cx="200" cy="370" r="6" class="point" visibility="hidden" />
+        <text id="labelA" x="185" y="365" fill="#ffdd57" font-weight="700" visibility="hidden">a</text>
+
+        <!-- Line joining a' and a -->
+        <line id="lineAAprime" x1="200" y1="180" x2="200" y2="370" stroke="yellow" stroke-width="2" visibility="hidden" />
+
+        <!-- Red parallel line with upper arrow inverted, both arrows exactly touching line ends -->
+        <line id="redParallelLineAAprime" x1="150" y1="180" x2="150" y2="370" stroke="red" stroke-width="2" visibility="hidden" marker-start="url(#arrowStartInverted)" marker-end="url(#arrowEnd)" />
+
+        <!-- Mid arrows on vertical red line at XY intersection, rotated 90 degrees and shifted to vertical line -->
+        <line id="midArrowUpLine" x1="150" y1="250" x2="150" y2="250" stroke="red" stroke-width="2" marker-end="url(#midArrowUp)" visibility="hidden"/>
+        <line id="midArrowDownLine" x1="150" y1="250" x2="150" y2="250" stroke="red" stroke-width="2" marker-end="url(#midArrowDown)" visibility="hidden"/>
+
+        <!-- Mid arrow rotated 180 degrees on vertical red line at XY intersection -->
+        <line id="midArrowRotatedLine" x1="150" y1="250" x2="150" y2="250" stroke="red" stroke-width="2" marker-end="url(#midArrowRotated180)" visibility="hidden"/>
+
+        <!-- Mid arrows on RIGHT vertical red line at its XY intersection (x=560) -->
+        <line id="midArrowUpLineRight" x1="560" y1="250" x2="560" y2="250" stroke="red" stroke-width="2" marker-end="url(#midArrowUp)" visibility="hidden"/>
+        <line id="midArrowDownLineRight" x1="560" y1="250" x2="560" y2="250" stroke="red" stroke-width="2" marker-end="url(#midArrowDown)" visibility="hidden"/>
+        <line id="midArrowRotatedLineRight" x1="560" y1="250" x2="560" y2="250" stroke="red" stroke-width="2" marker-end="url(#midArrowRotated180)" visibility="hidden"/>
+
+        <!-- Angle alpha arc and label between a'b' and locus of a' -->
+        <path id="angleAlphaArc" d="M 230 180 A 30 30 0 0 0 218 157" stroke="#ff9500" stroke-width="2" fill="none" visibility="hidden" />
+        <text id="angleAlphaLabel" x="235" y="165" fill="#ff9500" font-weight="700" font-size="16" font-style="italic" visibility="hidden">α</text>
+
+        <!-- Other previous lines, points, arcs, parallel lines -->
+        <line id="lineAprimeBprimeLeft" x1="200" y1="180" x2="340" y2="110" stroke="skyblue" stroke-width="2" visibility="hidden" />
+        <text id="textFV" x="270" y="135" font-weight="700" font-size="14" fill="skyblue" visibility="hidden" transform="rotate(-27 270 135)">FV</text>
+        <circle id="pointBprimeLeft" cx="340" cy="110" r="6" class="point" visibility="hidden" />
+        <text id="labelBprimeLeft" x="325" y="105" fill="#ffdd57" font-weight="700" visibility="hidden">b'</text>
+
+        <line id="lineAprimeBprime" x1="200" y1="180" x2="460" y2="110" stroke="pink" stroke-width="2" visibility="hidden" />
+        <circle id="pointBprime" cx="460" cy="110" r="6" class="point" visibility="hidden" />
+        <text id="labelBprime" x="445" y="105" fill="#ffdd57" font-weight="700" visibility="hidden">b1'</text>
+
+        <line id="lineBprimeB1" x1="460" y1="110" x2="460" y2="370" stroke="yellow" stroke-width="2" visibility="hidden" />
+        <circle id="pointB1" cx="460" cy="370" r="6" class="point" visibility="hidden" />
+        <text id="labelB1" x="445" y="365" fill="#ffdd57" font-weight="700" visibility="hidden">b1</text>
+
+        <circle id="pointB2" cx="420" cy="470" r="6" class="point" visibility="hidden" />
+        <text id="labelB2" x="405" y="485" fill="#ffdd57" font-weight="700" visibility="hidden">b2</text>
+
+        <circle id="pointB" cx="340" cy="470" r="6" class="point" visibility="hidden" />
+        <text id="labelB" x="325" y="485" fill="#ffdd57" font-weight="700" visibility="hidden">b</text>
+
+        <line id="lineAB2" x1="200" y1="370" x2="420" y2="470" stroke="pink" stroke-width="2" visibility="hidden" />
+        <line id="lineAB" x1="200" y1="370" x2="340" y2="470" stroke="skyblue" stroke-width="2" visibility="hidden" />
+        <text id="textTV" x="270" y="440" font-weight="700" font-size="14" fill="skyblue" visibility="hidden" transform="rotate(35 270 420)">TV</text>
+        
+        <!-- Angle beta arc and label between ab and locus of b -->
+        <path id="angleBetaArc" d="M 230 370 A 30 30 0 0 1 218 393" stroke="#00d4ff" stroke-width="2" fill="none" visibility="hidden" />
+        <text id="angleBetaLabel" x="235" y="395" fill="#00d4ff" font-weight="700" font-size="16" font-style="italic" visibility="hidden">β</text>
+        
+        <line id="lineB2B2prime" x1="420" y1="470" x2="420" y2="180" stroke="yellow" stroke-width="2" visibility="hidden" />
+        <circle id="pointB2prime" cx="420" cy="180" r="6" class="point" visibility="hidden" />
+        <text id="labelB2prime" x="405" y="170" fill="#ffdd57" font-weight="700" visibility="hidden">b2'</text>
+        <line id="lineBBprime" x1="340" y1="470" x2="340" y2="110" stroke="yellow" stroke-width="2" visibility="hidden" />
+
+        <line id="parallelLineAprime" x1="50" y1="180" x2="650" y2="180" stroke="yellow" stroke-width="2" visibility="hidden" />
+        <line id="parallelLineA" x1="50" y1="370" x2="650" y2="370" stroke="yellow" stroke-width="2" visibility="hidden" />
+        <line id="parallelLineBprime" x1="50" y1="110" x2="650" y2="110" stroke="yellow" stroke-width="2" visibility="hidden" />
+        <line id="parallelLineB2" x1="50" y1="470" x2="650" y2="470" stroke="yellow" stroke-width="2" visibility="hidden" />
+
+        <path id="arcB1B" d="M340 470 A150 150 0 0 0 460 370" stroke="yellow" stroke-width="2" fill="none" visibility="hidden" />
+        <path id="arcBprimeB2prime" d="M340 110 A120 120 0 0 1 420 180" stroke="yellow" stroke-width="2" fill="none" visibility="hidden" />
+
+        <text id="locusAprime" x="650" y="175" fill="yellow" font-weight="700" font-size="14" text-anchor="end" visibility="hidden">locus of a'</text>
+        <text id="locusA" x="650" y="370" fill="yellow" font-weight="700" font-size="14" text-anchor="end" visibility="hidden">locus of a</text>
+        <text id="locusBprime" x="630" y="108" fill="yellow" font-weight="700" font-size="14" text-anchor="end" visibility="hidden">locus of b'</text>
+        <text id="locusB" x="645" y="470" fill="yellow" font-weight="700" font-size="14" text-anchor="end" visibility="hidden">locus of b</text>
+
+        <!-- Vertical red line with arrows, appears last -->
+        <line id="parallelLineBBprimeRight" x1="560" y1="470" x2="560" y2="110" stroke="red" stroke-width="2" marker-start="url(#arrowStartInverted)" marker-end="url(#arrowEnd)" visibility="hidden" />
+        <line id="newParallelBelowXY" x1="200" y1="290" x2="340" y2="290" stroke="red" stroke-width="3" visibility="hidden" marker-start="url(#greenArrowStart)" marker-end="url(#greenArrowEnd)" />
+
+        <text id="endProjectorText" x="230" y="310" fill="red" font-weight="700" font-size="14" visibility="hidden">End projector</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="step-counter" id="stepCounter">Step 1 of 21</div>
+    <div class="step-info">
+      <div class="step-title" id="stepTitle">Drawing the Reference Line (XY)</div>
+      <div class="step-description" id="stepDescription">
+        The XY line is the fundamental reference line in orthographic projection. It represents the intersection between the Horizontal Plane (HP) and the Vertical Plane (VP). All measurements and projections are made relative to this line.
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button id="prev">Previous</button>
+    <button id="next">Next</button>
+    <button id="reset">Reset</button>
+    <button onclick="window.location.href='./index.html'">Home</button>
+
+  </div>
+
+  <script>
+    const stepDescriptions = [
+      {
+        title: "Drawing the Reference Line (XY)",
+        description: "The XY line is the fundamental reference line in orthographic projection. It represents the intersection between the Horizontal Plane (HP) and the Vertical Plane (VP). All measurements and projections are made relative to this line."
+      },
+      {
+        title: "Identifying the Projection Planes",
+        description: "VP (Vertical Plane) and HP (Horizontal Plane) are labeled. The VP is used for front views, while the HP is used for top views. These two planes are perpendicular to each other and meet at the XY line."
+      },
+      {
+        title: "Plotting Point A' (Front View of Point A)",
+        description: "Point a' is marked on the VP (above the XY line), representing the front view of point A. The yellow horizontal line shows the locus (path) of all possible positions for a' at this height. This establishes the vertical position of point A."
+      },
+      {
+        title: "Plotting Point A (Top View of Point A)",
+        description: "Point a is marked on the HP (below the XY line), representing the top view of point A. The yellow horizontal line shows the locus of all possible positions for a at this distance from XY. This establishes the depth position of point A."
+      },
+      {
+        title: "Drawing the Projector Between A and A'",
+        description: "A vertical yellow line connects a and a', called a projector. This line is perpendicular to the XY line and shows that both points represent the same point A in 3D space, just viewed from different planes (top and front)."
+      },
+      {
+        title: "Establishing the Front View Direction (FV) with Angle α",
+        description: "Point b' is marked showing the front view (FV) of point B. The skyblue line from a' to b' represents the front view of the line AB. The angle α (alpha) shows the inclination of this line relative to the horizontal locus of a', indicating the line's angle with the HP."
+      },
+      {
+        title: "Extending to Find B1' Position - True Length",
+        description: "The pink line extends from a' to b1', showing the true inclination of the line in the front view. This line segment represents the 'True Length' of the line AB, as it shows the actual distance between the points when the line is parallel to one of the projection planes."
+      },
+      {
+        title: "Marking Point B1' and Its Locus",
+        description: "Point b1' is marked with its locus line (yellow horizontal). This represents an intermediate position used in the construction process to find the true projections of point B."
+      },
+      {
+        title: "Drawing Projector from B1' to B1",
+        description: "A vertical yellow projector connects b1' to b1 on the HP. This projector is perpendicular to XY and ensures proper alignment between the front and top views of this construction point."
+      },
+      {
+        title: "Establishing Point B2 and Top View Direction (TV)",
+        description: "Point b2 is marked on the HP with its locus line. The pink line from a to b2 shows an intermediate construction line. This step helps in determining the true top view position of point B."
+      },
+      {
+        title: "Finding the True Position of Point B with Angle β",
+        description: "Point b is marked as the final top view position of point B. The skyblue line from a to b represents the top view (TV) of line AB. The angle β (beta) shows the inclination of this line relative to the horizontal locus of a, indicating the line's angle with the VP. The vertical yellow projector connects b to its front view b', ensuring proper orthographic alignment."
+      },
+      {
+        title: "Constructing Point B2' in Front View",
+        description: "Point b2' is added in the front view with a vertical yellow projector from b2. This intermediate point helps verify the spatial relationships and ensures accuracy in the construction."
+      },
+      {
+        title: "Drawing Arc Between B1 and B",
+        description: "A yellow arc connects b1 and b on the HP. This arc represents the locus of possible positions and shows the geometric relationship between these construction points in the top view."
+      },
+      {
+        title: "Drawing Arc Between B' and B2'",
+        description: "A yellow arc connects b' and b2' on the VP. This arc in the front view corresponds to the arc in the top view, maintaining the geometric consistency of the construction."
+      },
+      {
+        title: "Showing Distance from VP",
+        description: "A vertical red line with arrows is drawn parallel to the projector between a and a'. This indicates the perpendicular distance of point A from the Vertical Plane (VP)."
+      },
+      {
+        title: "Indicating Plane Divisions at Point A",
+        description: "Arrows at the XY intersection show the divisions: the upper arrow points to the VP region (above XY), and the lower arrow points to the HP region (below XY). This clarifies which side of each plane the point lies on."
+      },
+      {
+        title: "Showing Rotated Reference Arrow",
+        description: "A rotated arrow at the XY line provides an additional reference indicator, helping to visualize the 90-degree relationship between the HP and VP planes."
+      },
+      {
+        title: "Labeling Spatial Positions of Points A and B (Above HP)",
+        description: "Labels indicate that both points A and B are positioned 'Above HP' (above the Horizontal Plane). This means in 3D space, these points have positive height values relative to the ground plane."
+      },
+      {
+        title: "Labeling Spatial Positions (In Front of VP)",
+        description: "Labels indicate that both points A and B are 'In front of VP' (in front of the Vertical Plane). This means in 3D space, these points are positioned forward from the vertical reference plane."
+      },
+      {
+        title: "Showing Distance from VP at Point B",
+        description: "A vertical red line with arrows is drawn at point B's position, showing its perpendicular distance from the VP. The arrows at the XY intersection indicate the plane divisions, similar to point A."
+      },
+      {
+        title: "End Projector - Completing the Construction",
+        description: "The final red line with arrows labeled 'End projector' connects the front and top views of point B. This completes the orthographic projection, showing the full spatial relationship between all points and confirming that the line AB is inclined to both the HP and VP."
+      }
+    ];
+
+    const steps = [
+      ['xy-line','xLabel','yLabel'],
+      ['VPLabel','HPLabel'],
+      ['pointAprime','labelAprime','parallelLineAprime','locusAprime'],
+      ['pointA','labelA','parallelLineA','locusA'],
+      ['lineAAprime'],
+      ['pointBprimeLeft','labelBprimeLeft','lineAprimeBprimeLeft','textFV','angleAlphaArc','angleAlphaLabel'],
+      ['lineAprimeBprime','trueLengthLine'],
+      ['pointBprime','labelBprime','parallelLineBprime','locusBprime'],
+      ['lineBprimeB1','pointB1','labelB1'],
+      ['pointB2','labelB2','parallelLineB2','locusB','lineAB2'],
+      ['pointB','labelB','lineBBprime','lineAB','textTV','angleBetaArc','angleBetaLabel'],
+      ['pointB2prime','labelB2prime','lineB2B2prime'],
+      ['arcB1B'],
+      ['arcBprimeB2prime'],
+      ['redParallelLineAAprime'],
+      ['midArrowUpLine','midArrowDownLine'],
+      ['midArrowRotatedLine'],
+      ['aboveHPPointA','aboveHPPointB'],
+      ['infrontVPPointA','infrontVPPointB'],
+      ['parallelLineBBprimeRight','midArrowUpLineRight','midArrowDownLineRight','midArrowRotatedLineRight'],
+      ['newParallelBelowXY','endProjectorText']
+    ];
+
+    let currentStep = 0;
+
+    function updateStep(){
+      const allElements = ['angleBetaArc','angleBetaLabel','angleAlphaArc','angleAlphaLabel','trueLengthLine','textTV','textFV','aboveHPPointB','xy-line','xLabel','yLabel','VPLabel','arcB1B','arcBprimeB2prime','HPLabel','pointAprime','labelAprime','parallelLineAprime','locusAprime','pointA','labelA','parallelLineA','locusA','lineAAprime','redParallelLineAAprime','midArrowUpLine','midArrowDownLine','midArrowRotatedLine','pointBprimeLeft','labelBprimeLeft','lineAprimeBprimeLeft','lineAprimeBprime','lineBprimeB1','pointBprime','labelBprime','parallelLineBprime','locusBprime','pointB1','labelB1','pointB2','labelB2','parallelLineB2','locusB','lineAB2','pointB','labelB','lineBBprime','lineAB','pointB2prime','labelB2prime','lineB2B2prime','aboveHPPointA','infrontVPPointA','parallelLineBBprimeRight','newParallelBelowXY','endProjectorText','infrontVPPointB'];
+      allElements.forEach(id => {
+        const el = document.getElementById(id);
+        if(el){el.setAttribute('visibility','hidden');}
+      });
+      for(let i=0;i<=currentStep;i++){
+        steps[i].forEach(id => {
+          const el = document.getElementById(id);
+          if(el){el.setAttribute('visibility','visible');}
+        });
+      }
+
+      // Update step information
+      document.getElementById('stepCounter').textContent = `Step ${currentStep + 1} of ${steps.length}`;
+      document.getElementById('stepTitle').textContent = stepDescriptions[currentStep].title;
+      document.getElementById('stepDescription').textContent = stepDescriptions[currentStep].description;
+
+      // Update button states
+      document.getElementById('prev').disabled = currentStep === 0;
+      document.getElementById('next').disabled = currentStep === steps.length - 1;
+    }
+
+    document.getElementById('next').addEventListener('click',()=>{
+      if(currentStep<steps.length-1){
+        currentStep++;
+        updateStep();
+      }
+    });
+
+    document.getElementById('prev').addEventListener('click',()=>{
+      if(currentStep>0){
+        currentStep--;
+        updateStep();
+      }
+    });
+
+    document.getElementById('reset').addEventListener('click',()=>{
+      currentStep = 0;
+      updateStep();
+    });
+
+    updateStep();
+  </script>
+</body>
+</html>

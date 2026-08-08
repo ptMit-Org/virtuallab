@@ -1,0 +1,358 @@
+/* 🌟 General Setup */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    line-height: 1.6;
+    background-color: #e6f5f2; /* Soft mint-teal background */
+    color: #2a2a2a;
+    padding-top: 70px; /* Space for fixed header */
+}
+
+/* 🌿 Header and Navigation */
+header {
+    background-color: #004d40; /* Deep teal */
+    color: white;
+    padding: 15px 30px;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.25);
+}
+
+header h1 {
+    font-size: 1.6em;
+    font-weight: 500;
+}
+
+nav a {
+    color: #b2dfdb; /* Muted teal for contrast */
+    text-decoration: none;
+    margin-left: 25px;
+    padding: 10px 18px;
+    transition: background-color 0.3s, border-radius 0.3s, color 0.3s, box-shadow 0.3s;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+nav a:hover,nav a.active {
+  color: #ffd54f; /* yellow highlight */
+  font-weight: bold;
+  border-bottom: 2px solid #ffd54f;
+}
+
+
+/* 🧩 Main Content Area */
+main {
+    padding: 30px;
+    max-width: 1200px;
+    margin: 30px auto;
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+}
+
+h2 {
+    color: #00796b;
+    border-bottom: 3px solid #80cbc4;
+    padding-bottom: 12px;
+    /* Gap between H2 and first component box */
+    margin-bottom: 40px; 
+    font-size: 1.8em;
+    font-weight: 600;
+}
+
+h3 {
+    color: #009688;
+    /* FIX: Set top margin to 0 to align H3 with the top padding of the component-content */
+    margin-top: 0; 
+    margin-bottom: 15px;
+    font-weight: 500;
+}
+
+.description {
+    margin-bottom: 35px;
+    font-style: italic;
+    color: #444;
+    text-align: center;
+}
+
+/* 🎛️ Introduction Page Component Card Styling */
+.component-card {
+    display: flex;
+    align-items: stretch;
+    margin-bottom: 50px; 
+    border-radius: 12px;
+    background-color: #f1fcfa; /* Off-white mint */
+    border: 1px solid #b2dfdb;
+    cursor: pointer;
+    overflow: hidden;
+    height: 200px; 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+.component-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0, 150, 136, 0.25);
+    border-color: #009688;
+}
+
+.component-content {
+    flex: 1;
+    /* FIX: Reduce top padding slightly to compensate for removed H3 margin, improving vertical centering */
+    padding: 22px 25px 25px 25px; 
+    border-left: 2px dashed #b2dfdb;
+}
+
+.component-image {
+    flex: 0 0 35%;
+    background-color: #e0f2f1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+}
+
+.component-img {
+    max-height: 90%;
+    max-width: 90%;
+    object-fit: contain;
+    border-radius: 6px;
+}
+
+/* 🖼️ Image Placeholder Styling */
+.image-placeholder {
+    width: 100%;
+    height: 180px;
+    background-color: #dcedc8;
+    border: 3px solid #a5d6a7;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9em;
+    color: #33691e;
+    text-align: center;
+}
+
+/* ▶️ Next Button Styling */
+.next-button {
+    display: block;
+    width: 300px;
+    margin: 40px auto 20px auto;
+    padding: 15px 30px;
+    background: linear-gradient(90deg, #009688, #aeea00); /* Teal to lime */
+    color: #043a35;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.next-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 150, 136, 0.3);
+    background: linear-gradient(90deg, #26a69a, #c6ff00);
+}
+
+/* 🦶 Footer Styling */
+footer {
+    text-align: center;
+    padding: 15px;
+    margin-top: 20px;
+    color: #666;
+    font-size: 0.85em;
+    border-top: 1px solid #ccc;
+}
+
+/* 🧰 Materials Required Page */
+.materials-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 40px;
+    padding: 30px;
+    border: 2px solid #80cbc4;
+    border-radius: 12px;
+    background-color: #f9fffd;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.materials-list {
+    flex: 1;
+    min-width: 350px;
+}
+
+.materials-list ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.materials-list li {
+    background-color: #e0f2f1;
+    padding: 15px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    border-left: 6px solid #009688;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.materials-list li:hover {
+    background-color: #b2dfdb;
+    transform: translateX(6px);
+    box-shadow: 0 4px 10px rgba(0, 150, 136, 0.2);
+}
+
+.material-name {
+    font-size: 1.1em;
+    color: #004d40;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 5px;
+}
+
+/* 🧭 Diagram Section */
+.materials-diagram {
+    flex: 1;
+    text-align: center;
+    padding: 20px;
+    background-color: #f1fcfa;
+    border-radius: 10px;
+}
+
+.materials-diagram h3 {
+    margin-top: 0;
+}
+
+.setup-image {
+    max-width: 100%;
+    height: auto;
+    border: 5px solid #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 8px 18px rgba(0, 150, 136, 0.3);
+    transition: transform 0.3s;
+}
+
+.setup-image:hover {
+    transform: scale(1.04);
+}
+
+figcaption {
+    font-style: italic;
+    font-size: 0.9em;
+    color: #333;
+    margin-top: 15px;
+}
+
+/* 📱 Responsive Adjustments */
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        text-align: center;
+        position: static;
+        padding-top: 10px;
+    }
+
+    header h1 {
+        margin-bottom: 10px;
+    }
+
+    nav a {
+        margin: 5px 10px;
+        display: inline-block;
+    }
+
+    body {
+        padding-top: 0;
+    }
+
+    main {
+        margin-top: 10px;
+        padding: 10px;
+    }
+    
+    .component-card {
+        flex-direction: column;
+        padding: 15px;
+        height: auto; /* Allow height to flex on mobile */
+    }
+    
+    .component-image {
+        flex: 1 1 100%;
+        max-width: 100%;
+        padding-right: 0;
+        margin-bottom: 15px;
+    }
+
+    .component-content {
+        flex: 1;
+        padding-left: 0;
+        padding-top: 15px;
+        border-left: none;
+        border-top: 2px dashed #b2dfdb;
+    }
+
+    .materials-container {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .materials-list, .materials-diagram {
+        min-width: 100%;
+    }
+    /* Maintain perfect 16:9 aspect ratio for the video iframe */
+    .video-pane {
+        aspect-ratio: 16 / 9; /* forces perfect 16:9 area */
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        }
+
+        .video-pane .pane-content {
+        flex: 1;
+        background-color: #000;
+        }
+
+        .video-pane .pane-content iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        object-fit: cover; /* fills frame nicely */
+        }
+        /* PDF container styling */
+        .pdf-container {
+        height: 500px;             /* smaller preview window height */
+        overflow-y: scroll;        /* enable scrolling */
+        overflow-x: hidden;
+        background-color: #f1fcfa;
+        position: relative;
+        }
+
+        /* PDF iframe styling (enlarged content look) */
+        .pdf-viewer {
+        width: 130%;               /* make content appear zoomed in */
+        height: 800px;             /* large enough so zoom doesn’t cut off */
+        border: none;
+        transform: scale(1.5);    /* zoom in the PDF visually */
+        transform-origin: top left;
+        display: block;
+        }
+
+        /* Hide horizontal scroll bar that appears due to zoom */
+        .pdf-container::-webkit-scrollbar {
+        width: 5px;
+        }
+
+}

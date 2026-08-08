@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Hexagonal Pyramid Projection – Step by Step</title>
+<link rel="icon" href="./favicon.ico" />
+<style>
+body{margin:0;background:#fff;font-family:Arial;}
+svg{width:100%;height:100vh;}
+.red{stroke:red;stroke-width:2;fill:none;}
+.yellow{stroke:gold;stroke-width:2;fill:none;}
+.blue{stroke:blue;stroke-width:2;fill:none;}
+text{fill:red;font-size:14px;}
+#questionBox {
+  width: 100%;
+  text-align: center;
+  font-size: 15px;
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  margin: 6px 0 10px 0;
+}
+</style>
+</head>
+
+<body>
+
+
+      <div id="questionBox">
+<h1>Hexagonal Pyramid: Inclined to both planes</h1>
+
+
+            The hexagonal pyramid of base 30 mm and axis height 60 mm lies on one of its side edges
+            and is inclined at 60° to HP and 45° to VP. Draw its projections.
+          </div>
+
+<div style="text-align:center;padding:8px;">
+  <button onclick="prev()">Previous</button>
+  <button onclick="next()">Next</button>
+  <button onclick="window.location.href='./index.html'">Home</button>
+
+</div>
+<!-- QUESTION DISPLAY (ALWAYS VISIBLE) -->
+
+<div id="stepBox"
+     style="width:100%;text-align:center;
+            font-size:14px;font-weight:bold;
+            margin-bottom:8px;color:blue;">
+</div>
+
+<svg viewBox="0 0 2200 1000">
+
+<!-- ARROW DEFINITIONS -->
+<defs>
+  <marker id="arrowUp" markerWidth="10" markerHeight="10"
+          refX="5" refY="0" markerUnits="strokeWidth">
+    <path d="M0,10 L5,0 L10,10 Z" fill="red"/>
+  </marker>
+  <marker id="arrowDown" markerWidth="10" markerHeight="10"
+          refX="5" refY="10" markerUnits="strokeWidth">
+    <path d="M0,0 L5,10 L10,0 Z" fill="red"/>
+  </marker>
+</defs>
+
+<!-- STEP 1 : XY -->
+<g id="s1">
+  <line class="red" x1="200" y1="500" x2="2000" y2="500"/>
+  <text x="2010" y="505">XY</text>
+</g>
+
+<!-- STEP 2 : HEXAGON -->
+<g id="s2" visibility="hidden">
+  <polygon class="red"
+    points="500,600 552,630 552,690 500,720 448,690 448,630"/>
+  <text x="492" y="595">e</text>
+  <text x="560" y="635">f</text>
+  <text x="560" y="705">a</text>
+  <text x="492" y="740">b</text>
+  <text x="430" y="705">c</text>
+  <text x="430" y="635">d</text>
+</g>
+
+<!-- STEP 3 : CENTRE -->
+<g id="s3" visibility="hidden">
+  <line class="red" x1="500" y1="600" x2="500" y2="720"/>
+  <line class="red" x1="448" y1="630" x2="552" y2="690"/>
+  <line class="red" x1="552" y1="630" x2="448" y2="690"/>
+  <line class="red" x1="495" y1="660" x2="505" y2="660"/>
+  <line class="red" x1="500" y1="655" x2="500" y2="665"/>
+  <text x="510" y="680">o</text>
+</g>
+
+<!-- STEP 4 : UPWARD PROJECTIONS -->
+<g id="s4" visibility="hidden">
+  <line class="yellow" x1="448" y1="630" x2="448" y2="500"/>
+  <line class="yellow" x1="500" y1="600" x2="500" y2="500"/>
+  <line class="yellow" x1="552" y1="630" x2="552" y2="500"/>
+</g>
+
+<!-- STEP 5 : AXIS -->
+<g id="s5" visibility="hidden">
+  <line class="red" x1="500" y1="500" x2="500" y2="180"/>
+  <text x="510" y="180">o'</text>
+</g>
+
+<!-- STEP 6 : ORIGINAL TRIANGLE -->
+<g id="s6" visibility="hidden">
+  <line class="red" x1="500" y1="180" x2="448" y2="500"/>
+  <line class="red" x1="500" y1="180" x2="552" y2="500"/>
+  <line class="red" x1="448" y1="500" x2="552" y2="500"/>
+  <line class="red" x1="500" y1="180" x2="500" y2="500"/>
+  <text x="430" y="515">c'(d')</text>
+  <text x="492" y="515">b'(e')</text>
+  <text x="560" y="515">a'(f')</text>
+</g>
+
+<!-- STEP 7 : DIMENSIONS -->
+<g id="s7" visibility="hidden">
+  <line class="red" x1="410" y1="630" x2="410" y2="690"
+        marker-start="url(#arrowUp)" marker-end="url(#arrowDown)"/>
+  <text x="385" y="665"
+      transform="rotate(-90 385 665)">30</text>
+
+  <line class="red" x1="350" y1="500" x2="350" y2="180"
+        marker-start="url(#arrowDown)" marker-end="url(#arrowUp)"/>
+  <text x="330" y="340"
+      transform="rotate(-90 330 340)">60</text>
+</g>
+
+<!-- STEP 8 : TILTED TRIANGLE -->
+<g id="s8" visibility="hidden"
+   transform="translate(350,0) rotate(30 552 500)">
+  <line class="red" x1="500" y1="180" x2="448" y2="500"/>
+  <line class="red" x1="500" y1="180" x2="552" y2="500"/>
+  <line class="red" x1="448" y1="500" x2="552" y2="500"/>
+  <line class="red" x1="500" y1="180" x2="500" y2="500"/>
+  <text x="435" y="515">c¹'(d¹')</text>
+  <text x="510" y="495">b¹'(e¹')</text>
+  <text x="560" y="515">a¹'(f¹')</text>
+  <text x="515" y="195">o¹'</text>
+  <!-- EXTENSION FROM b¹'(e¹') UP TO XY (YELLOW) -->
+<line class="yellow"
+      x1="500" y1="500"
+      x2="500" y2="530"/>
+      <!-- HP INCLINATION LABEL -->
+<text x="440" y="500"
+      transform="rotate(-30 520 470)"
+      class="red">θ = 60°</text>
+</g>
+
+<!-- STEP 9 : CORRECT VERTICAL PROJECTIONS FROM TILTED TRIANGLE -->
+<g id="s9" visibility="hidden">
+
+  <!-- Projectors from tilted triangle
+       Start point = rotated
+       Direction = true vertical
+  -->
+  <g transform="translate(350,0) rotate(30 552 500)">
+    
+    <!-- Apex projector -->
+    <line class="yellow"
+          x1="500" y1="180"
+          x2="500" y2="720"
+          transform="rotate(-30 500 180)" />
+
+    <!-- Left base corner -->
+    <line class="yellow"
+          x1="448" y1="500"
+          x2="448" y2="780"
+          transform="rotate(-30 448 500)" />
+
+    <!-- Right base corner -->
+    <line class="yellow"
+          x1="552" y1="500"
+          x2="552" y2="740"
+          transform="rotate(-30 552 500)" />
+
+    <!-- Centre-line base point -->
+    <line class="yellow"
+          x1="500" y1="500"
+          x2="500" y2="760"
+          transform="rotate(-30 500 500)" />
+
+  </g>
+
+  <!-- Horizontal projections from hexagon (unchanged & correct) -->
+  <line class="yellow" x1="448" y1="630" x2="1030" y2="630"/>
+  <line class="yellow" x1="500" y1="600" x2="1030" y2="600"/>
+  <line class="yellow" x1="552" y1="630" x2="1030" y2="630"/>
+  <line class="yellow" x1="552" y1="690" x2="1030" y2="690"/>
+  <line class="yellow" x1="500" y1="720" x2="1030" y2="720"/>
+  <line class="yellow" x1="448" y1="690" x2="1030" y2="690"/>
+  <line class="yellow" x1="500" y1="660" x2="1030" y2="660"/>
+
+</g>
+<!-- STEP 10 : INTERSECTION LABELS (FIXED AS PER GIVEN GRID) -->
+<g id="s10" visibility="hidden">
+
+  <!-- Reference:
+       Vertical lines counted from LEFT → RIGHT
+       Horizontal lines counted from TOP → BOTTOM
+  -->
+
+  <!-- e¹ : 1st horizontal × 2nd vertical -->
+  <text x="860" y="600">e¹</text>
+
+  <!-- d¹ : 2nd horizontal × 1st vertical -->
+  <text x="820" y="630">d¹</text>
+
+  <!-- f¹ : 2nd horizontal × 3rd vertical -->
+  <text x="920" y="630">f¹</text>
+
+  <!-- o¹ : 3rd horizontal × 4th vertical -->
+  <text x="1030" y="660">o¹</text>
+
+  <!-- c¹ : 4th horizontal × 1st vertical -->
+  <text x="820" y="690">c¹</text>
+
+  <!-- a¹ : 4th horizontal × 3rd vertical -->
+  <text x="920" y="690">a¹</text>
+
+  <!-- b¹ : 5th horizontal × 2nd vertical -->
+  <text x="860" y="730">b¹</text>
+
+</g>
+<!-- STEP 11 : FINAL JOINING OF POINTS (COMPLETE & CORRECT) -->
+<g id="s11" visibility="hidden">
+
+  <!-- ===== CONTINUOUS RED LINES ===== -->
+
+  <!-- Outer continuous edges -->
+  <line class="red" x1="855" y1="720" x2="810" y2="690"/> <!-- b¹–c¹ -->
+  <line class="red" x1="812" y1="690" x2="812" y2="630"/> <!-- c¹–d¹ -->
+  <line class="red" x1="810" y1="630" x2="855" y2="600"/> <!-- d¹–e¹ -->
+
+  <!-- Continuous joins to apex projection -->
+  <line class="red" x1="810" y1="690" x2="1020" y2="660"/> <!-- c¹–o¹ -->
+  <line class="red" x1="810" y1="630" x2="1020" y2="660"/> <!-- d¹–o¹ -->
+  <line class="red" x1="855" y1="720" x2="1020" y2="660"/> <!-- b¹–o¹ -->
+  <line class="red" x1="855" y1="600" x2="1020" y2="660"/> <!-- e¹–o¹ -->
+
+  <!-- ===== DOTTED RED LINES ===== -->
+
+  <line class="red" x1="900" y1="690" x2="900" y2="630"
+        stroke-dasharray="6 4"/> <!-- a¹–f¹ -->
+
+  <line class="red" x1="900" y1="690" x2="855" y2="720"
+        stroke-dasharray="6 4"/> <!-- a¹–b¹ -->
+
+  <line class="red" x1="855" y1="600" x2="900" y2="630"
+        stroke-dasharray="6 4"/> <!-- e¹–f¹ -->
+
+  <line class="red" x1="900" y1="690" x2="1020" y2="660"
+        stroke-dasharray="6 4"/> <!-- a¹–o¹ -->
+
+  <line class="red" x1="900" y1="630" x2="1020" y2="660"
+        stroke-dasharray="6 4"/> <!-- f¹–o¹ -->
+
+  <!-- ===== CENTRE OF FINAL HEXAGON ===== -->
+  <text x="860" y="660">o</text>
+
+  <!-- ===== AXIS LINE (o – o¹) ===== -->
+  <line class="red"
+        x1="860" y1="660"
+        x2="1020" y2="660"
+        stroke-dasharray="8 4 2 4"/>
+
+</g>
+<!-- STEP 12 : MARKING SPECIFIED INTERSECTION POINTS -->
+<g id="s12" visibility="hidden">
+
+  <!-- 1st vertical × 1st horizontal -->
+  <text x="820" y="600">k</text>
+
+  <!-- 1st vertical × 5th horizontal -->
+  <text x="820" y="720">l</text>
+
+  <!-- 4th vertical × 1st horizontal -->
+  <text x="1030" y="600">m</text>
+
+  <!-- 4th vertical × 5th horizontal -->
+  <text x="1030" y="720">n</text>
+
+</g>
+
+</g>
+<!-- STEP 13 : JOINING k–l–n–m USING YELLOW LINES -->
+<g id="s13" visibility="hidden">
+
+  <!-- k to l -->
+  <line class="blue" x1="810" y1="720" x2="810" y2="600"/>
+
+  <!-- l to n -->
+  <line class="blue" x1="810" y1="720" x2="1020" y2="720"/>
+
+  <!-- n to m -->
+  <line class="blue" x1="1020" y1="720" x2="1020" y2="600"/>
+
+  <!-- m to k -->
+  <line class="blue" x1="1020" y1="600" x2="810" y2="600"/>
+
+</g>
+<!-- STEP 14 : TILTED RECTANGLE FIRST, THEN TILTED HEXAGONAL PYRAMID
+     (SHIFTED FAR RIGHT – NO OVERLAP) -->
+
+<g id="s14" visibility="hidden">
+
+  <!-- ===============================
+       STEP 14A : TILTED RECTANGLE
+       =============================== -->
+  <g id="s14a"
+     transform="translate(400,0) rotate(45 860 660)">
+
+    <!-- Rectangle edges -->
+    <line class="blue" x1="810" y1="600" x2="810" y2="720"/>
+    <line class="blue" x1="810" y1="720" x2="1020" y2="720"/>
+    <line class="blue" x1="1020" y1="720" x2="1020" y2="600"/>
+    <line class="blue" x1="1020" y1="600" x2="810" y2="600"/>
+
+    <!-- Rectangle labels -->
+    <text x="800" y="600">k</text>
+    <text x="800" y="720">l</text>
+    <text x="1020" y="720">n</text>
+    <text x="1020" y="600">m</text>
+
+  </g>
+
+  <!-- ===============================
+       STEP 14B : TILTED HEXAGONAL PYRAMID
+       =============================== -->
+  <g id="s14b"
+     transform="translate(400,0) rotate(45 860 660)">
+
+    <!-- Continuous red edges -->
+    <line class="red" x1="855" y1="720" x2="810" y2="690"/>
+    <line class="red" x1="810" y1="690" x2="810" y2="630"/>
+    <line class="red" x1="810" y1="630" x2="855" y2="600"/>
+
+    <!-- Joins to apex -->
+    <line class="red" x1="810" y1="690" x2="1020" y2="660"/>
+    <line class="red" x1="810" y1="630" x2="1020" y2="660"/>
+    <line class="red" x1="855" y1="720" x2="1020" y2="660"/>
+    <line class="red" x1="855" y1="600" x2="1020" y2="660"/>
+
+    <!-- Dotted hidden edges -->
+    <line class="red" x1="900" y1="690" x2="900" y2="630"
+          stroke-dasharray="6 4"/>
+    <line class="red" x1="900" y1="690" x2="855" y2="720"
+          stroke-dasharray="6 4"/>
+    <line class="red" x1="855" y1="600" x2="900" y2="630"
+          stroke-dasharray="6 4"/>
+    <line class="red" x1="900" y1="690" x2="1020" y2="660"
+          stroke-dasharray="6 4"/>
+    <line class="red" x1="900" y1="630" x2="1020" y2="660"
+          stroke-dasharray="6 4"/>
+
+    <!-- Centre -->
+    <text x="860" y="660">o</text>
+
+    <!-- Axis -->
+    <line class="red"
+          x1="860" y1="660"
+          x2="1020" y2="660"
+          stroke-dasharray="8 4 2 4"/>
+
+    <!-- Labels -->
+    <text x="855" y="720">b¹</text>
+    <text x="820" y="690">c¹</text>
+    <text x="820" y="630">d¹</text>
+    <text x="855" y="600">e¹</text>
+    <text x="900" y="630">f¹</text>
+    <text x="900" y="690">a¹</text>
+    <text x="1020" y="660">o¹</text>
+    <!-- EXTENSION FROM o¹ (TILTED HEXAGONAL PYRAMID) TO XY -->
+<line class="yellow"
+      x1="860" y1="660"
+      x2="635" y2="660"/>
+      <!-- VP INCLINATION LABEL -->
+<text x="740" y="170"
+      transform="rotate(-45 1280 470)"
+      class="red">φ = 45°</text>
+    
+ </g>
+
+<!-- STEP 15 : HORIZONTAL PROJECTION LINES
+     FROM TILTED TRIANGLE (CORRECT) -->
+<g id="s15" visibility="hidden"
+   transform="translate(350,0) rotate(0 552 500)">
+
+  <!-- From left corner c¹'(d¹') -->
+  <line class="yellow"
+        x1="458" y1="450"
+        x2="1025" y2="450"/>
+
+  <!-- From right corner a¹'(f¹') -->
+  <line class="yellow"
+        x1="552" y1="500"
+        x2="1025" y2="500"/>
+
+  <!-- From apex o¹' -->
+  <line class="yellow"
+        x1="660" y1="200"
+        x2="1025" y2="200"/>
+
+  <!-- From midline foot -->
+  <line class="yellow"
+        x1="510" y1="475"
+        x2="1025" y2="475"/>
+
+</g>
+<!-- STEP 16 : TRUE VERTICAL PROJECTION LINES
+     FROM TILTED HEXAGONAL PYRAMID -->
+<g id="s16" visibility="hidden">
+
+  <!-- a¹ -->
+  <line class="yellow"
+        x1="1268" y1="710"
+        x2="1268" y2="200"/>
+
+  <!-- b¹ -->
+  <line class="yellow"
+        x1="1215" y1="700"
+        x2="1215" y2="200"/>
+
+  <!-- c¹ -->
+  <line class="yellow"
+        x1="1204" y1="660"
+        x2="1204" y2="200"/>
+
+  <!-- d¹ -->
+  <line class="yellow"
+        x1="1245" y1="610"
+        x2="1245" y2="200"/>
+
+  <!-- e¹ -->
+  <line class="yellow"
+        x1="1299" y1="625"
+        x2="1299" y2="200"/>
+
+  <!-- f¹ -->
+  <line class="yellow"
+        x1="1310" y1="670"
+        x2="1310" y2="200"/>
+
+  <!-- centre o¹ -->
+  <line class="yellow"
+        x1="1260" y1="660"
+        x2="1260" y2="200"/>
+
+  <!-- apex O¹ -->
+  <line class="yellow"
+        x1="1373" y1="780"
+        x2="1373" y2="200"/>
+
+</g>
+<!-- STEP 17 : INTERSECTION POINTS OF HORIZONTAL & VERTICAL PROJECTORS -->
+<g id="s17" visibility="hidden">
+
+  <!-- a¹ & a¹' -->
+  <text x="1268" y="500">a¹''</text>
+
+  <!-- b¹ & b¹' -->
+  <text x="1215" y="475">b¹''</text>
+
+  <!-- c¹ & c¹' -->
+  <text x="1204" y="450">c¹''</text>
+
+  <!-- d¹ & d¹' -->
+  <text x="1245" y="450">d¹''</text>
+
+  <!-- e¹ & e¹' -->
+  <text x="1299" y="475">e¹''</text>
+
+  <!-- f¹ & f¹' -->
+  <text x="1310" y="500">f¹''</text>
+
+  <!-- o¹ & o¹' -->
+  <text x="1375" y="200">o¹''</text>
+
+</g>
+<!-- STEP 18 : JOINING FINAL INTERSECTION POINTS -->
+<g id="s18" visibility="hidden">
+
+  <!-- ===== CONTINUOUS RED LINES ===== -->
+
+  <!-- apex joins -->
+  <line class="red" x1="1268" y1="500" x2="1373" y2="200"/> <!-- a¹''-o¹'' -->
+  <line class="red" x1="1215" y1="475" x2="1373" y2="200"/> <!-- b¹''-o¹'' -->
+  <line class="red" x1="1204" y1="450" x2="1373" y2="200"/> <!-- c¹''-o¹'' -->
+  <line class="red" x1="1310" y1="500" x2="1373" y2="200"/> <!-- f¹''-o¹'' -->
+
+  <!-- base continuous edges -->
+  <line class="red" x1="1310" y1="500" x2="1268" y2="500"/> <!-- f¹''-a¹'' -->
+  <line class="red" x1="1268" y1="500" x2="1215" y2="475"/> <!-- a¹''-b¹'' -->
+  <line class="red" x1="1215" y1="475" x2="1204" y2="450"/> <!-- b¹''-c¹'' -->
+
+
+  <!-- ===== DOTTED RED LINES ===== -->
+
+  <!-- apex dotted joins -->
+  <line class="red" x1="1245" y1="450" x2="1373" y2="200"
+        stroke-dasharray="6 4"/> <!-- d¹''-o¹'' -->
+  <line class="red" x1="1299" y1="475" x2="1373" y2="200"
+        stroke-dasharray="6 4"/> <!-- e¹''-o¹'' -->
+
+  <!-- base dotted edges -->
+  <line class="red" x1="1204" y1="450" x2="1245" y2="450"
+        stroke-dasharray="6 4"/> <!-- c¹''-d¹'' -->
+  <line class="red" x1="1245" y1="450" x2="1299" y2="475"
+        stroke-dasharray="6 4"/> <!-- d¹''-e¹'' -->
+  <line class="red" x1="1299" y1="475" x2="1310" y2="500"
+        stroke-dasharray="6 4"/> <!-- e¹''-f¹'' -->
+
+</g>
+  
+
+</g>
+</g>
+</svg>
+
+<script>
+let step=1;
+const maxStep=20;
+const stepText = {
+  1: "Step 1: Draw the reference line XY.",
+  2: "Step 2: Draw the hexagon in top view and label all corners.",
+  3: "Step 3: Locate the centre of the hexagon (o).",
+  4: "Step 4: Draw vertical projection lines upwards to XY.",
+  5: "Step 5: Draw the axis and locate apex o'.",
+  6: "Step 6: Join apex with base to form triangular faces.",
+  7: "Step 7: Add dimensions (30 mm side and 60 mm axis).",
+  8: "Step 8: Tilt the pyramid to 60° to HP.",
+  9: "Step 9: Draw vertical projectors from tilted view.",
+  10: "Step 10: Mark intersection points.",
+  11: "Step 11: Join points to form final front view.",
+  12: "Step 12: Mark auxiliary reference points k, l, m, n.",
+  13: "Step 13: Join k-l-m-n to form rectangle.",
+  14: "Step 14: Tilt the figure to 45° to VP.",
+  15: "Step 15: Draw horizontal projectors.",
+  16: "Step 16: Draw vertical projectors.",
+  17: "Step 17: Mark final intersection points.",
+  18: "Step 18: Join points to complete final projection."
+};
+function show(){
+  for(let i=1;i<=maxStep;i++){
+    const g=document.getElementById("s"+i);
+    if(g) g.setAttribute("visibility", i<=step ? "visible":"hidden");
+  }
+  document.getElementById("stepBox").innerText = stepText[step] || "";
+
+}
+function next(){ if(step<maxStep){step++;show();} }
+function prev(){ if(step>1){step--;show();} }
+show();
+</script>
+
+</body>
+</html>

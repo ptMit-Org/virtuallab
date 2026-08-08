@@ -1,0 +1,676 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Section of Hexagonal Pyramid</title>
+<link rel="icon" href="./favicon.ico" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root { --red: #c40000; --axis-y: 550; }
+
+  body {
+    margin:0;
+    display:flex;
+    flex-direction: column;
+    background:#fff;
+    font-family: Arial, sans-serif;
+    height: 100vh;
+    overflow:hidden;
+  }
+  
+  #problem-statement {
+    background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+    padding: 8px 12px;
+    text-align: center;
+    border-bottom: 3px solid var(--red);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    flex-shrink: 0;
+  }
+  
+  #problem-statement h1 {
+    color: var(--red);
+    font-size: 15px;
+    margin: 0;
+    line-height: 1.35;
+    font-weight: 600;
+  }
+  
+  #problem-statement h2 {
+    color: var(--red);
+    font-size: 18px;
+    margin: 0 0 4px 0;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  #top-bar {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:4px 12px;
+    gap:10px;
+    border-bottom:1px solid #ddd;
+    flex-shrink:0;
+    background:#fafafa;
+  }
+
+  #step-display {
+    flex:1;
+    min-height:34px;
+    font-size:12px;
+    line-height:1.3;
+    color:#333;
+  }
+
+  #step-title {
+    color:var(--red);
+    font-weight:700;
+    display:block;
+    margin-bottom:1px;
+  }
+
+  #controls {
+    display:flex;
+    gap:6px;
+    flex-shrink:0;
+  }
+
+  button {
+    padding:5px 10px;
+    font-size:12px;
+    cursor: pointer;
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    transition: background 0.3s;
+  }
+  
+  button:hover {
+    background: #a00000;
+  }
+  
+  button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+
+  #main-container {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+  
+  #main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 4px;
+    overflow: auto;
+    min-width: 0;
+  }
+  
+  #svg-container {
+    width: 100%;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+  }
+  
+  svg { 
+    width: 100%; 
+    height: 100%;
+    max-width: 1200px;
+    max-height: 900px;
+    background: #fff; 
+    border: 1px solid #ddd;
+  }
+  
+  /* Shared styles */
+  .red { stroke:var(--red); fill:none; stroke-width:2.3; stroke-linecap:round; stroke-linejoin:round; }
+  .red-fill { stroke:var(--red); fill:rgba(196,0,0,0.06); stroke-width:2; }
+  .red-solid { stroke:var(--red); fill:var(--red); stroke-width:1.8; }
+  .blue { stroke: blue; fill: none; stroke-width: 1.7; stroke-linecap: round; }
+  
+  /* Text Styles with Halo for Clarity */
+  text {
+    font-family: Arial, sans-serif;
+    paint-order: stroke;
+    stroke: rgba(255, 255, 255, 0.95);
+    stroke-width: 4px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .axis-label { fill:var(--red); font-size:18px; font-weight:700; }
+  .corner-label { fill:var(--red); font-size:16px; font-weight:700; }
+  .dim-text { fill:var(--red); font-size:16px; font-weight:700; text-anchor:middle; }
+  .point-label { fill:var(--red); font-size:18px; font-weight:800; text-anchor:middle; }
+  .green-text { fill: green; font-size: 18px; font-weight: 800; text-anchor: middle; }
+
+  .yellow { stroke:yellow; stroke-width:1.7; stroke-linecap:round; fill:none; }
+  .dotted { stroke:yellow; stroke-width:1.7; stroke-dasharray:6 6; stroke-linecap:round; fill:none; }
+  .red-dotted { stroke:var(--red); stroke-width:1.7; stroke-dasharray:6 6; stroke-linecap:round; fill:none; }
+  .green { stroke:green; stroke-width:2.1; stroke-linecap:round; }
+  
+  .intersection-point { fill:green; }
+  .red-point { fill:var(--red); }
+  .angle-arc { stroke: var(--red); stroke-width: 1.2; fill: none; }
+  .hatch-line { stroke: var(--red); stroke-width: 0.8; opacity: 0.6; }
+  
+  marker#dimArrowStart polygon, marker#dimArrowEnd polygon { fill: var(--red); }
+  marker#dimArrowStartSmall polygon, marker#dimArrowEndSmall polygon { fill: var(--red); }
+
+  .construction-phase line:not(.os-connector):not(.force-green):not(.blue) { stroke: yellow; }
+  .construction-phase path { stroke: yellow; fill: none; }
+  .construction-phase circle:not(.force-green-pt) { stroke: yellow; fill: none; }
+  .construction-phase .intersection-point { fill: yellow; }
+  .construction-phase .hatch-line { stroke: yellow; }
+  .construction-phase .green { stroke: green; }
+  .construction-phase .angle-arc { stroke: yellow; }
+  .force-green { stroke: green !important; }
+  .force-green-pt { fill: green !important; stroke: none !important; }
+  .os-connector { stroke-width:2.3; stroke-linecap:round; stroke-linejoin:round; fill:none; }
+</style>
+</head>
+<body>
+
+<div id="problem-statement">
+  <h2>Section of Hexagonal Pyramid</h2>
+  <h1>
+    A hexagonal pyramid of base of side 35mm and altitude 70mm rests on its base on the VP with two edges of the base parallel to HP. A cutting plane parallel to VP and inclined to 35 degree with respect to HP cuts the pyramid at the height of 5mm from the centre. Draw the top view, sectional front view and true shape of the section.
+  </h1>
+</div>
+
+<div id="top-bar">
+  <div id="step-display">
+    <span id="step-title"></span>
+    <span id="step-text"></span>
+  </div>
+  <div id="controls">
+    <button id="startBtn">Start</button>
+    <button id="prevBtn" disabled>← Previous</button>
+    <button id="nextBtn" disabled>Next →</button>
+    <button onclick="window.location.href='./index.html'">Home</button>
+  </div>
+</div>
+
+<div id="main-container">
+  <div id="main-content">
+    <div id="svg-container">
+      <svg id="svg" viewBox="0 0 1400 1000" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <marker id="dimArrowStart" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <polygon points="7,0 2,4 7,8"></polygon>
+          </marker>
+          <marker id="dimArrowEnd" markerWidth="8" markerHeight="8" refX="1" refY="4" orient="auto">
+            <polygon points="1,0 6,4 1,8"></polygon>
+          </marker>
+          <marker id="dimArrowStartSmall" markerWidth="4" markerHeight="4" refX="3.5" refY="2" orient="auto">
+            <polygon points="4,0 0,2 4,4"></polygon>
+          </marker>
+          <marker id="dimArrowEndSmall" markerWidth="4" markerHeight="4" refX="0.5" refY="2" orient="auto">
+            <polygon points="0,0 4,2 0,4"></polygon>
+          </marker>
+        </defs>
+        <g id="allElements"></g>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<script>
+const MM_TO_PX = 96/25.4;
+const sideMM = 35;
+const sidePx = sideMM * MM_TO_PX;
+const apexDepthMM = 70;
+const apexDepthPx = apexDepthMM * MM_TO_PX;
+const axisLeft = 120;
+const svg = document.getElementById('svg');
+const allElements = document.getElementById('allElements');
+
+let currentStep = -1;
+let constructionDone = false;
+let osConnectorEl = null;
+
+function computeAxisY() { return svg.viewBox.baseVal.height * 0.7; }
+
+function hexVertices(cx, cy, s){
+  const pts = [];
+  for(let i=0;i<6;i++){
+    const angle = Math.PI + i*(Math.PI/3);
+    pts.push({ x: cx + s*Math.cos(angle), y: cy + s*Math.sin(angle) });
+  }
+  return pts;
+}
+
+function ptsToPath(pts){ 
+  return pts.map((p,i)=> (i?`L ${p.x} ${p.y}`:`M ${p.x} ${p.y}`)).join(' ') + ' Z'; 
+}
+
+function lineIntersection(x1, y1, x2, y2, x3, y3, x4, y4) {
+  const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+  if (Math.abs(denom) < 0.0001) return null;
+  const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
+  const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom;
+  return { x: x1 + t * (x2 - x1), y: y1 + t * (y2 - y1), t, u };
+}
+
+function createEl(tag, attrs = {}, parent = allElements) {
+  const el = document.createElementNS(svg.namespaceURI, tag);
+  Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+  parent.appendChild(el);
+  return el;
+}
+
+function createHatch(points, angle, spacing) {
+  const group = document.createElementNS(svg.namespaceURI, 'g');
+  const bounds = {
+    minX: Math.min(...points.map(p => p.x)), maxX: Math.max(...points.map(p => p.x)),
+    minY: Math.min(...points.map(p => p.y)), maxY: Math.max(...points.map(p => p.y))
+  };
+  const diagonal = Math.hypot(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY);
+  const numLines = Math.ceil(diagonal / spacing) + 2;
+  const angleRad = angle * Math.PI / 180;
+  for(let i = -numLines; i <= numLines; i++) {
+    const offset = i * spacing;
+    const perpAngle = angleRad + Math.PI / 2;
+    const centerX = (bounds.minX + bounds.maxX) / 2;
+    const centerY = (bounds.minY + bounds.maxY) / 2;
+    const startX = centerX + offset * Math.cos(perpAngle) - diagonal * Math.cos(angleRad);
+    const startY = centerY + offset * Math.sin(perpAngle) - diagonal * Math.sin(angleRad);
+    const endX = startX + 2 * diagonal * Math.cos(angleRad);
+    const endY = startY + 2 * diagonal * Math.sin(angleRad);
+    const intersections = [];
+    for(let j = 0; j < points.length; j++) {
+      const p1 = points[j]; const p2 = points[(j + 1) % points.length];
+      const inter = lineIntersection(startX, startY, endX, endY, p1.x, p1.y, p2.x, p2.y);
+      if(inter && inter.t >= 0 && inter.t <= 1 && inter.u >= 0 && inter.u <= 1) intersections.push(inter);
+    }
+    if(intersections.length >= 2) {
+      intersections.sort((a, b) => a.t - b.t);
+      createEl('line', { x1: intersections[0].x, y1: intersections[0].y, x2: intersections[1].x, y2: intersections[1].y, class: 'hatch-line' }, group);
+    }
+  }
+  return group;
+}
+
+function computeGeometry() {
+  const axisY = computeAxisY();
+  const centerX = axisLeft + 280;
+  let centerY = axisY - sidePx - 80;
+  let pts = hexVertices(centerX, centerY, sidePx);
+  const hexCenter = { x: centerX, y: centerY };
+  const apexY = axisY + apexDepthPx;
+  const apexX = centerX;
+  const cutYOffset = -18;
+  const cutCenterY = centerY + cutYOffset;
+  const angle = 30 * Math.PI/180;
+  const cutLen = sidePx * 1.5;
+  const gx1 = centerX - cutLen*Math.cos(angle);
+  const gy1 = cutCenterY - cutLen*Math.sin(angle);
+  const gx2 = centerX + cutLen*Math.cos(angle);
+  const gy2 = cutCenterY + cutLen*Math.sin(angle);
+  const qPrime = lineIntersection(gx1, gy1, gx2, gy2, hexCenter.x, hexCenter.y, pts[1].x, pts[1].y);
+  const rPrime = lineIntersection(gx1, gy1, gx2, gy2, hexCenter.x, hexCenter.y, pts[2].x, pts[2].y);
+  const sPrime = lineIntersection(gx1, gy1, gx2, gy2, hexCenter.x, hexCenter.y, pts[3].x, pts[3].y);
+  const hexIntersections = [];
+  for(let i=0; i<6; i++){
+    const p1 = pts[i]; const p2 = pts[(i+1)%6];
+    const inter = lineIntersection(gx1, gy1, gx2, gy2, p1.x, p1.y, p2.x, p2.y);
+    if(inter && inter.t >= 0 && inter.t <= 1 && inter.u >= 0 && inter.u <= 1) hexIntersections.push({...inter, edge: i});
+  }
+  const pPrime = hexIntersections[0].x < hexIntersections[1].x ? hexIntersections[0] : hexIntersections[1];
+  const tPrime = hexIntersections[0].x < hexIntersections[1].x ? hexIntersections[1] : hexIntersections[0];
+  const pointP = { x: pPrime.x, y: axisY };
+  const pointT = { x: tPrime.x, y: axisY };
+  const pointQ = { x: qPrime.x, y: lineIntersection(qPrime.x, qPrime.y, qPrime.x, axisY + 200, pts[1].x, axisY, apexX, apexY).y };
+  const pointR = { x: rPrime.x, y: lineIntersection(rPrime.x, rPrime.y, rPrime.x, axisY + 200, pts[2].x, axisY, apexX, apexY).y };
+  const pointS = { x: sPrime.x, y: lineIntersection(sPrime.x, sPrime.y, sPrime.x, axisY + 200, pts[3].x, axisY, apexX, apexY).y };
+  const x1y1Offset = 240;
+  const perpAngle = angle + Math.PI/2;
+  const x1y1_x1 = gx1 - x1y1Offset * Math.cos(perpAngle);
+  const x1y1_y1 = gy1 - x1y1Offset * Math.sin(perpAngle);
+  const x1y1_x2 = gx2 - x1y1Offset * Math.cos(perpAngle);
+  const x1y1_y2 = gy2 - x1y1Offset * Math.sin(perpAngle);
+  const primePoints = [
+    { prime: pPrime, from: pointP, label: "p′" }, { prime: qPrime, from: pointQ, label: "q″" },
+    { prime: rPrime, from: pointR, label: "r″" }, { prime: sPrime, from: pointS, label: "s″" },
+    { prime: tPrime, from: pointT, label: "t′" }
+  ];
+  const transferredPoints = primePoints.map(({prime, from}) => {
+    const dist = Math.abs(axisY - from.y);
+    const x1y1Inter = lineIntersection(prime.x, prime.y, prime.x - 450 * Math.cos(perpAngle), prime.y - 450 * Math.sin(perpAngle), x1y1_x1, x1y1_y1, x1y1_x2, x1y1_y2);
+    return { x: x1y1Inter.x - dist * Math.cos(perpAngle), y: x1y1Inter.y - dist * Math.sin(perpAngle), x1y1Inter: x1y1Inter, dist: dist };
+  });
+  const ooExtendedInter = lineIntersection(centerX, centerY, centerX, apexY + 80, gx1, gy1, gx2, gy2);
+  const greenToXYInter = lineIntersection(gx1, gy1, gx2, gy2, axisLeft, axisY, 1300, axisY);
+  return {
+    axisY, centerX, centerY, pts, hexCenter, apexX, apexY, gx1, gy1, gx2, gy2,
+    qPrime, rPrime, sPrime, pPrime, tPrime, pointP, pointT, pointQ, pointR, pointS,
+    x1y1_x1, x1y1_y1, x1y1_x2, x1y1_y2, primePoints, transferredPoints,
+    ooExtendedInter, greenToXYInter, angle, perpAngle
+  };
+}
+
+const steps = [
+  {
+    name: "Step 1: Draw XY axis",
+    description: "Draw horizontal line representing x and y axis",
+    draw: G => {
+      createEl('line', {x1: axisLeft, y1: G.axisY, x2: 1300, y2: G.axisY, class: 'red'});
+      createEl('text', {x: axisLeft - 20, y: G.axisY - 5, class: 'axis-label'}).textContent = 'x';
+      createEl('text', {x: 1320, y: G.axisY - 5, class: 'axis-label', 'text-anchor': 'end'}).textContent = 'y';
+    }
+  },
+  {
+    name: "Step 2: Draw hexagon",
+    description: "Draw regular hexagon with center o'",
+    draw: G => { createEl('path', {d: ptsToPath(G.pts), class: 'red-fill'}); }
+  },
+  {
+    name: "Step 3: Label corners",
+    description: "Label corners 1' to 6'",
+    draw: G => {
+      const labels = ["1′","2′","3′","4′","5′","6′"];
+      for(let i=0;i<6;i++){
+        const p = G.pts[i];
+        // Move labels slightly further out for clarity
+        const lx = p.x + ((p.x - G.hexCenter.x) / (sidePx||1)) * 25;
+        const ly = p.y + ((p.y - G.hexCenter.y) / (sidePx||1)) * 25 + 5;
+        createEl('text', {x: lx, y: ly, class: 'corner-label', 'text-anchor': 'middle'}).textContent = labels[i];
+      }
+    }
+  },
+  {
+    name: "Step 4: Side dimension",
+    description: "Show side length dimension 35mm",
+    draw: G => {
+      const p0 = G.pts[0], p1 = G.pts[1];
+      const outOffset = 130;
+      const ux = p1.x - p0.x, uy = p1.y - p0.y;
+      const ulen = Math.hypot(ux,uy) || 1;
+      let nx = -uy / ulen, ny = ux / ulen;
+      if (Math.hypot(p0.x+nx*5 - G.hexCenter.x, p0.y+ny*5 - G.hexCenter.y) < sidePx) { nx = -nx; ny = -ny; }
+      createEl('line', {x1: p0.x, y1: p0.y, x2: p0.x + nx*outOffset, y2: p0.y + ny*outOffset, class: 'yellow'});
+      createEl('line', {x1: p1.x, y1: p1.y, x2: p1.x + nx*outOffset, y2: p1.y + ny*outOffset, class: 'yellow'});
+      const dimA = { x: p0.x + nx*outOffset, y: p0.y + ny*outOffset };
+      const dimB = { x: p1.x + nx*outOffset, y: p1.y + ny*outOffset };
+      createEl('line', { x1: dimA.x + (ux/ulen)*6, y1: dimA.y + (uy/ulen)*6, x2: dimB.x - (ux/ulen)*6, y2: dimB.y - (uy/ulen)*6, class: 'red', 'marker-start': 'url(#dimArrowStart)', 'marker-end': 'url(#dimArrowEnd)' });
+      const txtX = (dimA.x+dimB.x)/2 + nx*10, txtY = (dimA.y+dimB.y)/2 + ny*10;
+      let angleDeg = Math.atan2(uy, ux) * 180 / Math.PI;
+      if (angleDeg > 90) angleDeg -= 180; if (angleDeg < -90) angleDeg += 180;
+      createEl('text', { x: txtX, y: txtY, class: 'dim-text', transform: `rotate(${angleDeg}, ${txtX}, ${txtY})` }).textContent = String(sideMM);
+    }
+  },
+  {
+    name: "Step 5: Join to o'",
+    description: "Join all corners to centre o'",
+    draw: G => {
+      for(let i=0;i<6;i++) {
+        // q'-2' (index 1) and s'-4' (index 3) remain yellow
+        const colorClass = (i === 1 || i === 3) ? 'yellow' : 'red';
+        createEl('line', {x1: G.pts[i].x, y1: G.pts[i].y, x2: G.hexCenter.x, y2: G.hexCenter.y, class: colorClass});
+      }
+      createEl('text', {x: G.centerX, y: G.centerY - 20, class: 'point-label'}).textContent = "o′";
+    }
+  },
+  {
+    name: "Step 6: Project down",
+    description: "Draw vertical projectors from all corners to xy",
+    draw: G => { for(let i=0;i<6;i++) createEl('line', {x1: G.pts[i].x, y1: G.pts[i].y, x2: G.pts[i].x, y2: G.axisY, class: 'yellow'}); }
+  },
+  {
+    name: "Step 7: Draw apex o",
+    description: "Join base projections to apex o",
+    draw: G => {
+      for(let i=0;i<6;i++) createEl('line', {x1: G.pts[i].x, y1: G.axisY, x2: G.apexX, y2: G.apexY, class: 'yellow'});
+      // Axis line is continuous yellow
+      createEl('line', {x1: G.centerX, y1: G.axisY, x2: G.centerX, y2: G.apexY, class: 'yellow'});
+      createEl('text', {x: G.centerX, y: G.apexY + 25, class: 'point-label'}).textContent = 'o';
+    }
+  },
+  {
+    name: "Step 8: Label base points",
+    description: "Label 1, 2(6), 3(5), 4 on xy",
+    draw: G => {
+      // White halo in CSS ensures these are clear even if crossing lines
+      createEl('text', {x: G.pts[0].x, y: G.axisY + 20, class: 'point-label'}).textContent = '1';
+      createEl('text', {x: (G.pts[1].x + G.pts[5].x)/2, y: G.axisY + 20, class: 'point-label'}).textContent = '2(6)';
+      createEl('text', {x: (G.pts[2].x + G.pts[4].x)/2, y: G.axisY + 20, class: 'point-label'}).textContent = '3(5)';
+      createEl('text', {x: G.pts[3].x, y: G.axisY + 20, class: 'point-label'}).textContent = '4';
+    }
+  },
+  {
+    name: "Step 9: Cutting plane",
+    description: "Draw green cutting plane across the hexagon",
+    draw: G => { createEl('line', {x1: G.gx1, y1: G.gy1, x2: G.gx2, y2: G.gy2, class: 'green force-green'}); }
+  },
+  {
+    name: "Step 10: p' and t'",
+    description: "Locate p' and t' on hexagon edges",
+    draw: G => {
+      createEl('circle', {cx: G.pPrime.x, cy: G.pPrime.y, r: 3.2, class: 'force-green-pt'});
+      createEl('circle', {cx: G.tPrime.x, cy: G.tPrime.y, r: 3.2, class: 'force-green-pt'});
+      createEl('text', {x: G.pPrime.x - 15, y: G.pPrime.y - 10, class: 'green-text'}).textContent = "p′";
+      createEl('text', {x: G.tPrime.x + 15, y: G.tPrime.y - 10, class: 'green-text'}).textContent = "t′";
+    }
+  },
+  {
+    name: "Step 11: q', r', s'",
+    description: "Locate q', r', s' on o'–corner lines",
+    draw: G => {
+      [G.qPrime, G.rPrime, G.sPrime].forEach(p => createEl('circle', {cx: p.x, cy: p.y, r: 3.2, class: 'force-green-pt'}));
+      osConnectorEl = createEl('line', { x1: G.hexCenter.x, y1: G.hexCenter.y, x2: G.sPrime.x, y2: G.sPrime.y, class: 'os-connector', stroke: 'yellow' });
+      createEl('text', {x: G.qPrime.x - 15, y: G.qPrime.y - 10, class: 'green-text'}).textContent = "q′";
+      createEl('text', {x: G.rPrime.x + 15, y: G.rPrime.y - 10, class: 'green-text'}).textContent = "r′";
+      createEl('text', {x: G.sPrime.x + 15, y: G.sPrime.y - 10, class: 'green-text'}).textContent = "s′";
+    }
+  },
+  {
+    name: "Step 12: Along base",
+    description: "Connect p'-2'-3'-4'-t' along base",
+    draw: G => {
+      createEl('line', {x1: G.pPrime.x, y1: G.pPrime.y, x2: G.pts[1].x, y2: G.pts[1].y, class: 'yellow'});
+      createEl('line', {x1: G.pts[1].x, y1: G.pts[1].y, x2: G.pts[2].x, y2: G.pts[2].y, class: 'yellow'});
+      createEl('line', {x1: G.pts[2].x, y1: G.pts[2].y, x2: G.pts[3].x, y2: G.pts[3].y, class: 'yellow'});
+      createEl('line', {x1: G.pts[3].x, y1: G.pts[3].y, x2: G.tPrime.x, y2: G.tPrime.y, class: 'yellow'});
+    }
+  },
+  {
+    name: "Step 13: Join to q', r', s'",
+    description: "Connect 5', 6', 1' to q', r', s'",
+    draw: G => {
+      createEl('line', {x1: G.pts[4].x, y1: G.pts[4].y, x2: G.qPrime.x, y2: G.qPrime.y, class: 'red'});
+      createEl('line', {x1: G.pts[5].x, y1: G.pts[5].y, x2: G.rPrime.x, y2: G.rPrime.y, class: 'red'});
+      createEl('line', {x1: G.pts[0].x, y1: G.pts[0].y, x2: G.sPrime.x, y2: G.sPrime.y, class: 'red'});
+    }
+  },
+  {
+    name: "Step 14: Project p', t'",
+    description: "Project p', t' to get p, t (BLUE)",
+    draw: G => {
+      createEl('line', {x1: G.pPrime.x, y1: G.pPrime.y, x2: G.pointP.x, y2: G.pointP.y, class: 'blue'});
+      createEl('line', {x1: G.tPrime.x, y1: G.tPrime.y, x2: G.pointT.x, y2: G.pointT.y, class: 'blue'});
+    }
+  },
+  {
+    name: "Step 15: Mark p, t",
+    description: "Mark p and t on xy",
+    draw: G => {
+      createEl('circle', {cx: G.pointP.x, cy: G.pointP.y, r: 3, class: 'red-point'});
+      createEl('circle', {cx: G.pointT.x, cy: G.pointT.y, r: 3, class: 'red-point'});
+      createEl('text', {x: G.pointP.x - 15, y: G.pointP.y + 18, class: 'green-text'}).textContent = "p";
+      createEl('text', {x: G.pointT.x + 15, y: G.pointT.y + 18, class: 'green-text'}).textContent = "t";
+    }
+  },
+  {
+    name: "Step 16: Project q',r',s'",
+    description: "Project q', r', s' to get q, r, s (BLUE)",
+    draw: G => {
+      [G.qPrime, G.rPrime, G.sPrime].forEach((p, i) => {
+        const dest = [G.pointQ, G.pointR, G.pointS][i];
+        createEl('line', {x1: p.x, y1: p.y, x2: dest.x, y2: dest.y, class: 'blue'});
+      });
+    }
+  },
+  {
+    name: "Step 17: Mark q,r,s",
+    description: "Mark q, r, s on edges",
+    draw: G => {
+      [G.pointQ, G.pointR, G.pointS].forEach(p => createEl('circle', {cx: p.x, cy: p.y, r: 3, class: 'red-point'}));
+      createEl('text', {x: G.pointQ.x - 15, y: G.pointQ.y + 5, class: 'green-text'}).textContent = "q";
+      createEl('text', {x: G.pointR.x + 15, y: G.pointR.y + 5, class: 'green-text'}).textContent = "r";
+      createEl('text', {x: G.pointS.x + 15, y: G.pointS.y + 5, class: 'green-text'}).textContent = "s";
+    }
+  },
+  {
+    name: "Step 18: Sectional top view",
+    description: "Join p-q-r-s-t to form section",
+    draw: G => {
+      const p = [G.pointP, G.pointQ, G.pointR, G.pointS, G.pointT];
+      for(let i=0; i<5; i++) createEl('line', {x1: p[i].x, y1: p[i].y, x2: p[(i+1)%5].x, y2: p[(i+1)%5].y, class: 'red'});
+    }
+  },
+  {
+    name: "Step 19: Hatch section",
+    description: "Hatch the lower sectional pentagon",
+    draw: G => { allElements.appendChild(createHatch([G.pointP, G.pointQ, G.pointR, G.pointS, G.pointT], 45, 2 * MM_TO_PX)); }
+  },
+  {
+    name: "Step 20: Perpendiculars upward",
+    description: "Draw perpendiculars from p',q',r',s',t'",
+    draw: G => {
+      [G.pPrime, G.qPrime, G.rPrime, G.sPrime, G.tPrime].forEach(p => {
+        createEl('line', {x1: p.x, y1: p.y, x2: p.x - 700*Math.cos(G.perpAngle), y2: p.y - 700*Math.sin(G.perpAngle), class: 'yellow'});
+      });
+    }
+  },
+  {
+    name: "Step 21: x1y1 line",
+    description: "Draw x1y1 parallel to cutting plane",
+    draw: G => {
+      createEl('line', {x1: G.x1y1_x1, y1: G.x1y1_y1, x2: G.x1y1_x2, y2: G.x1y1_y2, class: 'red'});
+      createEl('text', {x: G.x1y1_x1 - 25, y: G.x1y1_y1 + 5, class: 'point-label'}).textContent = "x1";
+      createEl('text', {x: G.x1y1_x2 + 25, y: G.x1y1_y2 + 5, class: 'point-label'}).textContent = "y1";
+    }
+  },
+  {
+    name: "Step 22: Transfer p',t'",
+    description: "Transfer p and t to p'', t'' on x1y1",
+    draw: G => {
+      const pts = [G.transferredPoints[0], G.transferredPoints[4]];
+      const labels = ["p″", "t″"];
+      pts.forEach((p, i) => {
+        createEl('circle', {cx: p.x1y1Inter.x, cy: p.x1y1Inter.y, r: 3, class: 'red-point'});
+        createEl('text', {x: p.x1y1Inter.x + (i?18:-18), y: p.x1y1Inter.y - 10, class: 'point-label'}).textContent = labels[i];
+      });
+    }
+  },
+  {
+    name: "Step 23-25: Transfer q'', r'', s''",
+    description: "Transfer q, r, s to true shape plane",
+    draw: G => {
+      [1,2,3].forEach(i => {
+        const p = G.transferredPoints[i];
+        createEl('circle', {cx: p.x, cy: p.y, r: 3, class: 'red-point'});
+        createEl('text', {x: p.x + (i===1?-18:18), y: p.y - 10, class: 'point-label'}).textContent = ["q″","r″","s″"][i-1];
+      });
+    }
+  },
+  {
+    name: "Step 26: True shape and hatch",
+    description: "Join p''-q''-r''-s''-t'' and hatch",
+    draw: G => {
+      const up = [G.transferredPoints[0].x1y1Inter, G.transferredPoints[1], G.transferredPoints[2], G.transferredPoints[3], G.transferredPoints[4].x1y1Inter];
+      for(let i=0; i<5; i++) createEl('line', {x1: up[i].x, y1: up[i].y, x2: up[(i+1)%5].x, y2: up[(i+1)%5].y, class: 'red'});
+      allElements.appendChild(createHatch(up, 75, 2 * MM_TO_PX));
+    }
+  },
+  {
+    name: "Step 27: 70mm axis",
+    description: "Draw 70mm axis dimension",
+    draw: G => {
+      const dimX = G.pPrime.x - 60;
+      createEl('line', { x1: dimX, y1: G.axisY+10, x2: dimX, y2: G.apexY-10, class: 'red', 'marker-start': 'url(#dimArrowStart)', 'marker-end': 'url(#dimArrowEnd)' });
+      createEl('text', { x: dimX-10, y: (G.axisY+G.apexY)/2, class: 'dim-text', transform: `rotate(-90, ${dimX-10}, ${(G.axisY+G.apexY)/2})` }).textContent = '70';
+    }
+  },
+  {
+    name: "Step 28: 5mm distance",
+    description: "Show 5mm distance from centre to cutting plane",
+    draw: G => {
+      createEl('line', { x1: G.pts[3].x, y1: G.pts[3].y, x2: 1300, y2: G.pts[3].y, class: 'yellow' });
+      createEl('line', { x1: G.centerX, y1: G.centerY, x2: G.ooExtendedInter.x, y2: G.ooExtendedInter.y, class: 'red' });
+      createEl('line', { x1: G.ooExtendedInter.x, y1: G.ooExtendedInter.y, x2: 1300, y2: G.ooExtendedInter.y, class: 'yellow' });
+      const dimX = 1200;
+      createEl('line', { 
+        x1: dimX, y1: G.centerY + 1, 
+        x2: dimX, y2: G.ooExtendedInter.y - 1, 
+        class: 'red', 
+        'marker-start': 'url(#dimArrowStartSmall)', 
+        'marker-end': 'url(#dimArrowEndSmall)' 
+      });
+      // marking "5" with 90 degree tilt facing left
+      const labelY = (G.centerY + G.ooExtendedInter.y) / 2;
+      createEl('text', {
+        x: dimX - 18, 
+        y: labelY, 
+        class: 'dim-text',
+        'font-size': '14',
+        transform: `rotate(-90, ${dimX - 18}, ${labelY})`
+      }).textContent = '5';
+    }
+  },
+  {
+    name: "Step 29: 35° angle",
+    description: "Extend cutting plane and mark 35°",
+    draw: G => {
+      createEl('line', {x1: G.gx2, y1: G.gy2, x2: G.greenToXYInter.x, y2: G.greenToXYInter.y, class: 'yellow'});
+      const arcPath = `M ${G.greenToXYInter.x - 30} ${G.greenToXYInter.y} A 30 30 0 0 0 ${G.greenToXYInter.x + 30*Math.cos(Math.atan2(G.gy2-G.greenToXYInter.y, G.gx2-G.greenToXYInter.x))} ${G.greenToXYInter.y + 30*Math.sin(Math.atan2(G.gy2-G.greenToXYInter.y, G.gx2-G.greenToXYInter.x))}`;
+      createEl('path', {d: arcPath, class: 'angle-arc'});
+      createEl('text', { x: G.greenToXYInter.x-45, y: G.greenToXYInter.y-10, class: 'dim-text', 'font-size': '14' }).textContent = '35°';
+    }
+  },
+  {
+    name: "Step 30: Final darkening",
+    description: "Final view",
+    draw: G => { 
+      // Stop construction phase
+      svg.classList.remove('construction-phase'); 
+      constructionDone = true; 
+      // Ensure specific connector changes color if needed, but per request, some lines stay yellow
+      if(osConnectorEl) osConnectorEl.setAttribute('stroke', '#c40000'); 
+    }
+  }
+];
+
+function redrawUpTo(stepIndex) {
+  // FULL RESET for exact state restoration
+  allElements.innerHTML = ''; 
+  osConnectorEl = null;
+  constructionDone = false; // Reset flag so "previous" works
+  svg.classList.add('construction-phase'); // Reset class so "previous" works
+
+  const G = computeGeometry();
+  for (let i = 0; i <= stepIndex; i++) steps[i].draw(G);
+}
+
+function goToStep(stepIndex) {
+  currentStep = stepIndex; redrawUpTo(currentStep);
+  document.getElementById('step-title').textContent = steps[currentStep].name + " ";
+  document.getElementById('step-text').textContent = steps[currentStep].description;
+  prevBtn.disabled = currentStep <= 0; nextBtn.disabled = currentStep >= steps.length - 1;
+}
+
+startBtn.onclick = () => goToStep(0);
+prevBtn.onclick = () => goToStep(currentStep - 1);
+nextBtn.onclick = () => goToStep(currentStep + 1);
+</script>
+</body>
+</html>

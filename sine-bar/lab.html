@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sine Bar Taper Angle Determination</title>
+  <link rel="icon" href="./images/favicon.ico" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body>
+  <header class="top-bar">
+    <h1>Sine Bar lab</h1>
+    <button class="intro-btn" onclick="window.location.href='./index.html'">
+      Introduction
+    </button>
+  </header>
+
+  <div class="main-container">
+    <aside class="panel left-panel">
+      <div class="panel-header">CONTROLS</div>
+      <div class="panel-content">
+        <label class="control-label">Select Slip Gauge Height:</label>
+        <select id="heightSelect" class="styled-select">
+          <option value="0" selected>0 mm (Base)</option>
+          <option value="10">10 mm</option>
+          <option value="20">20 mm</option>
+          <option value="40">40 mm</option>
+          <option value="41.65">41.65 mm (Target)</option>
+        </select>
+
+        <div class="button-group">
+          <button class="action-btn" onclick="updateAngle()">Set Height</button>
+          <button class="action-btn primary" onclick="calculateDeflection()">
+            Calculate Deflection
+          </button>
+        </div>
+
+        <div class="gauge-display-container">
+          <h3>Stack Details</h3>
+          <div id="splitGaugeList">Select height...</div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="center-stage">
+      <div id="lab-container">
+        <img id="base" src="./images/base.png" alt="base" />
+        <img id="slipgauge" src="./images/slipgauge.png" alt="slip gauge" />
+        <img id="sinebar" src="./images/sinebar.png" alt="sine bar" />
+        <img id="taperbar" src="./images/testobject.png" alt="taper test object" />
+
+        <div id="dialGauge">
+          <img src="./images/dial.png" width="90" alt="dial" />
+          <div id="readingBox">0.00</div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="panel right-panel">
+      <div class="panel-header">INSTRUCTIONS</div>
+      <div class="panel-content">
+        <ol class="instruction-list">
+          <li>Select a <b>Slip Gauge Height</b> from the left panel.</li>
+          <li>Click <b>Set Height</b> to stack the gauges.</li>
+          <li>Click <b>Calculate Deflection</b> to move the dial indicator.</li>
+          <li>Adjust height until dial reading is close to <b>0</b>.</li>
+          <li>Observe the calculated Taper Angle below.</li>
+        </ol>
+      </div>
+
+      <div class="panel-header mt-auto">DIGITAL READING</div>
+      <div class="panel-content results-area">
+        <div id="angleInfoBox" class="info-box">
+          <span class="placeholder-text">Waiting for calculation...</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script src="./js/script.js"></script>
+</body>
+
+</html>

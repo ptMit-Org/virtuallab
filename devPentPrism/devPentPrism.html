@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Development Pentagonal Prism</title>
+        <link rel="icon" href="./favicon.ico" />
+
+<style>
+  :root{--red:#e33;--yellow:#f7d23b}
+  body{margin:12px;font-family:Arial,Helvetica,sans-serif;background:#fff;color:#111;text-align:center}
+  #stepText{font-weight:700;margin:8px 0}
+  .controls{margin-bottom:8px}
+  button{padding:8px 12px;margin:0 6px;border:1px solid #777;border-radius:6px;background:#fff;cursor:pointer}
+  svg{display:block;margin:0 auto;max-width:1200px;width:100%;border:1px solid #eee;background:#fff}
+  text.red{fill:var(--red);font-weight:700;font-size:14px}
+  text.yel{fill:var(--yellow);font-weight:700;font-size:14px}
+</style>
+</head>
+<body>
+<h2>Pentagonal Prism - Development of Surface </h2>
+  <h3  x="600" y="32"
+        text-anchor="middle"
+        font-size="18"
+        font-weight="700"
+        fill="#000">
+    Question: A pentagonal prism of height 40 mm and base edge of 30 mm is resting on HP with its base such that one of its base edge is parallel to VP. Draw its simple projection and develop its surface.
+</h3>
+<div id="stepText">Click Next Step to start.</div>
+<div class="controls">
+  <button id="prevBtn">Previous Step</button>
+  <button id="nextBtn">Next Step</button>
+  <button id="resetBtn">Reset</button>
+  <button onclick="window.location.href='./index.html'">Home</button>
+
+</div>
+
+<svg id="svg" viewBox="0 0 1200 560" xmlns="http://www.w3.org/2000/svg" aria-labelledby="t d">
+  <title id="t">Prism with development and dimensions</title>
+  <desc id="d">Left: pentagonal prism with projectors. Right: development. Final step shows dimensions and note that all dimensions are in mm.</desc>
+
+
+  <line x1="60" y1="260" x2="600" y2="260" stroke="#000" stroke-width="1.8"/>
+  <text x="48"  y="264" font-weight="700">X</text>
+  <text x="608" y="264" font-weight="700">Y</text>
+
+  <g id="leftPlan"></g>
+  <g id="leftLabels"></g>
+  <g id="leftRadials"></g>
+  <g id="leftProj"></g>
+  <g id="leftElev"></g>
+  <g id="dims"></g>
+
+  <g id="right" transform="translate(600,0)">
+    <g id="dev"></g>
+  </g>
+</svg>
+
+<script>
+(() => {
+  // Scaling: 1 mm = 3 pixels (to fit original drawing space)
+  const pxPerMM = 3;
+  const H = 40 * pxPerMM; // Height of prism: 40 mm = 120 pixels
+  const sideMM = 30;
+  const sidePX = sideMM * pxPerMM; // Base edge: 30 mm = 90 pixels
+
+  const Rplan  = sidePX / (2 * Math.sin(Math.PI / 5)); // Radius of circumcircle
+
+  const cx = 300, cy = 360; // Center of plan
+  const XY = 260; // XY line position
+  const elevYBot = XY;
+  const elevYTop = XY - H; // Top base height
+
+  const plan = [];
+  for (let i = 0; i < 5; i++) {
+    const a = Math.PI / 2 + i * (2 * Math.PI / 5);
+    plan.push([cx + Rplan * Math.cos(a), cy + Rplan * Math.sin(a)]);
+  }
+
+  // Find the bottom-most point to align with the original pyramid code's rotation
+  let iBottom = 0;
+  plan.forEach((p, i) => { if (p[1] > plan[iBottom][1]) iBottom = i; });
+  const rotate = (arr, k) => arr.slice(k).concat(arr.slice(0, k));
+  const planLbl = rotate(plan, iBottom); // Base points labeled 1-5 (bottom base)
+
+  const baseXY  = planLbl.map(p => [p[0], elevYBot]); // Base points on XY
+  const topXY   = planLbl.map(p => [p[0], elevYTop]); // Top points in elevation
+
+  // Development parameters (Right side)
+  const devW = 5 * sidePX; // Perimeter: 5 * 30 mm = 150 mm = 450 pixels
+  const devH = H;
+  const devXStart = 30;
+  const devYStart = elevYTop;
+  const devPoints = []; // 6 points for the bottom line of development (1 to 1)
+  for (let i = 0; i <= 5; i++) {
+    devPoints.push({
+      x: devXStart + i * sidePX,
+      y: devYStart + devH
+    });
+  }
+  const devTopPoints = devPoints.map(p => ({ x: p.x, y: devYStart }));
+
+  const leftPlanG  = document.getElementById('leftPlan');
+  const leftLabels = document.getElementById('leftLabels');
+  const leftRadials= document.getElementById('leftRadials');
+  const leftProj   = document.getElementById('leftProj');
+  const leftElev   = document.getElementById('leftElev');
+  const dimsG      = document.getElementById('dims');
+  const dev        = document.getElementById('dev');
+  const stepText   = document.getElementById('stepText');
+  const q1 = document.getElementById('q1');
+  const q2 = document.getElementById('q2');
+
+  const SVG_NS     = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs = {}) => {
+    const n = document.createElementNS(SVG_NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    return n;
+  };
+
+  const TICK_LEN = 6;
+  const MAX_STEP = 10; // 10 steps total
+  let step = 0;
+
+  function clearDrawing() {
+    [leftPlanG, leftLabels, leftRadials, leftProj, leftElev, dev, dimsG].forEach(g => {
+      while (g.firstChild) g.removeChild(g.firstChild);
+    });
+  }
+
+  function reset() {
+    clearDrawing();
+    step = 0;
+    stepText.textContent = 'Click Next Step to start.';
+    if (q1) q1.style.display = '';
+    if (q2) q2.style.display = '';
+  }
+
+  function addArrowHead(group, tipX, tipY, dirX, dirY, size) {
+    const len = Math.hypot(dirX, dirY) || 1;
+    const ux = dirX / len, uy = dirY / len;
+    const nx = -uy, ny = ux;
+
+    const baseX = tipX - ux * size;
+    const baseY = tipY - uy * size;
+    const leftX  = baseX + nx * (size * 0.6);
+    const leftY  = baseY + ny * (size * 0.6);
+    const rightX = baseX - nx * (size * 0.6);
+    const rightY = baseY - ny * (size * 0.6);
+
+    group.appendChild(el('polygon', {
+      points: [
+        tipX + ',' + tipY,
+        leftX + ',' + leftY,
+        rightX + ',' + rightY
+      ].join(' '),
+      fill: 'var(--red)',
+      stroke: 'none'
+    }));
+  }
+
+  // ---------- Steps 1–4 (Projection) ----------
+  function s1(){
+    stepText.textContent = 'Step 1: Draw the top view (plan) of the pentagonal prism (bottom base) and center O.';
+    leftPlanG.appendChild(el('polygon', {
+      points: planLbl.map(p => p.join(',')).join(' '),
+      fill: 'none',
+      stroke: 'var(--red)',
+      'stroke-width': 3
+    }));
+    // O as +
+    leftPlanG.appendChild(el('line',{x1:cx-8,y1:cy,x2:cx+8,y2:cy,stroke:'var(--red)','stroke-width':3}));
+    leftPlanG.appendChild(el('line',{x1:cx,y1:cy-8,x2:cx,y2:cy+8,stroke:'var(--red)','stroke-width':3}));
+    leftLabels.appendChild(el('text',{x:cx-6,y:cy+22,class:'red'})).textContent='O';
+    const OFFSET=18;
+    planLbl.forEach((p,i)=>{
+      const lbl = String(i+1) + ' (' + String(i+1) + '′)'; // Label bottom and top base points
+      if(i===2||i===3){
+        const ang=Math.atan2(p[1]-cy,p[0]-cx);
+        const lx=p[0]+OFFSET*Math.cos(ang);
+        const ly=p[1]+OFFSET*Math.sin(ang);
+        leftLabels.appendChild(el('text',{x:lx-6,y:ly+18,class:'red'})).textContent=lbl;
+      }else{
+        leftLabels.appendChild(el('text',{x:p[0]-8,y:p[1]+20,class:'red'})).textContent=lbl;
+      }
+    });
+    // Lateral edges in plan (projected as lines from center O) - Included to complete plan view
+    planLbl.forEach(p=>{
+      leftRadials.appendChild(el('line',{x1:cx,y1:cy,x2:p[0],y2:p[1],stroke:'var(--red)','stroke-width':1.5,'stroke-dasharray':'4,4'}));
+    });
+  }
+
+  // Original Step 3 -> New Step 2
+  function s2(animate=false){
+    stepText.textContent='Step 2: Draw vertical projectors from all corners.';
+    const allCorners = planLbl;
+    if(!animate){
+      allCorners.forEach(p=>{
+        leftProj.appendChild(el('line',{
+          x1:p[0],y1:p[1],x2:p[0],y2:elevYTop, // Project to top base height
+          stroke:'var(--yellow)','stroke-width':2.0,'stroke-linecap':'round'
+        }));
+      });
+      return;
+    }
+    let i=0,delay=300;
+    function drawNext(){
+      if(i>=allCorners.length)return;
+      const p=allCorners[i];
+      leftProj.appendChild(el('line',{
+        x1:p[0],y1:p[1],x2:p[0],y2:elevYTop,
+        stroke:'var(--yellow)','stroke-width':2.0,'stroke-linecap':'round'
+      }));
+      i++; if(i<allCorners.length)setTimeout(drawNext,delay);
+    }
+    drawNext();
+  }
+
+  // Original Step 4 -> New Step 3
+  function s3(){
+    stepText.textContent="Step 3: Draw the front view (elevation) - a rectangle with top and bottom base lines on the projectors.";
+    
+    // Bottom base line
+    leftElev.appendChild(el('polyline',{points:baseXY.map(p=>p.join(',')).join(' '),fill:'none',stroke:'var(--red)','stroke-width':3}));
+    // Top base line
+    leftElev.appendChild(el('polyline',{points:topXY.map(p=>p.join(',')).join(' '),fill:'none',stroke:'var(--red)','stroke-width':3}));
+
+    const baseLabels=["1","2","(3)","(4)","5"];
+    const topLabels=["1′","2′","(3′)","(4′)","5′"];
+    
+    baseXY.forEach((bp,i)=>{
+      const t=el('text',{x:bp[0]-10,y:bp[1]+20,class:'red'}); t.textContent = baseLabels[i]; leftLabels.appendChild(t);
+    });
+    topXY.forEach((tp,i)=>{
+      const t=el('text',{x:tp[0]-10,y:tp[1]-6,class:'red'}); t.textContent = topLabels[i]; leftLabels.appendChild(t);
+    });
+  }
+
+  // Original Step 5 -> New Step 4
+  function s4(animate=false){
+    stepText.textContent='Step 4: Draw visible and hidden lateral edges.';
+    const visibleIndices=[0,1,4]; // 1, 2, 5
+    const hiddenIndices=[2,3]; // 3, 4
+
+    const drawEdges = (indices, isHidden) => {
+      indices.forEach(i => {
+        const x = baseXY[i][0];
+        const dashArray = isHidden ? '6,4' : '';
+        leftElev.appendChild(el('line',{
+          x1:x,y1:elevYBot,x2:x,y2:elevYTop,
+          stroke:'var(--red)','stroke-width':3,'stroke-dasharray':dashArray
+        }));
+      });
+    };
+
+    if(!animate){
+      drawEdges(visibleIndices, false);
+      drawEdges(hiddenIndices, true);
+      return;
+    }
+    
+    let idx=0, delay=300;
+    const actions = [
+      () => drawEdges(visibleIndices, false),
+      () => drawEdges(hiddenIndices, true)
+    ];
+
+    function run(){if(idx>=actions.length)return;actions[idx++]();if(idx<actions.length)setTimeout(run,delay);}
+    run();
+  }
+
+  // ---------- Steps 5–10 (Development) ----------
+  
+  // Original Step 6 -> New Step 5
+  function s5(){
+    stepText.textContent='Step 5: Draw the starting line (lateral edge 1-1′) for the development of the lateral surface.';
+    const p1 = devPoints[0];
+    const p1t = devTopPoints[0];
+    dev.appendChild(el('line',{
+      x1:p1.x,y1:p1.y,x2:p1t.x,y2:p1t.y,
+      stroke:'var(--yellow)','stroke-width':3.0,'stroke-linecap':'round'
+    }));
+    dev.appendChild(el('text',{x:p1.x-12,y:p1.y+18,class:'yel'})).textContent='1';
+    dev.appendChild(el('text',{x:p1t.x-12,y:p1t.y-6,class:'yel'})).textContent='1′';
+  }
+
+  // Original Step 7 -> New Step 6
+  function s6(){
+    stepText.textContent='Step 6: Draw the bottom line (1-1) of the development, equal to the perimeter of the base (5 x 30 mm).';
+    const p1 = devPoints[0];
+    const p6 = devPoints[5];
+    dev.appendChild(el('line',{
+      x1:p1.x,y1:p1.y,x2:p6.x,y2:p6.y,
+      stroke:'var(--yellow)','stroke-width':2.0
+    }));
+    dev.appendChild(el('text',{x:p6.x-8,y:p6.y+18,class:'yel'})).textContent='1';
+  }
+
+  // Original Step 8 -> New Step 7
+  function s7(){
+    stepText.textContent='Step 7: Draw the top line (1′-1′) of the development.';
+    const p1t = devTopPoints[0];
+    const p6t = devTopPoints[5];
+    dev.appendChild(el('line',{
+      x1:p1t.x,y1:p1t.y,x2:p6t.x,y2:p6t.y,
+      stroke:'var(--yellow)','stroke-width':2.0
+    }));
+    dev.appendChild(el('text',{x:p6t.x-8,y:p6t.y-6,class:'yel'})).textContent='1′';
+  }
+
+  // Original Step 9 -> New Step 8
+  function s8(animate=false){
+    stepText.textContent='Step 8: Divide the perimeter (bottom line) into 5 equal parts, each 30 mm, and draw the lateral edges.';
+    const labels=['2','3','4','5'];
+    const labelsT=['2′','3′','4′','5′'];
+    
+    const drawDiv = i => {
+        const p = devPoints[i];
+        const pt = devTopPoints[i];
+        
+        // Vertical lateral edge
+        dev.appendChild(el('line',{
+          x1:p.x,y1:p.y,x2:pt.x,y2:pt.y,
+          stroke:'var(--yellow)','stroke-width':2.0
+        }));
+        
+        // Labels
+        if (i > 0 && i < 5) {
+            dev.appendChild(el('text',{x:p.x-12,y:p.y+18,class:'yel'})).textContent=labels[i-1];
+            dev.appendChild(el('text',{x:pt.x-12,y:pt.y-6,class:'yel'})).textContent=labelsT[i-1];
+        }
+    };
+    
+    if(!animate){
+      for(let i=1;i<5;i++) drawDiv(i);
+      return;
+    }
+
+    let idx=1,delay=300;
+    function drawNext(){if(idx>=5)return;drawDiv(idx);idx++;if(idx<5)setTimeout(drawNext,delay);}
+    drawNext();
+  }
+
+  // Original Step 10 -> New Step 9
+  function s9(animate=false){
+    stepText.textContent='Step 9: Darken the boundary of the developed surface.';
+    
+    const boundaryPoints = [
+        devPoints[0], devTopPoints[0], devTopPoints[5], devPoints[5]
+    ];
+    const boundary = [
+        [devPoints[0].x, devPoints[0].y], 
+        [devTopPoints[0].x, devTopPoints[0].y], 
+        [devTopPoints[5].x, devTopPoints[5].y], 
+        [devPoints[5].x, devPoints[5].y]
+    ];
+
+    dev.appendChild(el('polygon',{
+      points: boundary.map(p => p.join(',')).join(' '),
+      fill: 'none',
+      stroke:'var(--red)','stroke-width':3.5,
+      'data-role':'boundary'
+    }));
+
+    // Change colors to red for all development lines and labels
+    const nodesToChange = Array.from(dev.childNodes).filter(n=>{
+      if(!n.getAttribute)return false;
+      const stroke=n.getAttribute('stroke');
+      const cls=n.getAttribute('class');
+      const isYellowStroke=stroke==='var(--yellow)'||stroke==='#f7d23b';
+      const isYellowText=cls==='yel';
+      return isYellowStroke||isYellowText;
+    });
+
+    const applyRed=n=>{
+      const stroke=n.getAttribute('stroke');
+      const cls=n.getAttribute('class');
+      if(stroke==='var(--yellow)'||stroke==='#f7d2d2b')n.setAttribute('stroke','var(--red)');
+      if(cls==='yel')n.setAttribute('class','red');
+    };
+
+    if(!animate){nodesToChange.forEach(applyRed);return;}
+
+    let idx=0,delay=80;
+    function convertNext(){
+      if(idx>=nodesToChange.length)return;
+      applyRed(nodesToChange[idx]); idx++;
+      if(idx<nodesToChange.length)setTimeout(convertNext,delay);
+    }
+    convertNext();
+  }
+
+
+  // Original Step 11 -> New Step 10
+  function s10(animate=false){
+    stepText.textContent =
+      'Step 10: Add dimensions 40, 30 and 150 (perimeter) and note that all dimensions are in mm.';
+
+    const arrowSize = 7;
+
+    const drawDim40 = () => {
+      const offsetX40 = 80;
+      const HtopExtEndX = topXY[0][0] - offsetX40;
+      const HtopExtEndY = elevYTop;
+      const HbotExtEndX = baseXY[0][0] - offsetX40;
+      const HbotExtEndY = elevYBot;
+
+      dimsG.appendChild(el('line',{
+        x1:topXY[0][0],y1:elevYTop,x2:HtopExtEndX,y2:HtopExtEndY,
+        stroke:'var(--yellow)','stroke-width':1.0
+      }));
+      dimsG.appendChild(el('line',{
+        x1:baseXY[0][0],y1:elevYBot,x2:HbotExtEndX,y2:HbotExtEndY,
+        stroke:'var(--yellow)','stroke-width':1.0
+      }));
+      dimsG.appendChild(el('line',{
+        x1:HtopExtEndX,y1:HtopExtEndY,
+        x2:HbotExtEndX,y2:HbotExtEndY,
+        stroke:'var(--red)','stroke-width':1.6
+      }));
+      addArrowHead(dimsG, HtopExtEndX, HtopExtEndY, 0,-1, arrowSize);
+      addArrowHead(dimsG, HbotExtEndX, HbotExtEndY, 0, 1, arrowSize);
+      dimsG.appendChild(el('text',{
+        x:HtopExtEndX-24,
+        y:(HtopExtEndY+HbotExtEndY)/2+4,
+        class:'red'
+      })).textContent='40';
+    };
+
+    const drawDim30 = () => {
+      const p1 = planLbl[0];
+      const p2 = planLbl[1];
+      const dx12 = p2[0]-p1[0], dy12 = p2[1]-p1[1];
+      const len12 = Math.hypot(dx12,dy12) || 1;
+      const ux12 = dx12/len12, uy12 = dy12/len12;
+      let nx12 = -uy12, ny12 = ux12;
+      if(ny12 < 0){ nx12 = -nx12; ny12 = -ny12; }
+
+      const extLen12 = 30;
+      const P1extX = p1[0] + nx12*extLen12;
+      const P1extY = p1[1] + ny12*extLen12;
+      const P2extX = p2[0] + nx12*extLen12;
+      const P2extY = p2[1] + ny12*extLen12;
+
+      dimsG.appendChild(el('line',{
+        x1:p1[0],y1:p1[1],x2:P1extX,y2:P1extY,
+        stroke:'var(--yellow)','stroke-width':1.0
+      }));
+      dimsG.appendChild(el('line',{
+        x1:p2[0],y1:p2[1],x2:P2extX,y2:P2extY,
+        stroke:'var(--yellow)','stroke-width':1.0
+      }));
+      dimsG.appendChild(el('line',{
+        x1:P1extX,y1:P1extY,
+        x2:P2extX,y2:P2extY,
+        stroke:'var(--red)','stroke-width':1.6
+      }));
+      addArrowHead(dimsG, P1extX, P1extY, -ux12, -uy12, arrowSize);
+      addArrowHead(dimsG, P2extX, P2extY,  ux12,  uy12, arrowSize);
+
+      const mid12x = (P1extX + P2extX)/2 - nx12*10;
+      const mid12y = (P1extY + P2extY)/2 - ny12*10;
+      dimsG.appendChild(el('text',{
+        x:mid12x-10,
+        y:mid12y+4,
+        class:'red'
+      })).textContent='30';
+    };
+
+    const drawDimPerimeter = () => {
+      const dx = devPoints[5].x - devPoints[0].x;
+      const dy = 0;
+      const L  = Math.hypot(dx,dy) || 1;
+      const ux = dx/L,  uy = dy/L;
+      let nx = -uy, ny = ux;
+      
+      // We want the dimension line below the development box
+      const extLenS = 60; // Offset relative to the bottom line of the development
+      const SextX = devPoints[0].x;
+      const SextY = devPoints[0].y + extLenS;
+      const OextX = devPoints[5].x;
+      const OextY = devPoints[5].y + extLenS;
+      
+      // Extension lines (vertical from corners 1 and 1) - extend to the new lower point
+      dev.appendChild(el('line',{
+        x1:devPoints[0].x,y1:devPoints[0].y,x2:SextX,y2:SextY,
+        stroke:'var(--yellow)','stroke-width':1.0
+      }));
+      dev.appendChild(el('line',{
+        x1:devPoints[5].x,y1:devPoints[5].y,x2:OextX,y2:OextY,
+        stroke:'var(--yellow)','stroke-width':1.0
+      }));
+      
+      // Dimension line (horizontal)
+      dev.appendChild(el('line',{
+        x1:SextX,y1:SextY,
+        x2:OextX,y2:OextY,
+        stroke:'var(--red)','stroke-width':1.6
+      }));
+      
+      // Arrows (pointing inward)
+      addArrowHead(dev, SextX, SextY, -1, 0, arrowSize); // Left arrow
+      addArrowHead(dev, OextX, OextY, 1, 0, arrowSize); // Right arrow
+      
+      // Text (centered above dimension line)
+      const midSx = (SextX + OextX)/2;
+      const midSy = SextY - 10;
+      dev.appendChild(el('text',{
+        x:midSx,
+        y:midSy+4,
+        class:'red',
+        'text-anchor':'middle'
+      })).textContent='150 (5×30)';
+    };
+    
+    // Note is placed outside the dev group, so it appears relative to the whole SVG
+    const drawNote = () => {
+      dimsG.appendChild(el('text',{
+        x:540,
+        y:548,
+        class:'red'
+      })).textContent = 'All dimensions are in mm';
+    };
+
+    if (!animate) {
+      drawDim40();
+      drawDim30();
+      drawDimPerimeter();
+      drawNote();
+      return;
+    }
+
+    let idx = 0;
+    const acts = [drawDim40, drawDim30, drawDimPerimeter, drawNote];
+    const delay = 350;
+
+    function doNext() {
+      if (idx >= acts.length) return;
+      acts[idx++]();
+      if (idx < acts.length) setTimeout(doNext, delay);
+    }
+    doNext();
+  }
+
+  function callStep(n,animate){
+    switch(n){
+      case 1:s1();break;
+      case 2:s2(animate);break; // Old s3
+      case 3:s3();break; // Old s4
+      case 4:s4(animate);break; // Old s5
+      case 5:s5();break; // Old s6
+      case 6:s6();break; // Old s7
+      case 7:s7();break; // Old s8
+      case 8:s8(animate);break; // Old s9
+      case 9:s9(animate);break; // Old s10
+      case 10:s10(animate);break; // Old s11
+    }
+  }
+
+  function rebuildUpTo(currentStep){
+    clearDrawing();
+    if(currentStep===0){
+      stepText.textContent='Click Next Step to start.';
+      if (q1) q1.style.display = '';
+      if (q2) q2.style.display = '';
+      return;
+    }
+    if (q1) q1.style.display = 'none';
+    if (q2) q2.style.display = 'none';
+    for(let k=1;k<=currentStep;k++) callStep(k,false);
+  }
+
+  function next(){
+    if(step>=MAX_STEP){
+      stepText.textContent='All steps completed.';
+      step=MAX_STEP;
+      return;
+    }
+    step++;
+    if (step === 1) {
+      if (q1) q1.style.display = 'none';
+      if (q2) q2.style.display = 'none';
+    }
+    const animate = (
+      step===2 || step===4 || step===8 || step===9 || step===10
+    );
+    callStep(step,animate);
+  }
+
+  function prev(){
+    if(step<=0)return;
+    step--;
+    rebuildUpTo(step);
+  }
+
+  document.getElementById('nextBtn').addEventListener('click', next);
+  document.getElementById('prevBtn').addEventListener('click', prev);
+  document.getElementById('resetBtn').addEventListener('click', reset);
+  reset();
+})();
+</script>
+</body>
+</html>
