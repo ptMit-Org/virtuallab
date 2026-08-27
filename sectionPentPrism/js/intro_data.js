@@ -5,7 +5,7 @@ export const INTRO_CONTENT = {
     buttonLabel: "Experiment",
     buttonLink: "./sectionPentPrism.html",
 
-    mainHeading: "Section Of Solids: Pentagonal Prism",
+    mainHeading: "Section Of Solids: Prism Inclined to HP",
 
     aimTitle: "Aim",
     aimContent: "To draw the true shape of sectioned surface, front view and top view of a pentagonal prism which is sectioned by a cutting plane inclined at an angle 30° to HP and 25mm above the base.  ",
