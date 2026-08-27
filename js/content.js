@@ -365,6 +365,14 @@ const EXPERIMENTS = [
         description: 'To draw the true shape of sectioned surface, front view and top view of a pentagonal prism which is sectioned by a cutting plane inclined at an angle 30° to VP and 25mm below the base.',
         imagePath: 'images/experiments/sectionIncVP.png',
         link: 'sectionIncVP/'
+    },
+    {
+        id: 'exp-23',
+        subject: 'EDrawing',
+        title: 'Projection Of Lines: Inclined to VP adn HP',
+        description: 'To draw the projection a line inclined to both VP and HP (General).',
+        imagePath: 'images/experiments/linesVPHP.png',
+        link: 'linesVPHP/'
     }
     
 ];
