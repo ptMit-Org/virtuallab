@@ -330,7 +330,7 @@ const EXPERIMENTS = [
         id: 'exp-18',
         subject: 'EDrawing',
         title: 'Section Of Solids: Prism Inclined to VP',
-        description: 'To draw the true shape of sectioned surface, front view and top view of a pentagonal prism which is sectioned by a cutting plane inclined at an angle 30° to VP and 25mm below the base.',
+        description: 'To draw the true shape of sectioned surface, front view and top view of a pentagonal prism which is sectioned by a cutting plane inclined at an angle 30° to VP and 25mm infront of VP.',
         imagePath: 'images/experiments/sectionIncVP.png',
         link: 'sectionIncVP/'
     },
