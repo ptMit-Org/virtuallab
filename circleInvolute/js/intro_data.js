@@ -22,7 +22,7 @@ export const INTRO_CONTENT = {
             image: "./images/person.png"
         },
         {
-            name: "Siva Kumar. S",
+            name: "Sivakumar. S",
             roll: "2025507022",
             image: "./images/person.png"
         }
