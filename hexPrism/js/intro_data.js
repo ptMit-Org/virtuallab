@@ -17,7 +17,7 @@ export const INTRO_CONTENT = {
     // UPDATED STRUCTURE
     students: [
         {
-            name: "Kadiravan. S",
+            name: "Kadhiravan. S",
             roll: "2025507047",
             image: "./images/person.png"
         },
