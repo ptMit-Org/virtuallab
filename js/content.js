@@ -313,7 +313,7 @@ const EXPERIMENTS = [
     {
         id: 'exp-16',
         subject: 'EDrawing',
-        title: 'Section Of Solids: Pentagonal Prism',
+        title: 'Section Of Solids: Prism Inclined to HP',
         description: 'To draw the true shape of sectioned surface, front view and top view of a pentagonal prism which is sectioned by a cutting plane inclined at an angle 30° to HP and 25mm above the base.',
         imagePath: 'images/experiments/sectionPentPrism.png',
         link: 'sectionPentPrism/'
@@ -357,7 +357,16 @@ const EXPERIMENTS = [
         description: 'To draw the isometric projection of a square prism of height 70mm and the base is resting on HP with side length of 30mm.',
         imagePath: 'images/experiments/sqrPrismIso.png',
         link: 'sqrPrismIso/'
+    },
+    {
+        id: 'exp-22',
+        subject: 'EDrawing',
+        title: 'Section Of Solids: Prism Inclined to VP',
+        description: 'To draw the true shape of sectioned surface, front view and top view of a pentagonal prism which is sectioned by a cutting plane inclined at an angle 30° to VP and 25mm below the base.',
+        imagePath: 'images/experiments/sectionIncVP.png',
+        link: 'sectionIncVP/'
     }
+    
 ];
 
 export default EXPERIMENTS;
