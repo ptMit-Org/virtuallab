@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Projection of Points - Quadrants</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body { 
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: white;
+    color: #111;
+}
+
+/* ================= HEADER ================= */
+
+header {
+    text-align: center;
+    padding: 25px 15px 10px;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 30px;
+}
+
+header p {
+    margin-top: 8px;
+    color: #555;
+    font-size: 16px;
+}
+
+/* ================= MAIN CONTAINER ================= */
+
+.container {
+    width: 95%;
+    max-width: 1100px;
+    margin: 20px auto;
+}
+
+/* ================= INTRO ================= */
+
+#introSection {
+    display: block;
+}
+
+.intro-title {
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.intro-box {
+    border: 1px solid #ccc;
+    border-radius: 15px;
+    padding: 25px;
+    background: #fff;
+}
+
+/* 2 x 2 layout */
+
+.quadrant-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+}
+
+/* Each quadrant */
+
+.quadrant-card {
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 15px;
+    background: #fff;
+    cursor: pointer;
+    transition: 0.25s ease;
+}
+
+.quadrant-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+
+.quadrant-card h2 {
+    text-align: center;
+    margin: 0 0 5px;
+    font-size: 19px;
+}
+
+.quadrant-card .condition {
+    text-align: center;
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 8px;
+}
+
+.intro-svg {
+    width: 100%;
+    height: 210px;
+    display: block;
+}
+
+/* Intro labels */
+
+.qtitle {
+    font-size: 17px;
+    font-weight: bold;
+}
+
+.condition-text {
+    font-size: 13px;
+}
+
+.xy-label {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.point-label {
+    font-size: 14px;
+}
+
+/* ================= START BUTTON ================= */
+
+.start-area {
+    text-align: center;
+    margin-top: 25px;
+}
+
+.start-btn {
+    padding: 12px 25px;
+    border-radius: 10px;
+    border: 1px solid black;
+    background: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.start-btn:hover {
+    background: #f5f5f5;
+}
+
+.home-btn {
+    padding: 12px 25px;
+    border-radius: 10px;
+    border: 1px solid black;
+    background: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.home-btn:hover {
+    background: #f5f5f5;
+}
+
+/* ================= QUADRANT PAGE ================= */
+
+#quadrantSection {
+    display: none;
+}
+
+.main-layout {
+    display: flex;
+    gap: 20px;
+    align-items: stretch;
+}
+
+/* ================= SIDEBAR ================= */
+
+.sidebar {
+    width: 260px;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    padding: 15px;
+    background: white;
+}
+
+.sidebar h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar li {
+    padding: 9px 8px;
+    margin: 4px 0;
+    border-radius: 7px;
+    font-size: 14px;
+}
+
+.sidebar li.active {
+    font-weight: bold;
+    background: #f1f1f1;
+    border-left: 3px solid black;
+}
+
+/* ================= DIAGRAM AREA ================= */
+
+.diagram-panel {
+    flex: 1;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+}
+
+.diagram-panel h2 {
+    margin-top: 0;
+    font-size: 22px;
+}
+
+#diagram {
+    width: 100%;
+    max-width: 600px;
+    height: 360px;
+}
+
+/* ================= DESCRIPTION ================= */
+
+#stepDescription {
+    margin-top: 10px;
+    min-height: 28px;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+/* ================= BUTTONS ================= */
+
+.buttons {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+button.nav-btn {
+    padding: 9px 18px;
+    border-radius: 9px;
+    border: 1px solid black;
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+button.nav-btn:hover {
+    background: #f5f5f5;
+}
+
+button.nav-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.back-btn {
+    margin-top: 15px;
+    padding: 8px 16px;
+    border-radius: 9px;
+    border: 1px solid #888;
+    background: white;
+    cursor: pointer;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media(max-width: 800px) {
+
+    .quadrant-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .main-layout {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+    }
+}
+</style>
+</head>
+
+
+<body>
+
+<header>
+    <h1>Projection of Points</h1>
+    <p>Introduction to Quadrants</p>
+</header>
+
+
+<div class="container">
+
+<!-- =========================================================
+                     INTRODUCTION
+========================================================= -->
+
+<section id="introSection">
+
+    <div class="intro-title">
+        Position of a Point in Four Quadrants
+    </div>
+
+    <div class="intro-box">
+
+        <div class="quadrant-grid">
+
+            <!-- ================= FIRST QUADRANT ================= -->
+
+            <div class="quadrant-card" onclick="openQuadrant(1)">
+
+                <h2>1st Quadrant</h2>
+
+                <div class="condition">
+                    Above HP &nbsp; | &nbsp; In Front of VP
+                </div>
+
+                <svg class="intro-svg"
+                     viewBox="0 0 400 220">
+
+                    <!-- Title -->
+
+                    <text x="200"
+                          y="20"
+                          text-anchor="middle"
+                          class="qtitle">
+                        First Quadrant
+                    </text>
+
+                    <!-- Vertical projection line
+                         EXTENDS THROUGH XY -->
+
+                    <line x1="200" y1="45"
+                          x2="200" y2="195"
+                          stroke="black"
+                          stroke-width="2"/>
+
+                    <!-- XY BASE LINE -->
+
+                    <line x1="55" y1="120"
+                          x2="345" y2="120"
+                          stroke="black"
+                          stroke-width="2"/>
+
+                    <!-- X Y -->
+
+                    <text x="42" y="125"
+                          class="xy-label">
+                        X
+                    </text>
+
+                    <text x="352" y="125"
+                          class="xy-label">
+                        Y
+                    </text>
+
+                    <!-- a' ABOVE XY -->
+
+                    <circle cx="200" cy="70"
+                            r="4"
+                            fill="black"/>
+
+                    <text x="215" y="75"
+                          class="point-label">
+                        a′ (FV)
+                    </text>
+
+                    <!-- a BELOW XY -->
+
+                    <circle cx="200" cy="170"
+                            r="4"
+                            fill="black"/>
+
+                    <text x="215" y="175"
+                          class="point-label">
+                        a (TV)
+                    </text>
+
+                </svg>
+
+            </div>
+
+
+            <!-- ================= SECOND QUADRANT ================= -->
+
+            <div class="quadrant-card" onclick="openQuadrant(2)">
+
+                <h2>2nd Quadrant</h2>
+
+                <div class="condition">
+                    Above HP &nbsp; | &nbsp; Behind VP
+                </div>
+
+                <svg class="intro-svg"
+                     viewBox="0 0 400 220">
+
+                    <text x="200"
+                          y="20"
+                          text-anchor="middle"
+                          class="qtitle">
+                        Second Quadrant
+                    </text>
+
+                    <!-- Projection line -->
+
+                    <line x1="200" y1="45"
+                          x2="200" y2="120"
+                          stroke="black"
+                          stroke-width="2"/>
+
+                    <!-- XY -->
+
+                    <line x1="55" y1="120"
+                          x2="345" y2="120"
+                          stroke="black"
+                          stroke-width="2"/>
+
+                    <!-- Continue line below -->
+                    <line x1="200" y1="120"
+                          x2="200" y2="195"
+                          stroke="black"
+                          stroke-width="2"/>
+
+                    <text x="42" y="125"
+                          class="xy-label">
+                        X
+                    </text>
+
+                    <text x="352" y="125"
+                          class="xy-label">
+                        Y
+                    </text>
+
+                    <!-- a (TV) ABOVE -->
+
+                    <circle cx="200" cy="75"
+                            r="4"
+                            fill="black"/>
+
+                    <text x="215" y="80"
+                          class="point-label">
+                        a (TV)
+                    </text>
+
+                    <!-- a' (FV) ABOVE -->
+
+                    <circle cx="200" cy="98"
+                            r="4"
+                            fill="black"/>
+
+                    <text x="215" y="103"
+                          class="point-label">
+                        a′ (FV)
+                    </text>
+
+                </svg>
+
+            </div>
+
+
+            <!-- ================= THIRD QUADRANT ================= -->
+
+            <div class="quadrant-card" onclick="openQuadrant(3)">
+
+                <h2>3rd Quadrant</h2>
+
+                <div class="condition">
+                    Below HP &nbsp; | &nbsp; Behind VP
+                </div>
+
+                <svg class="intro-svg"
+                     viewBox="0 0 400 220">
+
+                    <text x="200"
+                          y="20"
+                          text-anchor="middle"
+                          class="qtitle">
+                        Third Quadrant
+                    </text>
+
+                    <!-- Vertical projection line -->
+
+                    <line x1="200" y1="45"
+                          x2="200" y2="195"
+                          stroke="black"
+                          stroke-width="2"/>
+
+                    <!-- XY -->
+
+                    <line x1="55" y1="120"
+                          x2="345" y2="120"
+                          stroke="black"
+                          stroke-width="2"/>
+
+                    <text x="42" y="125"
+                          class="xy-label">
+                        X
+                    </text>
+
+                    <text x="352" y="125"
+                          class="xy-label">
+                        Y
+                    </text>
+
+                    <!-- a (TV) ABOVE XY -->
+
+                    <circle cx="200" cy="72"
+                            r="4"
+                            fill="black"/>
+
+                    <text x="215" y="77"
+                          class="point-label">
+                        a (TV)
+                    </text>
+
+                    <!-- a' BELOW XY -->
+
+                    <circle cx="200" cy="170"
+                            r="4"
+                            fill="black"/>
+
+                    <text x="215" y="175"
+                          class="point-label">
+                        a′ (FV)
+                    </text>
+
+                </svg>
+
+            </div>
+
+
+            <!-- ================= FOURTH QUADRANT ================= -->
+
+            <div class="quadrant-card" onclick="openQuadrant(4)">
+
+                <h2>4th Quadrant</h2>
+
+                <div class="condition">
+                    Below HP &nbsp; | &nbsp; In Front of VP
+                </div>
+
+                <svg class="intro-svg"
+                     viewBox="0 0 400 220">
+
+                    <text x="200"
+                          y="20"
+                          text-anchor="middle"
+                          class="qtitle">
+                        Fourth Quadrant
+                    </text>
+
+                    <!-- Vertical projection line -->
+
+                    <line x1="200" y1="45"
+                          x2="200" y2="195"
+                          stroke="black"
+                          stroke-width="2"/>
+
+                    <!-- XY -->
+
+                    <line x1="55" y1="120"
+                          x2="345" y2="120"
+                          stroke="black"
+                          stroke-width="2"/>
+
+                    <text x="42" y="125"
+                          class="xy-label">
+                        X
+                    </text>
+
+                    <text x="352" y="125"
+                          class="xy-label">
+                        Y
+                    </text>
+
+                    <!-- a' BELOW XY -->
+
+                    <circle cx="200" cy="155"
+                            r="4"
+                            fill="black"/>
+
+                    <text x="215" y="160"
+                          class="point-label">
+                        a′ (FV)
+                    </text>
+
+                    <!-- a BELOW XY -->
+
+                    <circle cx="200" cy="180"
+                            r="4"
+                            fill="black"/>
+
+                    <text x="215" y="185"
+                          class="point-label">
+                        a (TV)
+                    </text>
+
+                </svg>
+
+            </div>
+
+        </div>
+
+        <div class="start-area">
+            <button class="home-btn" onclick="window.location.href='./index.html'">Home</button>
+
+            <button class="start-btn"
+                    onclick="openQuadrant(1)">
+                Start with 1st Quadrant →
+            </button>
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+                    QUADRANT SECTION
+========================================================= -->
+
+<section id="quadrantSection">
+
+    <div class="main-layout">
+
+        <!-- SIDEBAR -->
+
+        <div class="sidebar">
+
+            <h3 id="sidebarTitle">Steps</h3>
+
+            <ul id="stepsList"></ul>
+
+        </div>
+
+
+        <!-- DIAGRAM -->
+
+        <div class="diagram-panel">
+
+            <h2 id="quadrantTitle"></h2>
+
+            <svg id="diagram"
+                 viewBox="0 0 600 360">
+            </svg>
+
+            <div id="stepDescription"></div>
+
+            <div class="buttons">
+
+                <button id="prevBtn"
+                        class="nav-btn">
+                    Previous
+                </button>
+
+                <button id="nextBtn"
+                        class="nav-btn">
+                    Next
+                </button>
+
+            </div>
+
+            <button class="back-btn"
+                    onclick="backToIntro()">
+                ← Back to Quadrants
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+                     GLOBAL VARIABLES
+========================================================= */
+
+const svgNS = "http://www.w3.org/2000/svg";
+
+const introSection =
+    document.getElementById("introSection");
+
+const quadrantSection =
+    document.getElementById("quadrantSection");
+
+const diagram =
+    document.getElementById("diagram");
+
+const stepDescription =
+    document.getElementById("stepDescription");
+
+const stepsList =
+    document.getElementById("stepsList");
+
+const quadrantTitle =
+    document.getElementById("quadrantTitle");
+
+const prevBtn =
+    document.getElementById("prevBtn");
+
+const nextBtn =
+    document.getElementById("nextBtn");
+
+
+let currentQuadrant = 1;
+let currentStep = 0;
+
+
+/* =========================================================
+                     QUADRANT DATA
+========================================================= */
+
+const quadrantData = {
+
+    1: {
+
+        title: "1st Quadrant — Above HP & In Front of VP",
+
+        steps: [
+            "Draw XY line",
+            "Draw Above HP dimension line",
+            "Label Above HP",
+            "Draw point a′",
+            "Name the point as a′",
+            "Draw In Front of VP dimension line",
+            "Label In Front of VP",
+            "Draw point a",
+            "Name the point as a",
+            "Join both points with a thin line"
+        ]
+
+    },
+
+    2: {
+
+        title: "2nd Quadrant — Above HP & Behind VP",
+
+        steps: [
+            "Draw XY line",
+            "Draw Above HP dimension line",
+            "Label Above HP",
+            "Draw point a",
+            "Name the point as a",
+            "Draw Behind VP dimension line",
+            "Label Behind VP",
+            "Draw point a′",
+            "Name the point as a′",
+            "Join both points with a thin line"
+        ]
+
+    },
+
+    3: {
+
+        title: "3rd Quadrant — Below HP & Behind VP",
+
+        steps: [
+            "Draw XY line",
+            "Draw Below HP dimension line",
+            "Label Below HP",
+            "Draw point a",
+            "Name the point as a",
+            "Draw Behind VP dimension line",
+            "Label Behind VP",
+            "Draw point a′",
+            "Name the point as a′",
+            "Join both points with a thin line"
+        ]
+
+    },
+
+    4: {
+
+        title: "4th Quadrant — Below HP & In Front of VP",
+
+        steps: [
+            "Draw XY line",
+            "Draw Below HP dimension line",
+            "Label Below HP",
+            "Draw point a′",
+            "Name the point as a′",
+            "Draw In Front of VP dimension line",
+            "Label In Front of VP",
+            "Draw point a",
+            "Name the point as a",
+            "Join both points with a thin line"
+        ]
+
+    }
+
+};
+
+
+/* =========================================================
+                     SVG FUNCTIONS
+========================================================= */
+
+function createElement(type, attributes = {}) {
+
+    const el =
+        document.createElementNS(svgNS, type);
+
+    for (const key in attributes) {
+        el.setAttribute(key, attributes[key]);
+    }
+
+    diagram.appendChild(el);
+
+    return el;
+}
+
+
+function addText(x, y, text, options = {}) {
+
+    const t = createElement("text", {
+
+        x: x,
+        y: y,
+
+        "font-size":
+            options.size || 14,
+
+        "text-anchor":
+            options.anchor || "start",
+
+        "font-weight":
+            options.weight || "normal"
+
+    });
+
+    t.textContent = text;
+
+    return t;
+}
+
+
+/* =========================================================
+                    ARROW FUNCTION
+========================================================= */
+
+/*
+   The sharp edge is OUTWARD.
+
+   UP:
+       ▲
+
+   DOWN:
+       ▼
+*/
+
+function addArrow(x, y, direction) {
+
+    const p =
+        document.createElementNS(svgNS, "polygon");
+
+    let points;
+
+    if (direction === "up") {
+
+        points =
+            `${x},${y} ` +
+            `${x-6},${y+10} ` +
+            `${x+6},${y+10}`;
+
+    }
+
+    if (direction === "down") {
+
+        points =
+            `${x},${y} ` +
+            `${x-6},${y-10} ` +
+            `${x+6},${y-10}`;
+
+    }
+
+    p.setAttribute("points", points);
+
+    p.setAttribute("fill", "black");
+
+    diagram.appendChild(p);
+}
+
+
+/* =========================================================
+                     BASE XY LINE
+========================================================= */
+
+function drawXY() {
+
+    createElement("line", {
+
+        x1: 80,
+        y1: 180,
+
+        x2: 520,
+        y2: 180,
+
+        stroke: "black",
+
+        "stroke-width": 2
+
+    });
+
+    addText(62, 185, "X", {
+        size: 15,
+        weight: "bold"
+    });
+
+    addText(530, 185, "Y", {
+        size: 15,
+        weight: "bold"
+    });
+}
+
+
+/* =========================================================
+                DIMENSION LINE FUNCTION
+========================================================= */
+
+function drawDimensionLine(
+    x,
+    y1,
+    y2,
+    label,
+    labelSide
+) {
+
+    /* IMPORTANT:
+       The dimension line touches the XY line.
+    */
+
+    createElement("line", {
+
+        x1: x,
+        y1: y1,
+
+        x2: x,
+        y2: y2,
+
+        stroke: "black",
+
+        "stroke-width": 2
+
+    });
+
+
+    /* OUTWARD SHARP ARROWS */
+
+    if (y1 < y2) {
+
+        addArrow(x, y1, "up");
+
+        addArrow(x, y2, "down");
+
+    } else {
+
+        addArrow(x, y1, "down");
+
+        addArrow(x, y2, "up");
+
+    }
+
+
+    /* LABEL */
+
+    const middle =
+        (y1 + y2) / 2;
+
+    const offset =
+        labelSide === "left"
+        ? -22
+        : 22;
+
+    const tx = x + offset;
+
+    const text =
+        document.createElementNS(
+            svgNS,
+            "text"
+        );
+
+    text.setAttribute(
+        "x",
+        tx
+    );
+
+    text.setAttribute(
+        "y",
+        middle
+    );
+
+    text.setAttribute(
+        "font-size",
+        "13"
+    );
+
+    text.setAttribute(
+        "text-anchor",
+        "middle"
+    );
+
+    text.setAttribute(
+        "transform",
+        `rotate(-90 ${tx} ${middle})`
+    );
+
+    text.textContent = label;
+
+    diagram.appendChild(text);
+}
+
+
+/* =========================================================
+                     POINT FUNCTION
+========================================================= */
+
+function drawPoint(x, y, label) {
+
+    createElement("circle", {
+
+        cx: x,
+
+        cy: y,
+
+        r: 5,
+
+        fill: "black"
+
+    });
+
+    addText(
+        x + 12,
+        y + 5,
+        label,
+        {
+            size: 15
+        }
+    );
+}
+
+
+/* =========================================================
+               QUADRANT STEP DRAWING
+========================================================= */
+
+function drawQuadrantStep() {
+
+    diagram.innerHTML = "";
+
+    const q = currentQuadrant;
+    const step = currentStep;
+
+
+    /* =====================================================
+                         XY LINE
+    ===================================================== */
+
+    drawXY();
+
+
+    /* =====================================================
+                         1st QUADRANT
+    ===================================================== */
+
+    if (q === 1) {
+
+        /*
+           a′ = ABOVE XY
+           a  = BELOW XY
+
+           Vertical construction line touches XY.
+        */
+
+        if (step >= 1) {
+
+            drawDimensionLine(
+                230,
+                80,
+                180,
+                "Above HP",
+                "left"
+            );
+
+        }
+
+        if (step >= 3) {
+
+            drawPoint(
+                300,
+                80,
+                "a′"
+            );
+
+        }
+
+        if (step >= 5) {
+
+            drawDimensionLine(
+                370,
+                180,
+                280,
+                "In Front of VP",
+                "right"
+            );
+
+        }
+
+        if (step >= 7) {
+
+            drawPoint(
+                300,
+                280,
+                "a"
+            );
+
+        }
+
+        if (step >= 9) {
+
+            createElement("line", {
+
+                x1: 300,
+                y1: 80,
+
+                x2: 300,
+                y2: 280,
+
+                stroke: "black",
+
+                "stroke-width": 1
+
+            });
+
+        }
+
+    }
+
+
+    /* =====================================================
+                         2nd QUADRANT
+    ===================================================== */
+
+    if (q === 2) {
+
+        /*
+           Both points are ABOVE XY.
+
+           a  = TV
+           a′ = FV
+        */
+
+        if (step >= 1) {
+
+            drawDimensionLine(
+                230,
+                70,
+                180,
+                "Above HP",
+                "left"
+            );
+
+        }
+
+        if (step >= 3) {
+
+            drawPoint(
+                300,
+                95,
+                "a"
+            );
+
+        }
+
+        if (step >= 5) {
+
+            drawDimensionLine(
+                370,
+                110,
+                180,
+                "Behind VP",
+                "right"
+            );
+
+        }
+
+        if (step >= 7) {
+
+            drawPoint(
+                300,
+                70,
+                "a′"
+            );
+
+        }
+
+        if (step >= 9) {
+
+            createElement("line", {
+
+                x1: 300,
+                y1: 70,
+
+                x2: 300,
+                y2: 95,
+
+                stroke: "black",
+
+                "stroke-width": 1
+
+            });
+
+        }
+
+    }
+
+
+    /* =====================================================
+                         3rd QUADRANT
+    ===================================================== */
+
+    if (q === 3) {
+
+        /*
+           a  = TV ABOVE XY
+           a′ = FV BELOW XY
+        */
+
+        if (step >= 1) {
+
+            drawDimensionLine(
+                230,
+                180,
+                280,
+                "Below HP",
+                "left"
+            );
+
+        }
+
+        if (step >= 3) {
+
+            drawPoint(
+                300,
+                95,
+                "a"
+            );
+
+        }
+
+        if (step >= 5) {
+
+            drawDimensionLine(
+                370,
+                80,
+                180,
+                "Behind VP",
+                "right"
+            );
+
+        }
+
+        if (step >= 7) {
+
+            drawPoint(
+                300,
+                280,
+                "a′"
+            );
+
+        }
+
+        if (step >= 9) {
+
+            createElement("line", {
+
+                x1: 300,
+                y1: 95,
+
+                x2: 300,
+                y2: 280,
+
+                stroke: "black",
+
+                "stroke-width": 1
+
+            });
+
+        }
+
+    }
+
+
+    /* =====================================================
+                         4th QUADRANT
+    ===================================================== */
+
+    if (q === 4) {
+
+        /*
+           Both points are BELOW XY.
+
+           a′ = FV
+           a  = TV
+        */
+
+        if (step >= 1) {
+
+            drawDimensionLine(
+                230,
+                180,
+                280,
+                "Below HP",
+                "left"
+            );
+
+        }
+
+        if (step >= 3) {
+
+            drawPoint(
+                300,
+                225,
+                "a′"
+            );
+
+        }
+
+        if (step >= 5) {
+
+            drawDimensionLine(
+                370,
+                180,
+                310,
+                "In Front of VP",
+                "right"
+            );
+
+        }
+
+        if (step >= 7) {
+
+            drawPoint(
+                300,
+                280,
+                "a"
+            );
+
+        }
+
+        if (step >= 9) {
+
+            createElement("line", {
+
+                x1: 300,
+                y1: 225,
+
+                x2: 300,
+                y2: 280,
+
+                stroke: "black",
+
+                "stroke-width": 1
+
+            });
+
+        }
+
+    }
+
+
+    /* =====================================================
+                      UPDATE SIDEBAR
+    ===================================================== */
+
+    const data =
+        quadrantData[q];
+
+    stepsList.innerHTML = "";
+
+    data.steps.forEach(
+        (stepText, index) => {
+
+            const li =
+                document.createElement("li");
+
+            li.textContent =
+                `${index + 1}. ${stepText}`;
+
+            if (index === step) {
+
+                li.classList.add("active");
+
+            }
+
+            stepsList.appendChild(li);
+
+        }
+    );
+
+
+    stepDescription.textContent =
+        data.steps[step];
+
+
+    prevBtn.disabled =
+        step === 0;
+
+    nextBtn.disabled =
+        step === data.steps.length - 1;
+}
+
+
+/* =========================================================
+                   OPEN QUADRANT
+========================================================= */
+
+function openQuadrant(q) {
+
+    currentQuadrant = q;
+
+    currentStep = 0;
+
+    introSection.style.display =
+        "none";
+
+    quadrantSection.style.display =
+        "block";
+
+    quadrantTitle.textContent =
+        quadrantData[q].title;
+
+    drawQuadrantStep();
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+}
+
+
+/* =========================================================
+                     NEXT BUTTON
+========================================================= */
+
+nextBtn.addEventListener(
+    "click",
+    () => {
+
+        const maxStep =
+            quadrantData[
+                currentQuadrant
+            ].steps.length - 1;
+
+        if (currentStep < maxStep) {
+
+            currentStep++;
+
+            drawQuadrantStep();
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+                    PREVIOUS BUTTON
+========================================================= */
+
+prevBtn.addEventListener(
+    "click",
+    () => {
+
+        if (currentStep > 0) {
+
+            currentStep--;
+
+            drawQuadrantStep();
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+                    BACK TO INTRO
+========================================================= */
+
+function backToIntro() {
+
+    quadrantSection.style.display =
+        "none";
+
+    introSection.style.display =
+        "block";
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+}
+
+</script>
+
+</body>
+</html>

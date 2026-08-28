@@ -249,13 +249,21 @@ const EXPERIMENTS = [
     {
         id: 'exp-8',
         subject: 'EDrawing',
+        title: 'Projection Of Points',
+        description: 'To understand the position and to draw the projection of a point in four quadrants.',
+        imagePath: 'images/experiments/projPoints.png',
+        link: 'projPoints/'
+    },
+    {
+        id: 'exp-9',
+        subject: 'EDrawing',
         title: 'Projection Of Lines: Inclined to VP',
         description: 'To draw the projection a line of length 40mm located 20mm above HP, 15mm infront of VP and inclined at an angle of 35° to VP.',
         imagePath: 'images/experiments/lineProj1.png',
         link: 'lineProj1/'
     },
     {
-        id: 'exp-9',
+        id: 'exp-10',
         subject: 'EDrawing',
         title: 'Projection Of Lines: Inclined to VP and HP',
         description: 'To draw the projection a line inclined to both VP and HP (General).',
@@ -263,7 +271,7 @@ const EXPERIMENTS = [
         link: 'linesVPHP/'
     },
     {
-        id: 'exp-10',
+        id: 'exp-11',
         subject: 'EDrawing',
         title: 'Projection Of Planes: Hexagonal, Pentagonal & Square Planes',
         description: 'To draw the projection of planes whose surface is inclined at an angle 45° to HP and side is resting on HP, inclined at an angle 60° to VP.',
@@ -271,7 +279,7 @@ const EXPERIMENTS = [
         link: 'planes/'
     },
     {
-        id: 'exp-11',
+        id: 'exp-12',
         subject: 'EDrawing',
         title: 'Projection Of Solids: Pentagonal Prism',
         description: "To draw the top view and front view of a pentagonal prism of side 30 mm and height 70 mm is above HP with one of it's rectangular face parallel to HP and the axis is perpendicular to VP.",
@@ -279,7 +287,7 @@ const EXPERIMENTS = [
         link: 'pentPrism/'
     },
     {
-        id: 'exp-12',
+        id: 'exp-13',
         subject: 'EDrawing',
         title: 'Projection Of Solids: Hexagonal Prism',
         description: "To draw the top view and front view of the Hexagonal Prism of side 30 mm and height 70 mm is above HP with two of it's rectangular face parallel to HP and the axis is perpendicular to VP.",
@@ -287,7 +295,7 @@ const EXPERIMENTS = [
         link: 'hexPrism/'
     },
     {
-        id: 'exp-13',
+        id: 'exp-14',
         subject: 'EDrawing',
         title: 'Projection of Solids: Hexagonal Prism',
         description: 'To draw the front view and top view of a hexagonal pyramid of base side 30mm and length 70mm, inclined to VP at an angle of 45°.',
@@ -295,7 +303,7 @@ const EXPERIMENTS = [
         link: 'prismIncVP/'
     },
     {
-        id: 'exp-14',
+        id: 'exp-15',
         subject: 'EDrawing',
         title: 'Projection of Solids: Hexagonal Pyramid - Inclined to HP',
         description: 'To draw the projection of a hexagonal pyramid of base 30 mm and axis height 60 mm lying on HP with one of its side edges and the surface is inclined at an angle 60° to the HP.',
@@ -303,7 +311,7 @@ const EXPERIMENTS = [
         link: 'hexPyramid2/'
     },
     {
-        id: 'exp-15',
+        id: 'exp-16',
         subject: 'EDrawing',
         title: 'Projection of Solids: Hexagonal Pyramid',
         description: 'To draw the projection of a hexagonal pyramid of base 30 mm and axis height 60 mm lies on one of its side edges and is inclined at 60° to HP and 45° to VP.',
@@ -311,7 +319,7 @@ const EXPERIMENTS = [
         link: 'hexPyVPHP/'
     },
     {
-        id: 'exp-16',
+        id: 'exp-17',
         subject: 'EDrawing',
         title: 'Section of Solids: Pyramid',
         description: 'To draw the front view, top view and sectioned view of solid pyramid with given dimensions and cutting plane angle.',
@@ -319,7 +327,7 @@ const EXPERIMENTS = [
         link: 'sectionPyramid/'
     },
     {
-        id: 'exp-17',
+        id: 'exp-18',
         subject: 'EDrawing',
         title: 'Section Of Solids: Prism Inclined to HP',
         description: 'To draw the true shape of sectioned surface, front view and top view of a pentagonal prism which is sectioned by a cutting plane inclined at an angle 30° to HP and 25mm above the base.',
@@ -327,7 +335,7 @@ const EXPERIMENTS = [
         link: 'sectionPentPrism/'
     },
     {
-        id: 'exp-18',
+        id: 'exp-19',
         subject: 'EDrawing',
         title: 'Section Of Solids: Prism Inclined to VP',
         description: 'To draw the true shape of sectioned surface, front view and top view of a pentagonal prism which is sectioned by a cutting plane inclined at an angle 30° to VP and 25mm infront of VP.',
@@ -335,7 +343,7 @@ const EXPERIMENTS = [
         link: 'sectionIncVP/'
     },
     {
-        id: 'exp-19',
+        id: 'exp-20',
         subject: 'EDrawing',
         title: 'Section of Solids: Hexagonal Pyramid',
         description: 'To Draw the top view, sectional front view and true shape of the section of a hexagonal pyramid of base of side 35mm and altitude 70mm rests on its base on the VP with two edges of the base parallel to HP. Given that a cutting plane parallel to VP and inclined to 35 degree with respect to HP cuts the pyramid at the height of 5mm from the centre.',
@@ -343,7 +351,7 @@ const EXPERIMENTS = [
         link: 'sectionHexPyramid/'
     },
     {
-        id: 'exp-20',
+        id: 'exp-21',
         subject: 'EDrawing',
         title: 'Development Of Solids: Cylinder & Hexagonal Prism',
         description: 'To draw the simple projection and develop the surface of Cylinder and Hexagonal Prism whose base is resting on HP.',
@@ -351,7 +359,7 @@ const EXPERIMENTS = [
         link: 'devPrism/'
     },
     {
-        id: 'exp-21',
+        id: 'exp-22',
         subject: 'EDrawing',
         title: 'Development Of Solids: Pentagonal Pyramid',
         description: 'To draw the simple projection and develop the surface of a pentagonal pyramid of height 40 mm and base edge of 30 mm is resting on HP with its base such that one of its base edge is parallel to VP.',
@@ -359,7 +367,7 @@ const EXPERIMENTS = [
         link: 'devPyramid/'
     },
     {
-        id: 'exp-22',
+        id: 'exp-23',
         subject: 'EDrawing',
         title: 'Development Of Solids: Pentagonal Prism',
         description: 'To draw the simple projection and develop the surface of a pentagonal prism of height 40 mm and base edge of 30 mm is resting on HP with its base such that one of its base edge is parallel to VP.',
@@ -367,7 +375,7 @@ const EXPERIMENTS = [
         link: 'devPentPrism/'
     },
     {
-        id: 'exp-23',
+        id: 'exp-24',
         subject: 'EDrawing',
         title: 'Isometric Projection: Square Prism',
         description: 'To draw the isometric projection of a square prism of height 70mm and the base is resting on HP with side length of 30mm.',
